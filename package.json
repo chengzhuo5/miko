@@ -2,9 +2,6 @@
   "name": "miko",
   "version": "0.1.0",
   "private": true,
-  "bin": {
-    "miko": "./packages/cli/index.ts"
-  },
   "workspaces": [
     "packages/*",
     "app"

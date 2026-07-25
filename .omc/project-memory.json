@@ -216,8 +216,8 @@
     },
     {
       "path": "packages/cli/dev.ts",
-      "accessCount": 9,
-      "lastAccessed": 1784951151358,
+      "accessCount": 10,
+      "lastAccessed": 1784964329612,
       "type": "file"
     },
     {
@@ -257,6 +257,18 @@
       "type": "file"
     },
     {
+      "path": "packages/cli/preview.ts",
+      "accessCount": 6,
+      "lastAccessed": 1784964330042,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 6,
+      "lastAccessed": 1784964391315,
+      "type": "file"
+    },
+    {
       "path": ".npmrc",
       "accessCount": 5,
       "lastAccessed": 1784947043031,
@@ -269,27 +281,27 @@
       "type": "file"
     },
     {
-      "path": "packages/cli/preview.ts",
-      "accessCount": 5,
-      "lastAccessed": 1784951151856,
-      "type": "file"
-    },
-    {
       "path": "packages/vite-plugin-miko/tsconfig.json",
       "accessCount": 5,
       "lastAccessed": 1784955221781,
       "type": "file"
     },
     {
-      "path": "package.json",
-      "accessCount": 4,
-      "lastAccessed": 1784951171970,
-      "type": "file"
-    },
-    {
       "path": "packages/vite-plugin-bootstrap/README.md",
       "accessCount": 4,
       "lastAccessed": 1784958272604,
+      "type": "file"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784964401300,
+      "type": "file"
+    },
+    {
+      "path": "packages/framework/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784964451585,
       "type": "file"
     },
     {
@@ -341,6 +353,36 @@
       "type": "file"
     },
     {
+      "path": "packages/cli/tsc.ts",
+      "accessCount": 3,
+      "lastAccessed": 1784964328613,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1784964429168,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1784964446835,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1784964449528,
+      "type": "file"
+    },
+    {
+      "path": "packages/linter/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1784964454096,
+      "type": "file"
+    },
+    {
       "path": "app/.env",
       "accessCount": 2,
       "lastAccessed": 1784886382644,
@@ -350,24 +392,6 @@
       "path": "app/tests/e2e/helpers.ts",
       "accessCount": 2,
       "lastAccessed": 1784886392336,
-      "type": "file"
-    },
-    {
-      "path": "packages/cli/tsc.ts",
-      "accessCount": 2,
-      "lastAccessed": 1784942455690,
-      "type": "file"
-    },
-    {
-      "path": "packages/framework/package.json",
-      "accessCount": 2,
-      "lastAccessed": 1784955009187,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-bootstrap/package.json",
-      "accessCount": 2,
-      "lastAccessed": 1784963037970,
       "type": "file"
     },
     {
@@ -413,12 +437,6 @@
       "type": "file"
     },
     {
-      "path": "packages/linter/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1784886127017,
-      "type": "file"
-    },
-    {
       "path": "packages/linter/tsconfig.json",
       "accessCount": 1,
       "lastAccessed": 1784886133795,
@@ -428,18 +446,6 @@
       "path": "LICENSE",
       "accessCount": 1,
       "lastAccessed": 1784886140514,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-external/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1784886164288,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-index-html/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1784886169719,
       "type": "file"
     },
     {
@@ -458,12 +464,6 @@
       "path": "app/tests/components/smoke.test.ts",
       "accessCount": 1,
       "lastAccessed": 1784945587498,
-      "type": "file"
-    },
-    {
-      "path": "packages/cli/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1784951140546,
       "type": "file"
     },
     {
