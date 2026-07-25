@@ -1,0 +1,24 @@
+{
+  "name": "@minar-kotonoha/create-miko",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:unit": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:browser": "vitest --config vitest.browser.config.ts",
+    "lint": "run-s lint:*",
+    "lint:oxlint": "oxlint . --fix",
+    "lint:eslint": "eslint . --fix --cache",
+    "format": "oxfmt"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.61.0",
+    "@vueuse/core": "^14.3.0",
+    "pinia": "^4.0.0"
+  },
+  "devDependencies": {
+    "@minar-kotonoha/framework": "0.1.0",
+    "@minar-kotonoha/linter": "0.1.0"
+  }
+}

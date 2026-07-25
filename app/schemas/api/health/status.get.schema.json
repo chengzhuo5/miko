@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "api:health:status:get",
+  "title": "健康检查响应",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ok", "degraded", "down"]
+    },
+    "version": {
+      "type": "string"
+    },
+    "uptime": {
+      "type": "number"
+    }
+  },
+  "required": ["status"]
+}

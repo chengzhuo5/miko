@@ -1,0 +1,19 @@
+{
+  "extends": "@minar-kotonoha/linter/tsconfig.json",
+  "include": ["**/*", "**/*.vue", "../packages/plugins/bootstrap/index.d.ts"],
+  "exclude": ["**/__tests__/*", "e2e/**/*", "**/node_modules/*", "**/dist/*"],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": [
+      "vite/client",
+      "vite-plugin-vue-layouts-next/client",
+      "vue-macros/macros-global",
+      "@intlify/unplugin-vue-i18n/messages"
+    ]
+  },
+  "vueCompilerOptions": {
+    "plugins": ["vue-macros/volar"]
+  }
+}

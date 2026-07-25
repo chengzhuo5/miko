@@ -1,0 +1,47 @@
+{
+  "name": "@minar-kotonoha/linter",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./vite": "./vite.ts",
+    "./.oxlintrc.json": {
+      "types": "./.oxlintrc.d.ts",
+      "default": "./.oxlintrc.json"
+    },
+    "./eslint.config": "./eslint.config.ts",
+    "./tsconfig": "./tsconfig.json",
+    "./tsconfig.json": "./tsconfig.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "lint": "run-s lint:*",
+    "lint:oxlint": "oxlint . --fix",
+    "lint:eslint": "eslint . --fix --cache",
+    "format": "oxfmt"
+  },
+  "dependencies": {
+    "@intlify/unplugin-vue-i18n": "^11.2.0",
+    "@vitest/eslint-plugin": "^1.6.23",
+    "@vue-macros/eslint-config": "^3.1.4",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "@vue/tsconfig": "^0.9.0",
+    "eslint": "^10.7.0",
+    "eslint-plugin-oxlint": "~1.55.0",
+    "eslint-plugin-vue": "^10.10.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
+    "typescript": "^5.9.3",
+    "vite": "catalog:",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-oxlint": "^2.1.0",
+    "vite-plugin-vue-layouts-next": "^2.1.0",
+    "vue-macros": "^3.1.4"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
+}

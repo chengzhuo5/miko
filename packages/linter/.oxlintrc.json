@@ -1,0 +1,21 @@
+{
+  "ignorePatterns": ["**/dist/**", "**/dist-ssr/**", "**/coverage/**", "**/.vite-ssg-temp/**"],
+  "plugins": [
+    "eslint",
+    "typescript",
+    "unicorn",
+    "oxc",
+    "vue",
+    "vitest",
+    "import",
+    "node",
+    "jsdoc",
+    "promise"
+  ],
+  "env": {
+    "browser": true
+  },
+  "categories": {
+    "correctness": "error"
+  }
+}

@@ -1,0 +1,503 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1784874595273,
+  "projectRoot": "D:\\Code\\CMS\\cms-vite",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": "^20.19.0 || >=22.12.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "vite",
+        "version": "catalog:",
+        "category": "build"
+      },
+      {
+        "name": "vitest",
+        "version": "4.1.10",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": "Node.js 20.19.0||22.12.0"
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "packages/*",
+      "app"
+    ],
+    "mainDirectories": [
+      "app"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 14,
+      "lastAccessed": 1784874595211,
+      "keyFiles": [
+        "cbv.config.ts",
+        "eslint.config.ts",
+        "index.ts",
+        "oxlint.config.ts",
+        "package.json"
+      ]
+    },
+    "command": {
+      "path": "command",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1784874595219,
+      "keyFiles": [
+        "build.ts",
+        "dev.ts",
+        "index.ts",
+        "preview.ts",
+        "tsc.ts"
+      ]
+    },
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1784874595222,
+      "keyFiles": [
+        "favicon.ico"
+      ]
+    },
+    "introduce": {
+      "path": "introduce",
+      "purpose": null,
+      "fileCount": 10,
+      "lastAccessed": 1784874595223,
+      "keyFiles": [
+        "bun.lock",
+        "global-top.vue",
+        "netlify.toml",
+        "package.json",
+        "README.md"
+      ]
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1784874595223,
+      "keyFiles": []
+    },
+    "template": {
+      "path": "template",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1784874595224,
+      "keyFiles": [
+        "App.vue",
+        "index.html",
+        "main.ts",
+        "tsconfig.json"
+      ]
+    },
+    "types": {
+      "path": "types",
+      "purpose": "Type definitions",
+      "fileCount": 2,
+      "lastAccessed": 1784874595224,
+      "keyFiles": [
+        "components.d.ts",
+        "routes.d.ts"
+      ]
+    },
+    "app\\dist": {
+      "path": "app\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 4,
+      "lastAccessed": 1784874595226,
+      "keyFiles": [
+        "favicon.ico",
+        "index.html",
+        "page1.html"
+      ]
+    },
+    "app\\node_modules": {
+      "path": "app\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1784874595228,
+      "keyFiles": []
+    },
+    "dist\\assets": {
+      "path": "dist\\assets",
+      "purpose": "Static assets",
+      "fileCount": 6,
+      "lastAccessed": 1784874595230,
+      "keyFiles": [
+        "app-Cy-u85Ml.css",
+        "app-D0_kwpu8.js",
+        "app-legacy-CL6LHicE.js"
+      ]
+    },
+    "introduce\\node_modules": {
+      "path": "introduce\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1784874595232,
+      "keyFiles": []
+    },
+    "template\\components": {
+      "path": "template\\components",
+      "purpose": "UI components",
+      "fileCount": 1,
+      "lastAccessed": 1784874595235,
+      "keyFiles": [
+        "Fallback.vue"
+      ]
+    },
+    "template\\public": {
+      "path": "template\\public",
+      "purpose": "Public files",
+      "fileCount": 1,
+      "lastAccessed": 1784874595236,
+      "keyFiles": [
+        "favicon.ico"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "packages/vite-plugin-miko/index.ts",
+      "accessCount": 80,
+      "lastAccessed": 1784951072179,
+      "type": "file"
+    },
+    {
+      "path": "vite.config.ts",
+      "accessCount": 32,
+      "lastAccessed": 1784951834533,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 18,
+      "lastAccessed": 1784945207969,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 18,
+      "lastAccessed": 1784947841950,
+      "type": "directory"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 14,
+      "lastAccessed": 1784951057655,
+      "type": "file"
+    },
+    {
+      "path": "command/dev.ts",
+      "accessCount": 9,
+      "lastAccessed": 1784951151358,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-miko/package.json",
+      "accessCount": 8,
+      "lastAccessed": 1784945110269,
+      "type": "file"
+    },
+    {
+      "path": "app/miko.config.ts",
+      "accessCount": 7,
+      "lastAccessed": 1784945181368,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/index.ts",
+      "accessCount": 7,
+      "lastAccessed": 1784948918732,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-miko/README.md",
+      "accessCount": 7,
+      "lastAccessed": 1784951065007,
+      "type": "file"
+    },
+    {
+      "path": "app/index.ts",
+      "accessCount": 6,
+      "lastAccessed": 1784943829752,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/index.ts",
+      "accessCount": 6,
+      "lastAccessed": 1784947170442,
+      "type": "file"
+    },
+    {
+      "path": "command/index.ts",
+      "accessCount": 6,
+      "lastAccessed": 1784951131803,
+      "type": "file"
+    },
+    {
+      "path": ".npmrc",
+      "accessCount": 5,
+      "lastAccessed": 1784947043031,
+      "type": "file"
+    },
+    {
+      "path": "app/vite.config.ts",
+      "accessCount": 5,
+      "lastAccessed": 1784949382650,
+      "type": "file"
+    },
+    {
+      "path": "command/preview.ts",
+      "accessCount": 5,
+      "lastAccessed": 1784951151856,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784951171970,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-miko/tsconfig.json",
+      "accessCount": 3,
+      "lastAccessed": 1784947195937,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/tsconfig.json",
+      "accessCount": 3,
+      "lastAccessed": 1784947197011,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/tsconfig.json",
+      "accessCount": 3,
+      "lastAccessed": 1784947198069,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/tsconfig.json",
+      "accessCount": 3,
+      "lastAccessed": 1784947199090,
+      "type": "file"
+    },
+    {
+      "path": "app/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1784886381084,
+      "type": "file"
+    },
+    {
+      "path": "app/.env",
+      "accessCount": 2,
+      "lastAccessed": 1784886382644,
+      "type": "file"
+    },
+    {
+      "path": "app/tests/e2e/helpers.ts",
+      "accessCount": 2,
+      "lastAccessed": 1784886392336,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1784887246448,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1784887248927,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/README.md",
+      "accessCount": 2,
+      "lastAccessed": 1784887251290,
+      "type": "file"
+    },
+    {
+      "path": "template/App.vue",
+      "accessCount": 2,
+      "lastAccessed": 1784942455315,
+      "type": "file"
+    },
+    {
+      "path": "command/tsc.ts",
+      "accessCount": 2,
+      "lastAccessed": 1784942455690,
+      "type": "file"
+    },
+    {
+      "path": "packages/plugins/external/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784884381863,
+      "type": "file"
+    },
+    {
+      "path": "packages/plugins/bootstrap/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784884385851,
+      "type": "file"
+    },
+    {
+      "path": "packages/plugins/indexHTML/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784884386325,
+      "type": "file"
+    },
+    {
+      "path": "app/cbv.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784884391519,
+      "type": "file"
+    },
+    {
+      "path": "packages/framework/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784884398208,
+      "type": "file"
+    },
+    {
+      "path": "packages/framework/vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784885944003,
+      "type": "file"
+    },
+    {
+      "path": "packages/framework/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784885944411,
+      "type": "file"
+    },
+    {
+      "path": "C:/Users/cheng/.claude/plans/wise-chasing-pebble.md",
+      "accessCount": 1,
+      "lastAccessed": 1784886097559,
+      "type": "file"
+    },
+    {
+      "path": "packages/linter/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784886127017,
+      "type": "file"
+    },
+    {
+      "path": "packages/linter/tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1784886133795,
+      "type": "file"
+    },
+    {
+      "path": "LICENSE",
+      "accessCount": 1,
+      "lastAccessed": 1784886140514,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784886158604,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784886164288,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784886169719,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784886195579,
+      "type": "file"
+    },
+    {
+      "path": "packages",
+      "accessCount": 1,
+      "lastAccessed": 1784942473765,
+      "type": "directory"
+    },
+    {
+      "path": "command",
+      "accessCount": 1,
+      "lastAccessed": 1784942486655,
+      "type": "directory"
+    },
+    {
+      "path": "app/tests/components/smoke.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784945587498,
+      "type": "file"
+    },
+    {
+      "path": "packages/cli/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1784951140546,
+      "type": "file"
+    },
+    {
+      "path": "packages/cli/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784951142387,
+      "type": "file"
+    },
+    {
+      "path": "packages/cli/tsc.ts",
+      "accessCount": 1,
+      "lastAccessed": 1784951143744,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

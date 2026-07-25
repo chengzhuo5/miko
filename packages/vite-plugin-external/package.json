@@ -1,0 +1,21 @@
+{
+  "name": "@minar-kotonoha/vite-plugin-external",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "vite": "catalog:"
+  },
+  "dependencies": {
+    "@dual-bundle/import-meta-resolve": "^4.2.1",
+    "fast-glob": "^3.3.3",
+    "vite-plugin-external": "^6.2.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
