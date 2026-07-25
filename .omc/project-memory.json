@@ -78,11 +78,11 @@
         "package.json"
       ]
     },
-    "command": {
-      "path": "command",
-      "purpose": null,
-      "fileCount": 5,
-      "lastAccessed": 1784874595219,
+    "packages/cli": {
+      "path": "packages/cli",
+      "purpose": "CLI commands",
+      "fileCount": 6,
+      "lastAccessed": 1784954875219,
       "keyFiles": [
         "build.ts",
         "dev.ts",
@@ -98,19 +98,6 @@
       "lastAccessed": 1784874595222,
       "keyFiles": [
         "favicon.ico"
-      ]
-    },
-    "introduce": {
-      "path": "introduce",
-      "purpose": null,
-      "fileCount": 10,
-      "lastAccessed": 1784874595223,
-      "keyFiles": [
-        "bun.lock",
-        "global-top.vue",
-        "netlify.toml",
-        "package.json",
-        "README.md"
       ]
     },
     "packages": {
@@ -171,13 +158,6 @@
         "app-legacy-CL6LHicE.js"
       ]
     },
-    "introduce\\node_modules": {
-      "path": "introduce\\node_modules",
-      "purpose": "Dependencies",
-      "fileCount": 0,
-      "lastAccessed": 1784874595232,
-      "keyFiles": []
-    },
     "template\\components": {
       "path": "template\\components",
       "purpose": "UI components",
@@ -212,14 +192,14 @@
     },
     {
       "path": "CLAUDE.md",
-      "accessCount": 24,
-      "lastAccessed": 1784954773824,
+      "accessCount": 26,
+      "lastAccessed": 1784958264987,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 21,
-      "lastAccessed": 1784954833540,
+      "accessCount": 22,
+      "lastAccessed": 1784958255793,
       "type": "directory"
     },
     {
@@ -229,7 +209,7 @@
       "type": "file"
     },
     {
-      "path": "command/dev.ts",
+      "path": "packages/cli/dev.ts",
       "accessCount": 9,
       "lastAccessed": 1784951151358,
       "type": "file"
@@ -271,7 +251,7 @@
       "type": "file"
     },
     {
-      "path": "command/index.ts",
+      "path": "packages/cli/index.ts",
       "accessCount": 6,
       "lastAccessed": 1784951131803,
       "type": "file"
@@ -289,7 +269,7 @@
       "type": "file"
     },
     {
-      "path": "command/preview.ts",
+      "path": "packages/cli/preview.ts",
       "accessCount": 5,
       "lastAccessed": 1784951151856,
       "type": "file"
@@ -304,6 +284,12 @@
       "path": "package.json",
       "accessCount": 4,
       "lastAccessed": 1784951171970,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/README.md",
+      "accessCount": 4,
+      "lastAccessed": 1784958272604,
       "type": "file"
     },
     {
@@ -343,6 +329,18 @@
       "type": "file"
     },
     {
+      "path": "packages/vite-plugin-external/README.md",
+      "accessCount": 3,
+      "lastAccessed": 1784958241516,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/README.md",
+      "accessCount": 3,
+      "lastAccessed": 1784958242048,
+      "type": "file"
+    },
+    {
       "path": "app/.env",
       "accessCount": 2,
       "lastAccessed": 1784886382644,
@@ -355,25 +353,7 @@
       "type": "file"
     },
     {
-      "path": "packages/vite-plugin-bootstrap/README.md",
-      "accessCount": 2,
-      "lastAccessed": 1784887246448,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-external/README.md",
-      "accessCount": 2,
-      "lastAccessed": 1784887248927,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-index-html/README.md",
-      "accessCount": 2,
-      "lastAccessed": 1784887251290,
-      "type": "file"
-    },
-    {
-      "path": "command/tsc.ts",
+      "path": "packages/cli/tsc.ts",
       "accessCount": 2,
       "lastAccessed": 1784942455690,
       "type": "file"
@@ -403,7 +383,7 @@
       "type": "file"
     },
     {
-      "path": "app/cbv.config.ts",
+      "path": "app/miko.config.ts",
       "accessCount": 1,
       "lastAccessed": 1784884391519,
       "type": "file"

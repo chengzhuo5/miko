@@ -9,11 +9,17 @@
 import { bootstrapPlugin } from '@minar-kotonoha/vite-plugin-bootstrap'
 
 export default defineConfig({
-  plugins: [bootstrapPlugin()]
+  plugins: [bootstrapPlugin()]  // 默认读取项目根 index.ts
 })
 ```
 
-在项目根目录的 `index.ts` 中：
+可通过 `entryFile` 参数指定自定义启动入口：
+
+```ts
+plugins: [bootstrapPlugin('app.ts')]  // 读取 app.ts 而非 index.ts
+```
+
+在项目根目录的入口文件（默认 `index.ts`）中：
 
 ```ts
 import type { App } from 'vue'

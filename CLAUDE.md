@@ -124,7 +124,7 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 选 UI 库 + 配 proxy（可选）→ `bun dev`
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - `vueDevTools()` 已禁用（避免 virtual module 404）
-- `miko.config.ts`（可选）支持 `proxy`/`template`/`entry`/`outDir`/`uiLibrary`/`layout`/`lib` 配置
+- `miko.config.ts`（可选）支持所有插件的深度配置（`vue`/`vueJsx`/`vueRouter`/`layouts`/`components`/`unoCSS`/`legacy`/`ssg`/`linter`/`bootstrap`/`external`/`dev`/`janus` + `proxy`/`template`/`entry`/`outDir`/`pagesDir`/`uiLibrary`/`layout`/`lib`），完整类型见 `MikoUserConfig`
 
 ### 依赖版本 (2026-07-21)
 
