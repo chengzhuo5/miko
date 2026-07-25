@@ -42,7 +42,7 @@ cd app && bun test:e2e       # TypeScript E2E（@playwright/test, tests/e2e/）
 cd app && bun test:e2e:browser  # @vitest/browser-playwright, tests/components/
 ```
 
-`miko` 命令行工具（`command/index.ts`）分发到 `command/<子命令>.ts`。需要 Bun 运行时（`#!/usr/bin/env bun`）。
+`miko` 命令行工具位于 `packages/cli/`，分发到 `packages/cli/<子命令>.ts`。需要 Bun 运行时（`#!/usr/bin/env bun`）。
 
 ## 大仓结构
 
@@ -52,10 +52,9 @@ Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 |---------|---------|
 | `@minar-kotonoha/framework`（`packages/framework/`） | 核心框架：将 Vue 生态依赖聚合为 UMD 包，供 CDN 加载 |
 | `@minar-kotonoha/linter`（`packages/linter/`） | 共享的 ESLint/Oxlint/Oxfmt 配置 + Vite 代码检查插件 + 共享 tsconfig |
-| `@minar-kotonoha/vite-plugin-*`（`packages/vite-plugin-*/`） | 四个内部 Vite 插件（bootstrap、external、indexHTML、miko 总控） |
-| `@minar-kotonoha/create-miko`（`app/`） | 使用框架的 Starter 模板 |
-
-`introduce/` 目录是一个无关的 Slidev 演示项目——不属于大仓。
+| `@minar-kotonoha/cli`（`packages/cli/`） | miko CLI（dev、build、preview、tsc） |
+| `@minar-kotonoha/vite-plugin-*`（`packages/vite-plugin-*/`） | 四个 Vite 插件（bootstrap、external、indexHTML、miko 总控） |
+| `@minar-kotonoha/create-miko`（`app/`） | Starter 模板 |
 
 ## 架构
 
@@ -105,11 +104,11 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - **API 监控**: `page.route()` 拦截配置的 API 前缀
 
 **Vitest Browser Mode** — 组件级浏览器测试，渲染 Vue 组件到真实浏览器：
-- **配置**: `vitest.browser.config.ts`（根）和 `app/vitest.browser.config.ts`（应用级）
+- **配置**: `app/vitest.browser.config.ts`
 - **测试文件**: `app/tests/components/**/*.test.ts`
 - **运行**: `bun test:e2e:browser`
 - **注意**: 运行在 Vitest 内部 iframe 沙箱，不支持 `page.goto()` 导航外部 URL
-- **与单元测试隔离**: `vitest.config.ts`（jsdom, `__tests__/**`）排除 `tests/`
+- **与单元测试隔离**: `app/vitest.config.ts`（jsdom）排除 `tests/e2e/` 和 `tests/components/`
 
 ## 关键约定
 
@@ -120,11 +119,11 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - `.npmrc` 指向私有中国制品仓库（已注释），发布时使用 `--registry` 覆盖或 `publishConfig`
 - `vite` 版本通过 Bun catalog（`catalog:vite`）和 overrides 统一管理
 - `template/` 为 Vite 入口模板（App.vue, main.ts, layouts），`app/` 为项目模板（stores, e2e）
-- 插件架构：`@minar-kotonoha/vite-plugin-miko` 为总控插件，内置 Vue/Router/Layouts/Components/UnoCSS/Legacy/Linter/SSG 等全部插件。`@minar-kotonoha/vite-plugin-{bootstrap,external,index-html}` 为独立子插件可按需使用。
-- 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 配置 proxy（可选）→ `vite.config.ts` 中 `mikoConfig` 选 UI 库 → `bun dev`
-- Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`vite.config.ts` 中 `@minar-kotonoha/vite-plugin-miko` 总控插件通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
+- 插件架构：`defineMikoConfig()` 为统一入口，内部直接展开所有插件（Vue/Router/Layouts/Components/UnoCSS/Legacy/Linter/SSG）。`@minar-kotonoha/vite-plugin-{bootstrap,external,index-html}` 为独立子插件可按需使用。
+- 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 选 UI 库 + 配 proxy（可选）→ `bun dev`
+- Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - `vueDevTools()` 已禁用（避免 virtual module 404）
-- `vite.config.ts` 中 `mikoConfig` export 支持 `lib`/`uiLibrary` 配置；`miko.config.ts`（可选）支持 `proxy`/`template`/`entry`/`outDir`
+- `miko.config.ts`（可选）支持 `proxy`/`template`/`entry`/`outDir`/`uiLibrary`/`layout`/`lib` 配置
 
 ### 依赖版本 (2026-07-21)
 

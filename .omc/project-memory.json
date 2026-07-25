@@ -71,7 +71,7 @@
       "fileCount": 14,
       "lastAccessed": 1784874595211,
       "keyFiles": [
-        "cbv.config.ts",
+        "miko.config.ts",
         "eslint.config.ts",
         "index.ts",
         "oxlint.config.ts",
@@ -200,8 +200,8 @@
   "hotPaths": [
     {
       "path": "packages/vite-plugin-miko/index.ts",
-      "accessCount": 80,
-      "lastAccessed": 1784951072179,
+      "accessCount": 84,
+      "lastAccessed": 1784955199838,
       "type": "file"
     },
     {
@@ -212,20 +212,20 @@
     },
     {
       "path": "CLAUDE.md",
-      "accessCount": 18,
-      "lastAccessed": 1784945207969,
+      "accessCount": 24,
+      "lastAccessed": 1784954773824,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 18,
-      "lastAccessed": 1784947841950,
+      "accessCount": 21,
+      "lastAccessed": 1784954833540,
       "type": "directory"
     },
     {
       "path": "README.md",
-      "accessCount": 14,
-      "lastAccessed": 1784951057655,
+      "accessCount": 18,
+      "lastAccessed": 1784954742305,
       "type": "file"
     },
     {
@@ -235,39 +235,39 @@
       "type": "file"
     },
     {
+      "path": "packages/vite-plugin-miko/README.md",
+      "accessCount": 9,
+      "lastAccessed": 1784954762720,
+      "type": "file"
+    },
+    {
       "path": "packages/vite-plugin-miko/package.json",
-      "accessCount": 8,
-      "lastAccessed": 1784945110269,
+      "accessCount": 9,
+      "lastAccessed": 1784955210969,
       "type": "file"
     },
     {
       "path": "app/miko.config.ts",
-      "accessCount": 7,
-      "lastAccessed": 1784945181368,
+      "accessCount": 9,
+      "lastAccessed": 1784955268138,
       "type": "file"
     },
     {
       "path": "packages/vite-plugin-index-html/index.ts",
-      "accessCount": 7,
-      "lastAccessed": 1784948918732,
+      "accessCount": 8,
+      "lastAccessed": 1784955004079,
       "type": "file"
     },
     {
-      "path": "packages/vite-plugin-miko/README.md",
+      "path": "packages/vite-plugin-external/index.ts",
       "accessCount": 7,
-      "lastAccessed": 1784951065007,
+      "lastAccessed": 1784955003536,
       "type": "file"
     },
     {
       "path": "app/index.ts",
       "accessCount": 6,
       "lastAccessed": 1784943829752,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-external/index.ts",
-      "accessCount": 6,
-      "lastAccessed": 1784947170442,
       "type": "file"
     },
     {
@@ -295,15 +295,15 @@
       "type": "file"
     },
     {
-      "path": "package.json",
-      "accessCount": 4,
-      "lastAccessed": 1784951171970,
+      "path": "packages/vite-plugin-miko/tsconfig.json",
+      "accessCount": 5,
+      "lastAccessed": 1784955221781,
       "type": "file"
     },
     {
-      "path": "packages/vite-plugin-miko/tsconfig.json",
-      "accessCount": 3,
-      "lastAccessed": 1784947195937,
+      "path": "package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784951171970,
       "type": "file"
     },
     {
@@ -325,9 +325,21 @@
       "type": "file"
     },
     {
+      "path": "template/App.vue",
+      "accessCount": 3,
+      "lastAccessed": 1784955004449,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-bootstrap/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1784955188357,
+      "type": "file"
+    },
+    {
       "path": "app/package.json",
-      "accessCount": 2,
-      "lastAccessed": 1784886381084,
+      "accessCount": 3,
+      "lastAccessed": 1784955277019,
       "type": "file"
     },
     {
@@ -361,15 +373,15 @@
       "type": "file"
     },
     {
-      "path": "template/App.vue",
-      "accessCount": 2,
-      "lastAccessed": 1784942455315,
-      "type": "file"
-    },
-    {
       "path": "command/tsc.ts",
       "accessCount": 2,
       "lastAccessed": 1784942455690,
+      "type": "file"
+    },
+    {
+      "path": "packages/framework/package.json",
+      "accessCount": 2,
+      "lastAccessed": 1784955009187,
       "type": "file"
     },
     {
@@ -394,12 +406,6 @@
       "path": "app/cbv.config.ts",
       "accessCount": 1,
       "lastAccessed": 1784884391519,
-      "type": "file"
-    },
-    {
-      "path": "packages/framework/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1784884398208,
       "type": "file"
     },
     {
@@ -454,12 +460,6 @@
       "path": "packages/vite-plugin-index-html/package.json",
       "accessCount": 1,
       "lastAccessed": 1784886169719,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-bootstrap/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1784886195579,
       "type": "file"
     },
     {

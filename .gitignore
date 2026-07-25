@@ -44,3 +44,5 @@ app/.omc
 types/*.d.ts
 **/types/components.d.ts
 **/types/routes.d.ts
+**/.omc/state
+**/.omc/sessions

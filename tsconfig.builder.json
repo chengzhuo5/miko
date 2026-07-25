@@ -1,13 +1,9 @@
 {
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
-    "vite.config.*",
-    "vitest.config.*",
-    "cypress.config.*",
-    "nightwatch.conf.*",
     "playwright.config.*",
     "eslint.config.*",
-    "./command/**/*"
+    "./packages/cli/**/*"
   ],
   "compilerOptions": {
     "noEmit": true,

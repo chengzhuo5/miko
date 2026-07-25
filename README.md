@@ -33,8 +33,8 @@ miko/
 │   ├── vite-plugin-bootstrap/ # virtual:bootstrap 插件
 │   ├── vite-plugin-external/  # CDN 外部化插件
 │   ├── vite-plugin-index-html/# virtual:index + dev/prod 根目录分离插件
-│   └── vite-plugin-miko/      # 总控插件（组合上述 + 配置加载 + 代理）
-└── command/                   # miko CLI（dev, build, tsc, preview）
+│   └── vite-plugin-miko/      # 总控插件（defineMikoConfig 统一入口）
+└── packages/cli/               # miko CLI（dev, build, preview, tsc）
 ```
 
 ## 技术栈
@@ -64,12 +64,8 @@ cd app && bun test:e2e
 `vite.config.ts` — 一行搞定所有插件：
 
 ```ts
-import { defineConfig } from 'vite'
-import { mikoPlugin } from '@minar-kotonoha/vite-plugin-miko'
-
-export default defineConfig(async () => ({
-  plugins: [...await mikoPlugin()]
-}))
+import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
+export default await defineMikoConfig()
 ```
 
 可选创建 `miko.config.ts` 覆盖默认值：
@@ -109,7 +105,7 @@ Miko 的构建能力通过 4 个 Vite 插件提供，可按需独立使用：
 | `@minar-kotonoha/vite-plugin-bootstrap` | virtual:bootstrap — 自动发现项目入口 |
 | `@minar-kotonoha/vite-plugin-external` | 生产环境 CDN 外部化 |
 | `@minar-kotonoha/vite-plugin-index-html` | virtual:index + dev/prod 根目录分离 |
-| `@minar-kotonoha/vite-plugin-miko` | 总控插件 — 组合上述 + 配置加载 + 代理 + Janus |
+| `@minar-kotonoha/vite-plugin-miko` | 总控插件 — defineMikoConfig 统一入口 + SSG + 代理 + Janus |
 
 ## 许可证
 
