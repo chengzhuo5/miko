@@ -57,7 +57,14 @@ cd app && bun test:unit
 
 # E2E 测试（Playwright，需先启动 dev server）
 cd app && bun test:e2e
+
+# Vitest Browser Mode（组件级浏览器测试）
+cd app && bun test:e2e:browser
 ```
+
+> **⚠️ Windows 注意**：Vitest Browser Mode 配置中必须设置 `server: { host: '127.0.0.1' }`。
+> 默认 `localhost` 在 Windows 上解析到 IPv6 `::1`，而 Playwright Chromium headless shell 仅 IPv4 可达，
+> 否则会报 `ERR_CONNECTION_REFUSED`。
 
 ## 项目配置
 

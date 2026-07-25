@@ -108,6 +108,7 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - **测试文件**: `app/tests/components/**/*.test.ts`
 - **运行**: `bun test:e2e:browser`
 - **注意**: 运行在 Vitest 内部 iframe 沙箱，不支持 `page.goto()` 导航外部 URL
+- **⚠️ Windows 必须配置** `server: { host: '127.0.0.1' }` — vitest 默认 `localhost` 在 Windows 上解析到 IPv6 `::1`，而 Playwright Chromium headless shell 仅 IPv4 可达，导致 `ERR_CONNECTION_REFUSED`
 - **与单元测试隔离**: `app/vitest.config.ts`（jsdom）排除 `tests/e2e/` 和 `tests/components/`
 
 ## 关键约定

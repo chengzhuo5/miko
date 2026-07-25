@@ -19,6 +19,8 @@ export default defineConfig({
   resolve: {
     alias: [{ find: '@', replacement: process.cwd() }],
   },
+  // Windows 上 localhost → ::1 (IPv6)，Chromium headless shell 仅 IPv4 可达
+  server: { host: '127.0.0.1' },
   test: {
     browser: {
       enabled: true,
