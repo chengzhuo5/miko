@@ -31,6 +31,7 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import VueRouter from 'vue-router/vite'
 import VueMacros from 'vue-macros/vite'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
 // Layouts
 import Layouts from 'vite-plugin-vue-layouts-next'
@@ -439,6 +440,7 @@ export async function defineMikoConfig() {
         }),
       },
     }),
+    vueDevTools(),
   )
 
   // 2. 布局

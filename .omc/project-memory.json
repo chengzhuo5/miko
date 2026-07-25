@@ -180,8 +180,8 @@
   "hotPaths": [
     {
       "path": "packages/vite-plugin-miko/index.ts",
-      "accessCount": 84,
-      "lastAccessed": 1784955199838,
+      "accessCount": 87,
+      "lastAccessed": 1784964733897,
       "type": "file"
     },
     {
@@ -192,8 +192,8 @@
     },
     {
       "path": "CLAUDE.md",
-      "accessCount": 26,
-      "lastAccessed": 1784958264987,
+      "accessCount": 28,
+      "lastAccessed": 1784964774321,
       "type": "file"
     },
     {
@@ -210,14 +210,20 @@
     },
     {
       "path": "packages/vite-plugin-miko/package.json",
-      "accessCount": 11,
-      "lastAccessed": 1784964578328,
+      "accessCount": 13,
+      "lastAccessed": 1784964761812,
       "type": "file"
     },
     {
       "path": "packages/cli/dev.ts",
       "accessCount": 10,
       "lastAccessed": 1784964329612,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 10,
+      "lastAccessed": 1784964768132,
       "type": "file"
     },
     {
@@ -230,12 +236,6 @@
       "path": "app/miko.config.ts",
       "accessCount": 9,
       "lastAccessed": 1784955268138,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 9,
-      "lastAccessed": 1784964597355,
       "type": "file"
     },
     {
