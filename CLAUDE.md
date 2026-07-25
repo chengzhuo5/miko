@@ -125,6 +125,7 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - `vueDevTools()` 已启用 — 开发时可使用 Vue DevTools 调试
 - `miko.config.ts`（可选）支持所有插件的深度配置（`vue`/`vueJsx`/`vueRouter`/`layouts`/`components`/`unoCSS`/`legacy`/`ssg`/`linter`/`bootstrap`/`external`/`dev`/`janus` + `proxy`/`template`/`entry`/`outDir`/`pagesDir`/`uiLibrary`/`layout`/`lib`），完整类型见 `MikoUserConfig`
+- 发包：必须用 `bun publish`（npm publish 会丢弃 .ts 格式的 bin 脚本）。认证方式：`export NPM_CONFIG_TOKEN=npm_xxx` 然后 `bun publish --registry https://registry.npmjs.org/ --access public`。批量发布脚本：`scripts/publish-all.sh`
 
 ### 依赖版本 (2026-07-21)
 

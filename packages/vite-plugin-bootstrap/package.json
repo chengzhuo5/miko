@@ -1,13 +1,15 @@
 {
   "name": "@minar-kotonoha/vite-plugin-bootstrap",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "virtual:bootstrap — 自动发现项目入口，零配置启动 Vue 应用",
   "type": "module",
   "exports": {
     ".": "./index.ts",
     "./package.json": "./package.json"
   },
-  "files": ["index.ts"],
+  "files": [
+    "index.ts"
+  ],
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
