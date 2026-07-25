@@ -210,8 +210,8 @@
     },
     {
       "path": "packages/vite-plugin-miko/package.json",
-      "accessCount": 13,
-      "lastAccessed": 1784964761812,
+      "accessCount": 14,
+      "lastAccessed": 1784965001910,
       "type": "file"
     },
     {
@@ -293,15 +293,39 @@
       "type": "file"
     },
     {
+      "path": "packages/framework/package.json",
+      "accessCount": 5,
+      "lastAccessed": 1784965010667,
+      "type": "file"
+    },
+    {
       "path": "packages/vite-plugin-bootstrap/README.md",
       "accessCount": 4,
       "lastAccessed": 1784958272604,
       "type": "file"
     },
     {
-      "path": "packages/framework/package.json",
+      "path": "packages/vite-plugin-bootstrap/package.json",
       "accessCount": 4,
-      "lastAccessed": 1784964451585,
+      "lastAccessed": 1784965003982,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-external/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784965006680,
+      "type": "file"
+    },
+    {
+      "path": "packages/vite-plugin-index-html/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784965008989,
+      "type": "file"
+    },
+    {
+      "path": "packages/linter/package.json",
+      "accessCount": 4,
+      "lastAccessed": 1784965012880,
       "type": "file"
     },
     {
@@ -356,30 +380,6 @@
       "path": "packages/cli/tsc.ts",
       "accessCount": 3,
       "lastAccessed": 1784964328613,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-bootstrap/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1784964429168,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-external/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1784964446835,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-index-html/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1784964449528,
-      "type": "file"
-    },
-    {
-      "path": "packages/linter/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1784964454096,
       "type": "file"
     },
     {

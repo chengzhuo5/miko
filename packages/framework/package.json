@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/framework",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "miko 框架 CDN 包 — 聚合 Vue 生态依赖为单个 UMD 包",
   "type": "module",
   "exports": {
