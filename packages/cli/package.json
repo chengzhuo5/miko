@@ -4,13 +4,14 @@
   "description": "miko CLI — Vue 3 SSG 构建工具链命令行",
   "type": "module",
   "bin": {
-    "miko": "./index.ts"
+    "miko": "./miko.js"
   },
   "exports": {
     ".": "./index.ts",
     "./package.json": "./package.json"
   },
   "files": [
+    "miko.js",
     "index.ts",
     "dev.ts",
     "build.ts",
