@@ -9,6 +9,11 @@
   "peerDependencies": {
     "vite": "catalog:"
   },
+  "files": [
+    "index.ts",
+    "types.ts",
+    "template/"
+  ],
   "dependencies": {
     "@minar-kotonoha/linter": "workspace:^",
     "@minar-kotonoha/vite-plugin-bootstrap": "workspace:^",

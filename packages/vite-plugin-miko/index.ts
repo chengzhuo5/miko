@@ -119,10 +119,12 @@ const DEFAULTS = {
 // ===================================================================
 
 function detectTemplate(): string {
+  // 优先项目本地 template/（用户可覆盖）
   const local = resolve(cwd, 'template')
   if (existsSync(local)) return local
-  const pkgRelative = fileURLToPath(new URL('../../template', import.meta.url))
-  if (existsSync(pkgRelative)) return pkgRelative
+  // 回退到插件内置 template/
+  const bundled = fileURLToPath(new URL('./template', import.meta.url))
+  if (existsSync(bundled)) return bundled
   return local
 }
 

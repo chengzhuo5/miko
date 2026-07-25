@@ -180,8 +180,8 @@
   "hotPaths": [
     {
       "path": "packages/vite-plugin-miko/index.ts",
-      "accessCount": 87,
-      "lastAccessed": 1784964733897,
+      "accessCount": 89,
+      "lastAccessed": 1784972016953,
       "type": "file"
     },
     {
@@ -210,8 +210,8 @@
     },
     {
       "path": "packages/vite-plugin-miko/package.json",
-      "accessCount": 14,
-      "lastAccessed": 1784965001910,
+      "accessCount": 15,
+      "lastAccessed": 1784972028018,
       "type": "file"
     },
     {
