@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/vite-plugin-external",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "生产环境 CDN 外部化 — 将 Vue 生态依赖映射为 framework 全局对象",
   "type": "module",
   "exports": {

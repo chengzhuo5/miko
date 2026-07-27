@@ -43,6 +43,7 @@ export function externalPlugin(enableCDN = false) {
           ssr: {
             noExternal: [
               /.*\/vant/,
+              /@sec\//,
               ...(mode === 'development' ? ['vue-router'] : []),
             ],
           },
