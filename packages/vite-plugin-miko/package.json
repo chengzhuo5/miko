@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/vite-plugin-miko",
-  "version": "0.2.13",
+  "version": "0.2.14",
   "type": "module",
   "exports": {
     ".": "./index.ts",

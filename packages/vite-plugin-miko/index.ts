@@ -429,21 +429,18 @@ export async function defineMikoConfig() {
 
   const plugins: PluginOption[] = []
 
-  // 0. SSR CSS handler — 替换 .css import 为空模块，避免 Node.js ERR_UNKNOWN_FILE_EXTENSION
+  // 0. SSR CSS handler — 移除 CSS import，避免 Node.js ERR_UNKNOWN_FILE_EXTENSION
   plugins.push({
     name: 'miko:ssr-css',
     applyToEnvironment({ name }) {
       return name === 'ssr';
     },
-    resolveId(id) {
-      const base = id.split('?')[0];
-      if (base.endsWith('.css')) {
-        return '\0miko-ssr-css:' + id;
-      }
-    },
-    load(id) {
-      if (id.startsWith('\0miko-ssr-css:')) {
-        return '';
+    transform(code, id) {
+      // CSS 文件本身直接返回空
+      if (/\.(css|less|scss|sass)$/.test(id)) return '';
+      // JS/TS/Vue 文件中移除 CSS/Less 导入语句（含相对路径和裸 specifier）
+      if (/\.(ts|js|tsx|jsx|vue|mjs|cjs)$/.test(id)) {
+        return code.replace(/import\s+['"][^'"]+\.(css|less|scss|sass)['"]\s*;?/g, '');
       }
     },
   } satisfies PluginOption)
