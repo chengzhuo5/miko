@@ -429,12 +429,6 @@ export async function defineMikoConfig() {
 
   const plugins: PluginOption[] = []
 
-  // 0. UnoCSS — 必须在 Vue 前面，否则 Vue SFC 编译器先执行，
-  //    UnoCSS 看到的只有编译后的 JS（class 名已变成 render 函数）
-  if (unoCSSOpts !== false) {
-    plugins.push(UnoCSS({ configFile: false, ...unoCSSOpts } as Parameters<typeof UnoCSS>[0]))
-  }
-
   // 1. Vue 生态
   plugins.push(
     VueMacros({
@@ -490,7 +484,12 @@ export async function defineMikoConfig() {
     }),
   )
 
-  // 6. Bootstrap（virtual:bootstrap）
+  // 6. UnoCSS
+  if (unoCSSOpts !== false) {
+    plugins.push(UnoCSS({ configFile: false, ...unoCSSOpts } as Parameters<typeof UnoCSS>[0]))
+  }
+
+  // 7. Bootstrap（virtual:bootstrap）
   plugins.push(bootstrapPlugin(bootstrapOpts.entryFile))
 
   // 8. External（CDN 外部化）

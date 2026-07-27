@@ -180,8 +180,8 @@
   "hotPaths": [
     {
       "path": "packages/vite-plugin-miko/index.ts",
-      "accessCount": 90,
-      "lastAccessed": 1785117529989,
+      "accessCount": 92,
+      "lastAccessed": 1785137743731,
       "type": "file"
     },
     {
