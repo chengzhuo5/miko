@@ -45,7 +45,7 @@ miko/
 | 框架 | Vue 3.5、vue-router 5.2、Pinia 4 |
 | SSG | vite-ssg 28、@unhead 3 |
 | UI | Vant 4 / Element Plus、UnoCSS |
-| 类型 | TypeScript 5.9、vue-tsc |
+| 类型 | TypeScript 7 (tsgo)、vue-tsc 3.3 |
 | 测试 | Vitest 4.1、Playwright Test 1.61 |
 | 代码检查 | Oxlint 1.74、ESLint 10.7、Oxfmt |
 

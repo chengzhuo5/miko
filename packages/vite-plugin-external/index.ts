@@ -34,25 +34,23 @@ const externalMap = Object.fromEntries(
 );
 const cwd = process.cwd();
 
-export function externalPlugin() {
-  return [
+export function externalPlugin(enableCDN = false) {
+  const plugins: PluginOption[] = [
     {
       name: '@minar-kotonoha/vite-plugin-external',
       config: (_: UserConfig, { mode }: { mode: string }) => {
         return {
           ssr: {
-            /**
-             * 服务端渲染的时候，vant不能外部化，因为vant会有css in js的逻辑，而node.js并不支持css
-             */
             noExternal: [
               /.*\/vant/,
-              // 参考https://uvr.esm.is/guide/configuration.html。不能在打包阶段外部化router，会报错：vue-router/auto找不到
               ...(mode === 'development' ? ['vue-router'] : []),
             ],
           },
         };
       },
-      async resolveId(source: string, _importer: string | undefined, _options: unknown) {
+      async resolveId(source: string, _importer: string | undefined, options: { ssr?: boolean }) {
+        // SSR 时跳过解析，让 Vite 自己外部化 node_modules 依赖
+        if (options?.ssr) return;
         if (
           source.includes('vite/preload-helper.js') ||
           source.startsWith('/') ||
@@ -61,7 +59,6 @@ export function externalPlugin() {
         ) {
           return;
         }
-        // rolldown目前的modules配置无效，此处用于把引入的依赖从项目的node_modules中引入
         try {
           const resolvedId = await resolveModule(source, cwd);
           return resolvedId;
@@ -70,16 +67,21 @@ export function externalPlugin() {
         }
       },
     },
-    {
+  ];
+
+  if (enableCDN) {
+    plugins.push({
       ...pluginExternal({
         get externals() {
-          return queryEnableExternal() ? externalMap : {};
+          return externalMap;
         },
         externalizeDeps: ['vue-router/auto', 'vue-router/auto-routes'],
       }),
       apply(config, env) {
         return env.command === 'build';
       },
-    },
-  ] satisfies PluginOption[];
+    });
+  }
+
+  return plugins;
 }

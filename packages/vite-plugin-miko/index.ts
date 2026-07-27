@@ -492,8 +492,8 @@ export async function defineMikoConfig() {
   // 7. Bootstrap（virtual:bootstrap）
   plugins.push(bootstrapPlugin(bootstrapOpts.entryFile))
 
-  // 8. External（CDN 外部化）
-  plugins.push(...externalPlugin())
+  // 8. External（CDN 外部化，仅配置了 frameworkCDN 时启用）
+  plugins.push(...externalPlugin(!!externalOpts.frameworkCDN))
 
   // 9. IndexHTML
   plugins.push(await indexHTMLPlugin(entry, template))

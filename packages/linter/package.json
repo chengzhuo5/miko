@@ -42,7 +42,7 @@
     "eslint-plugin-vue": "^10.10.0",
     "oxfmt": "^0.59.0",
     "oxlint": "^1.74.0",
-    "typescript": "^5.9.3",
+    "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
     "vite": "catalog:",
     "vite-plugin-eslint": "^1.8.1",
     "vite-plugin-oxlint": "^2.1.0",

@@ -20,7 +20,7 @@ bun x miko build
 bun x miko build --lib
 
 # 仅类型检查
-bun x vue-tsc --noEmit  # miko tsc 在 Bun monorepo 中有路径解析问题
+bun x vue-tsc --noEmit  # 类型检查（TypeScript 7 通过 typescript-native-bridge 适配 vue-tsc）
 
 # 预览生产构建
 bun preview    # 或: bun x miko preview
@@ -91,7 +91,7 @@ Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 
 ### 类型检查
 
-TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建前作为子进程 fork 运行。`@minar-kotonoha/linter` 中的共享 tsconfig 继承 `@vue/tsconfig/tsconfig.dom.json`，并启用 vue-router 和 vue-macros 编译器插件。
+TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型检查——bridge 模拟经典 TypeScript API 使 vue-tsc 能使用 Go 原生编译器。`@minar-kotonoha/linter` 中的共享 tsconfig 继承 `@vue/tsconfig/tsconfig.dom.json`，并启用 vue-router 和 vue-macros 编译器插件。
 
 ### E2E 测试
 
@@ -135,8 +135,8 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 | 类别 | 包 | 版本 |
 |------|-----|------|
 | 构建 | vite | 8.1.5 |
-| | typescript | 5.9.3 |
-| | vue-tsc | ~3.2.5 (3.3+ Bun 模块解析冲突) |
+| | typescript | 7.0.2 (tsgo, through typescript-native-bridge) |
+| | vue-tsc | ~3.3.8 |
 | 测试 | vitest | 4.1.10 |
 | | @vitest/browser | 4.1.10 |
 | | @playwright/test | 1.61.1 |

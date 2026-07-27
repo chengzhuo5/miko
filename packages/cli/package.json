@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/miko-cli",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "miko CLI — Vue 3 SSG 构建工具链命令行",
   "type": "module",
   "bin": {
@@ -25,6 +25,7 @@
     "@minar-kotonoha/framework": "workspace:^",
     "@minar-kotonoha/vite-plugin-miko": "workspace:^",
     "dotenv": "^17.4.0",
+    "jiti": "^2.7.0",
     "vite": "catalog:",
     "vue-tsc": "~3.3.8",
     "yargs-parser": "^22.0.0"

@@ -22,6 +22,7 @@
         "fs-extra": "^11.4.0",
         "jsdom": "^29.1.1",
         "less": "^4.8.0",
+        "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
         "unocss": "^66.7.5",
         "unplugin-vue-components": "^32.1.0",
         "vite": "^8.1.5",
@@ -49,20 +50,23 @@
         "pinia": "^4.0.0",
       },
       "devDependencies": {
-        "@minar-kotonoha/framework": "0.1.0",
-        "@minar-kotonoha/linter": "0.1.0",
+        "@minar-kotonoha/framework": "^0.1.0",
+        "@minar-kotonoha/linter": "^0.1.0",
+        "@minar-kotonoha/miko-cli": "^0.1.0",
+        "@minar-kotonoha/vite-plugin-miko": "^0.2.9",
       },
     },
     "packages/cli": {
       "name": "@minar-kotonoha/miko-cli",
-      "version": "0.1.0",
+      "version": "0.1.4",
       "bin": {
-        "miko": "./index.ts",
+        "miko": "./miko",
       },
       "dependencies": {
         "@minar-kotonoha/framework": "workspace:^",
         "@minar-kotonoha/vite-plugin-miko": "workspace:^",
         "dotenv": "^17.4.0",
+        "jiti": "^2.7.0",
         "vite": "catalog:",
         "vue-tsc": "~3.3.8",
         "yargs-parser": "^22.0.0",
@@ -70,7 +74,7 @@
     },
     "packages/framework": {
       "name": "@minar-kotonoha/framework",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@unhead/dom": "^3.2.0",
@@ -87,7 +91,7 @@
     },
     "packages/linter": {
       "name": "@minar-kotonoha/linter",
-      "version": "0.1.0",
+      "version": "0.1.2",
       "dependencies": {
         "@intlify/unplugin-vue-i18n": "^11.2.0",
         "@vitest/eslint-plugin": "^1.6.23",
@@ -100,7 +104,7 @@
         "eslint-plugin-vue": "^10.10.0",
         "oxfmt": "^0.59.0",
         "oxlint": "^1.74.0",
-        "typescript": "^5.9.3",
+        "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
         "vite": "catalog:",
         "vite-plugin-eslint": "^1.8.1",
         "vite-plugin-oxlint": "^2.1.0",
@@ -110,7 +114,7 @@
     },
     "packages/vite-plugin-bootstrap": {
       "name": "@minar-kotonoha/vite-plugin-bootstrap",
-      "version": "0.1.1",
+      "version": "0.1.3",
       "dependencies": {
         "fs-extra": "^11.3.6",
       },
@@ -120,7 +124,7 @@
     },
     "packages/vite-plugin-external": {
       "name": "@minar-kotonoha/vite-plugin-external",
-      "version": "0.1.0",
+      "version": "0.1.5",
       "dependencies": {
         "@dual-bundle/import-meta-resolve": "^4.2.1",
         "fast-glob": "^3.3.3",
@@ -132,7 +136,7 @@
     },
     "packages/vite-plugin-index-html": {
       "name": "@minar-kotonoha/vite-plugin-index-html",
-      "version": "0.1.0",
+      "version": "0.1.4",
       "dependencies": {
         "fs-extra": "^11.3.6",
       },
@@ -142,7 +146,7 @@
     },
     "packages/vite-plugin-miko": {
       "name": "@minar-kotonoha/vite-plugin-miko",
-      "version": "0.2.0",
+      "version": "0.2.10",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@minar-kotonoha/vite-plugin-bootstrap": "workspace:^",
@@ -169,6 +173,7 @@
     "less",
   ],
   "overrides": {
+    "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
     "vite": "catalog:",
   },
   "catalog": {
@@ -806,6 +811,20 @@
     "@typescript-eslint/utils": ["@typescript-eslint/utils@8.65.0", "https://registry.npmmirror.com/@typescript-eslint/utils/-/utils-8.65.0.tgz", { "dependencies": { "@eslint-community/eslint-utils": "^4.9.1", "@typescript-eslint/scope-manager": "8.65.0", "@typescript-eslint/types": "8.65.0", "@typescript-eslint/typescript-estree": "8.65.0" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=4.8.4 <6.1.0" } }, "sha512-gXiwIHsYreboxeJucHKPvgwl7dXt50mF8s1/c00cP/WoVTyWKFdtfhRWwZiXYFU5H2O8vVoSLNrexFZjYS/SGA=="],
 
     "@typescript-eslint/visitor-keys": ["@typescript-eslint/visitor-keys@8.65.0", "https://registry.npmmirror.com/@typescript-eslint/visitor-keys/-/visitor-keys-8.65.0.tgz", { "dependencies": { "@typescript-eslint/types": "8.65.0", "eslint-visitor-keys": "^5.0.0" } }, "sha512-8C71BQkGjiMmXtop7pHVJu1l2NNShFdkCyD6a2ezzs5vU/L3LRtb69EtcteFwz0mYMPzIgOw0n6OV4VBUWZd7A=="],
+
+    "@typescript-native-bridge/darwin-arm64": ["@typescript-native-bridge/darwin-arm64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/darwin-arm64/-/darwin-arm64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-fLCYcIC3BOBZlrtwwtxQI0fMQ5GKg5ZQHLjcMASWNOClVAxPiPR0EigOktiuAPx9Pgjas9E4cDC2bgz7jwYNWg=="],
+
+    "@typescript-native-bridge/darwin-x64": ["@typescript-native-bridge/darwin-x64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/darwin-x64/-/darwin-x64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-ITCxLSnXrT5YJkLMuwmAEfImCTxow68HQ8v7cC802InCD567YOLGMOYhV0jQ8A0v4VLraZxCPgk/fU4L1LWQpw=="],
+
+    "@typescript-native-bridge/linux-arm": ["@typescript-native-bridge/linux-arm@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/linux-arm/-/linux-arm-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "linux", "cpu": "arm" }, "sha512-vD6YOl+Km4hvsOeLpa2j2epqJ0MXs56T/1spHJniCcvLsMdJcSfNluyF38UG6moXpLj13FrSvo8WPua/0i+DNQ=="],
+
+    "@typescript-native-bridge/linux-arm64": ["@typescript-native-bridge/linux-arm64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/linux-arm64/-/linux-arm64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-0tSYxVAYLFWyexvqPI8heTzw+Q2C5SB+IdDa3aHPFh0um/giI2Dn1izZ+MqU960GaHdd1jILKKKUGDl6BeR6uA=="],
+
+    "@typescript-native-bridge/linux-x64": ["@typescript-native-bridge/linux-x64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/linux-x64/-/linux-x64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "linux", "cpu": "x64" }, "sha512-AgUtqAuVpN3VR/F0MbRzkbC6ItwyrR7ycpQHqeuy5zUqrUzW/6U+Zr4RE78FmCJ33BMNwbZ136Tf2TM2phQOSA=="],
+
+    "@typescript-native-bridge/win32-arm64": ["@typescript-native-bridge/win32-arm64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/win32-arm64/-/win32-arm64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "win32", "cpu": "arm64" }, "sha512-rzDocjTuBSL1B9sCTEUef0XkVqNXdZyYDVM37WK5CRUc/s951w8Ve9WeIZ8P8XJbngDT+xkCKewhfUEZ1DAewQ=="],
+
+    "@typescript-native-bridge/win32-x64": ["@typescript-native-bridge/win32-x64@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/@typescript-native-bridge/win32-x64/-/win32-x64-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "os": "win32", "cpu": "x64" }, "sha512-ryDn3FJGuotV9vGcEjulslHR5VJiRLbiuZCI0JGWo4uQnnTQHIliO1Te4JP/CiRZboN4Ms7mWu25MpeJF5oNyw=="],
 
     "@unhead/bundler": ["@unhead/bundler@3.2.3", "https://registry.npmmirror.com/@unhead/bundler/-/bundler-3.2.3.tgz", { "dependencies": { "@vitejs/devtools-kit": "^0.4.1", "magic-string": "^1.0.0", "oxc-parser": "^0.140.0", "oxc-walker": "^1.0.0", "ufo": "^1.6.4", "unplugin": "^3.3.0" }, "peerDependencies": { "@unhead/cli": "^3.2.3", "esbuild": ">=0.17.0", "lightningcss": ">=1.20.0", "rolldown": ">=1.0.0-beta.0", "unhead": "^3.2.3", "vite": ">=6.4.2", "webpack": ">=5.0.0" }, "optionalPeers": ["@unhead/cli", "esbuild", "lightningcss", "rolldown", "vite", "webpack"] }, "sha512-fL1LRdTyPYe9dzenElL96yaFW0LcXTUl1RSa5a2ni0n/GxMtvioPwz9y/fD4JnbVG//Kwn3YCv1jfUmlhcoW4g=="],
 
@@ -1691,7 +1710,7 @@
 
     "type-level-regexp": ["type-level-regexp@0.1.17", "https://registry.npmmirror.com/type-level-regexp/-/type-level-regexp-0.1.17.tgz", {}, "sha512-wTk4DH3cxwk196uGLK/E9pE45aLfeKJacKmcEgEOA/q5dnPGNxXt0cfYdFxb57L+sEpf1oJH4Dnx/pnRcku9jg=="],
 
-    "typescript": ["typescript@5.9.3", "https://registry.npmmirror.com/typescript/-/typescript-5.9.3.tgz", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
+    "typescript": ["typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2", "https://registry.npmmirror.com/typescript-native-bridge/-/typescript-native-bridge-6.0.3-bridge.7.tsgo.7.0.2.tgz", { "optionalDependencies": { "@typescript-native-bridge/darwin-arm64": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/darwin-x64": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/linux-arm": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/linux-arm64": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/linux-x64": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/win32-arm64": "6.0.3-bridge.7.tsgo.7.0.2", "@typescript-native-bridge/win32-x64": "6.0.3-bridge.7.tsgo.7.0.2" }, "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-n5nAajn/pEQFGvnFnieOl6QOZNliATCkPX1mWakHbmaimjQXYR/340kpMII7nQjbMiC+Hn2et7ikK/fdxBxfQA=="],
 
     "typescript-eslint": ["typescript-eslint@8.65.0", "https://registry.npmmirror.com/typescript-eslint/-/typescript-eslint-8.65.0.tgz", { "dependencies": { "@typescript-eslint/eslint-plugin": "8.65.0", "@typescript-eslint/parser": "8.65.0", "@typescript-eslint/typescript-estree": "8.65.0", "@typescript-eslint/utils": "8.65.0" }, "peerDependencies": { "eslint": "^8.57.0 || ^9.0.0 || ^10.0.0", "typescript": ">=4.8.4 <6.1.0" } }, "sha512-/ggrHAwyjENDusvyxbuqxAC2dTnZg/Z8F+fgQtYIz+L6n/9HfSlEZcFGV/NsMNa6CkGk0xUjUAFwC0vHOflvIA=="],
 
@@ -1854,8 +1873,6 @@
     "@intlify/vue-i18n-extensions/@intlify/shared": ["@intlify/shared@10.0.8", "https://registry.npmmirror.com/@intlify/shared/-/shared-10.0.8.tgz", {}, "sha512-BcmHpb5bQyeVNrptC3UhzpBZB/YHHDoEREOUERrmF2BRxsyOEuRrq+Z96C/D4+2KJb8kuHiouzAei7BXlG0YYw=="],
 
     "@intlify/vue-i18n-extensions/vue-i18n": ["vue-i18n@10.0.8", "https://registry.npmmirror.com/vue-i18n/-/vue-i18n-10.0.8.tgz", { "dependencies": { "@intlify/core-base": "10.0.8", "@intlify/shared": "10.0.8", "@vue/devtools-api": "^6.5.0" }, "peerDependencies": { "vue": "^3.0.0" } }, "sha512-mIjy4utxMz9lMMo6G9vYePv7gUFt4ztOMhY9/4czDJxZ26xPeJ49MAGa9wBAE3XuXbYCrtVPmPxNjej7JJJkZQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework": ["@minar-kotonoha/framework@0.1.0", "", { "dependencies": { "@minar-kotonoha/linter": "0.0.11", "@unhead/dom": "^2.1.12", "@unhead/vue": "^2.1.12", "@vue/server-renderer": "^3.5.30", "axios": "^1.13.6", "unhead": "^2.1.12", "vite": "^8.0.0", "vite-ssg": "^28.2.2", "vue": "^3.5.30", "vue-demi": "^0.14.10", "vue-router": "^5.0.3" } }, "sha512-6Zd6XYvT7nZd1i83JA5+Fq3iQYbtf8dxsXP3qHfvBm2kY0LjgBavKYQKaS+WsxpUk7u3IsZOF5hzVgfRnWlyfw=="],
 
     "@oxc-parser/binding-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.10.0", "https://registry.npmmirror.com/@emnapi/core/-/core-1.10.0.tgz", { "dependencies": { "@emnapi/wasi-threads": "1.2.1", "tslib": "^2.4.0" } }, "sha512-yq6OkJ4p82CAfPl0u9mQebQHKPJkY7WrIuk205cTYnYe+k2Z8YBh11FrbRG/H6ihirqcacOgl2BIO8oyMQLeXw=="],
 
@@ -2053,14 +2070,6 @@
 
     "@intlify/vue-i18n-extensions/vue-i18n/@intlify/core-base": ["@intlify/core-base@10.0.8", "https://registry.npmmirror.com/@intlify/core-base/-/core-base-10.0.8.tgz", { "dependencies": { "@intlify/message-compiler": "10.0.8", "@intlify/shared": "10.0.8" } }, "sha512-FoHslNWSoHjdUBLy35bpm9PV/0LVI/DSv9L6Km6J2ad8r/mm0VaGg06C40FqlE8u2ADcGUM60lyoU7Myo4WNZQ=="],
 
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter": ["@minar-kotonoha/linter@0.0.11", "", { "dependencies": { "@intlify/unplugin-vue-i18n": "^11.0.3", "@vitest/eslint-plugin": "^1.6.9", "@vue-macros/eslint-config": "^3.1.2", "@vue/eslint-config-prettier": "^10.2.0", "@vue/eslint-config-typescript": "^14.7.0", "@vue/tsconfig": "^0.9.0", "eslint": "^10.0.2", "eslint-plugin-oxlint": "~1.51.0", "eslint-plugin-vue": "^10.8.0", "oxfmt": "^0.36.0", "oxlint": "^1.51.0", "typescript": "^5.9.3", "vite": "^8.0.0-beta.16", "vite-plugin-eslint": "^1.8.1", "vite-plugin-oxlint": "^2.0.1", "vite-plugin-vue-layouts-next": "^2.0.1", "vue-macros": "^3.1.2" } }, "sha512-J3Sb9DPZK4DN+aGmKbGOBGOEGDF2YuV5Muu9AOx3hEXdDup2pPBWX4E7ythxgzUJz+OW8FrfNCSym0KxJC79QA=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@unhead/dom": ["@unhead/dom@2.1.16", "https://registry.npmmirror.com/@unhead/dom/-/dom-2.1.16.tgz", { "peerDependencies": { "unhead": "2.1.16" } }, "sha512-ktuJ221g5UYa+9tYK/6tWMRm9a33aNcW8EKRl4Cj2rTrU8tXUg2R2HcXLy1TIjL46D9LyFd8mOat4tYDsdcN2g=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@unhead/vue": ["@unhead/vue@2.1.16", "https://registry.npmmirror.com/@unhead/vue/-/vue-2.1.16.tgz", { "dependencies": { "hookable": "^6.0.1", "unhead": "2.1.16" }, "peerDependencies": { "vue": ">=3.5.18" } }, "sha512-t6QykImeMJcrUTbFB0Coy0cB/OZItHdQFRFLoH8GAVXKWmQORGPrwvueP9me7adOCuMH2uVvrv0nCkbi6zksaA=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/unhead": ["unhead@2.1.16", "https://registry.npmmirror.com/unhead/-/unhead-2.1.16.tgz", { "dependencies": { "hookable": "^6.0.1" } }, "sha512-cD2Q4a6SQHhW9/bPp17NT4GJ1yS0DSLe75WEHKQ8bKa/wjB6cIki3KeL86hhllNBcpv8i6bxdwtwQunneXPqKQ=="],
-
     "@oxc-parser/binding-wasm32-wasi/@emnapi/core/@emnapi/wasi-threads": ["@emnapi/wasi-threads@1.2.1", "https://registry.npmmirror.com/@emnapi/wasi-threads/-/wasi-threads-1.2.1.tgz", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w=="],
 
     "@unhead/bundler/oxc-parser/@oxc-parser/binding-android-arm-eabi": ["@oxc-parser/binding-android-arm-eabi@0.140.0", "https://registry.npmmirror.com/@oxc-parser/binding-android-arm-eabi/-/binding-android-arm-eabi-0.140.0.tgz", { "os": "android", "cpu": "arm" }, "sha512-ZfjDZ422mo7eo3b3VltqNsV9kmv1qt/sPEAMSl64iOSwhVfd0eIZ9LB79Mbs1xYXJnk7WSROwzBCKDIiVxPTvQ=="],
@@ -2147,10 +2156,6 @@
 
     "@intlify/vue-i18n-extensions/vue-i18n/@intlify/core-base/@intlify/message-compiler": ["@intlify/message-compiler@10.0.8", "https://registry.npmmirror.com/@intlify/message-compiler/-/message-compiler-10.0.8.tgz", { "dependencies": { "@intlify/shared": "10.0.8", "source-map-js": "^1.0.2" } }, "sha512-DV+sYXIkHVd5yVb2mL7br/NEUwzUoLBsMkV3H0InefWgmYa34NLZUvMCGi5oWX+Hqr2Y2qUxnVrnOWF4aBlgWg=="],
 
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/eslint-plugin-oxlint": ["eslint-plugin-oxlint@1.51.0", "https://registry.npmmirror.com/eslint-plugin-oxlint/-/eslint-plugin-oxlint-1.51.0.tgz", { "dependencies": { "jsonc-parser": "^3.3.1" } }, "sha512-lct8LD1AxfHF1PcsuK6mFYals+zX0mx/WP2G4i16h0iR8jpT3xCfGTmTNwXiImcevzGIiJ/VDBgQ7t0B9z2Jeg=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt": ["oxfmt@0.36.0", "https://registry.npmmirror.com/oxfmt/-/oxfmt-0.36.0.tgz", { "dependencies": { "tinypool": "2.1.0" }, "optionalDependencies": { "@oxfmt/binding-android-arm-eabi": "0.36.0", "@oxfmt/binding-android-arm64": "0.36.0", "@oxfmt/binding-darwin-arm64": "0.36.0", "@oxfmt/binding-darwin-x64": "0.36.0", "@oxfmt/binding-freebsd-x64": "0.36.0", "@oxfmt/binding-linux-arm-gnueabihf": "0.36.0", "@oxfmt/binding-linux-arm-musleabihf": "0.36.0", "@oxfmt/binding-linux-arm64-gnu": "0.36.0", "@oxfmt/binding-linux-arm64-musl": "0.36.0", "@oxfmt/binding-linux-ppc64-gnu": "0.36.0", "@oxfmt/binding-linux-riscv64-gnu": "0.36.0", "@oxfmt/binding-linux-riscv64-musl": "0.36.0", "@oxfmt/binding-linux-s390x-gnu": "0.36.0", "@oxfmt/binding-linux-x64-gnu": "0.36.0", "@oxfmt/binding-linux-x64-musl": "0.36.0", "@oxfmt/binding-openharmony-arm64": "0.36.0", "@oxfmt/binding-win32-arm64-msvc": "0.36.0", "@oxfmt/binding-win32-ia32-msvc": "0.36.0", "@oxfmt/binding-win32-x64-msvc": "0.36.0" }, "bin": { "oxfmt": "bin/oxfmt" } }, "sha512-/ejJ+KoSW6J9bcNT9a9UtJSJNWhJ3yOLSBLbkoFHJs/8CZjmaZVZAJe4YgO1KMJlKpNQasrn/G9JQUEZI3p0EQ=="],
-
     "@unhead/bundler/oxc-parser/@oxc-parser/binding-wasm32-wasi/@emnapi/core": ["@emnapi/core@1.11.2", "https://registry.npmmirror.com/@emnapi/core/-/core-1.11.2.tgz", { "dependencies": { "@emnapi/wasi-threads": "1.2.2", "tslib": "^2.4.0" } }, "sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA=="],
 
     "@unhead/bundler/oxc-parser/@oxc-parser/binding-wasm32-wasi/@emnapi/runtime": ["@emnapi/runtime@1.11.2", "https://registry.npmmirror.com/@emnapi/runtime/-/runtime-1.11.2.tgz", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA=="],
@@ -2164,43 +2169,5 @@
     "glob/minimatch/brace-expansion/balanced-match": ["balanced-match@1.0.2", "https://registry.npmmirror.com/balanced-match/-/balanced-match-1.0.2.tgz", {}, "sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw=="],
 
     "vite-ssg/jsdom/https-proxy-agent/agent-base": ["agent-base@7.1.4", "https://registry.npmmirror.com/agent-base/-/agent-base-7.1.4.tgz", {}, "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-android-arm-eabi": ["@oxfmt/binding-android-arm-eabi@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-android-arm-eabi/-/binding-android-arm-eabi-0.36.0.tgz", { "os": "android", "cpu": "arm" }, "sha512-Z4yVHJWx/swHHjtr0dXrBZb6LxS+qNz1qdza222mWwPTUK4L790+5i3LTgjx3KYGBzcYpjaiZBw4vOx94dH7MQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-android-arm64": ["@oxfmt/binding-android-arm64@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-android-arm64/-/binding-android-arm64-0.36.0.tgz", { "os": "android", "cpu": "arm64" }, "sha512-3ElCJRFNPQl7jexf2CAa9XmAm8eC5JPrIDSjc9jSchkVSFTEqyL0NtZinBB2h1a4i4JgP1oGl/5G5n8YR4FN8Q=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-darwin-arm64": ["@oxfmt/binding-darwin-arm64@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-darwin-arm64/-/binding-darwin-arm64-0.36.0.tgz", { "os": "darwin", "cpu": "arm64" }, "sha512-nak4znWCqIExKhYSY/mz/lWsqWIpdsS7o0+SRzXR1Q0m7GrMcG1UrF1pS7TLGZhhkf7nTfEF7q6oZzJiodRDuw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-darwin-x64": ["@oxfmt/binding-darwin-x64@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-darwin-x64/-/binding-darwin-x64-0.36.0.tgz", { "os": "darwin", "cpu": "x64" }, "sha512-V4GP96thDnpKx6ADnMDnhIXNdtV+Ql9D4HUU+a37VTeVbs5qQSF/s6hhUP1b3xUqU7iRcwh72jUU2Y12rtGHAw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-freebsd-x64": ["@oxfmt/binding-freebsd-x64@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-freebsd-x64/-/binding-freebsd-x64-0.36.0.tgz", { "os": "freebsd", "cpu": "x64" }, "sha512-/xapWCADfI5wrhxpEUjhI9fnw7MV5BUZizVa8e24n3VSK6A3Y1TB/ClOP1tfxNspykFKXp4NBWl6NtDJP3osqQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-arm-gnueabihf": ["@oxfmt/binding-linux-arm-gnueabihf@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-arm-gnueabihf/-/binding-linux-arm-gnueabihf-0.36.0.tgz", { "os": "linux", "cpu": "arm" }, "sha512-1lOmv61XMFIH5uNm27620kRRzWt/RK6tdn250BRDoG9W7OXGOQ5UyI1HVT+SFkoOoKztBiinWgi68+NA1MjBVQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-arm-musleabihf": ["@oxfmt/binding-linux-arm-musleabihf@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-arm-musleabihf/-/binding-linux-arm-musleabihf-0.36.0.tgz", { "os": "linux", "cpu": "arm" }, "sha512-vMH23AskdR1ujUS9sPck2Df9rBVoZUnCVY86jisILzIQ/QQ/yKUTi7tgnIvydPx7TyB/48wsQ5QMr5Knq5p/aw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-arm64-gnu": ["@oxfmt/binding-linux-arm64-gnu@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-arm64-gnu/-/binding-linux-arm64-gnu-0.36.0.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-Hy1V+zOBHpBiENRx77qrUTt5aPDHeCASRc8K5KwwAHkX2AKP0nV89eL17hsZrE9GmnXFjsNmd80lyf7aRTXsbw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-arm64-musl": ["@oxfmt/binding-linux-arm64-musl@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-arm64-musl/-/binding-linux-arm64-musl-0.36.0.tgz", { "os": "linux", "cpu": "arm64" }, "sha512-SPGLJkOIHSIC6ABUQ5V8NqJpvYhMJueJv26NYqfCnwi/Mn6A61amkpJJ9Suy0Nmvs+OWESJpcebrBUbXPGZyQQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-ppc64-gnu": ["@oxfmt/binding-linux-ppc64-gnu@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-ppc64-gnu/-/binding-linux-ppc64-gnu-0.36.0.tgz", { "os": "linux", "cpu": "ppc64" }, "sha512-3EuoyB8x9x8ysYJjbEO/M9fkSk72zQKnXCvpZMDHXlnY36/1qMp55Nm0PrCwjGO/1pen5hdOVkz9WmP3nAp2IQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-riscv64-gnu": ["@oxfmt/binding-linux-riscv64-gnu@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-riscv64-gnu/-/binding-linux-riscv64-gnu-0.36.0.tgz", { "os": "linux", "cpu": "none" }, "sha512-MpY3itLwpGh8dnywtrZtaZ604T1m715SydCKy0+qTxetv+IHzuA+aO/AGzrlzUNYZZmtWtmDBrChZGibvZxbRQ=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-riscv64-musl": ["@oxfmt/binding-linux-riscv64-musl@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-riscv64-musl/-/binding-linux-riscv64-musl-0.36.0.tgz", { "os": "linux", "cpu": "none" }, "sha512-mmDhe4Vtx+XwQPRPn/V25+APnkApYgZ23q+6GVsNYY98pf3aU0aI3Me96pbRs/AfJ1jIiGC+/6q71FEu8dHcHw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-s390x-gnu": ["@oxfmt/binding-linux-s390x-gnu@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-s390x-gnu/-/binding-linux-s390x-gnu-0.36.0.tgz", { "os": "linux", "cpu": "s390x" }, "sha512-AYXhU+DmNWLSnvVwkHM92fuYhogtVHab7UQrPNaDf1sxadugg9gWVmcgJDlIwxJdpk5CVW/TFvwUKwI432zhhA=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-x64-gnu": ["@oxfmt/binding-linux-x64-gnu@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-x64-gnu/-/binding-linux-x64-gnu-0.36.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-H16QhhQ3usoakMleiAAQ2mg0NsBDAdyE9agUgfC8IHHh3jZEbr0rIKwjEqwbOHK5M0EmfhJmr+aGO/MgZPsneA=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-linux-x64-musl": ["@oxfmt/binding-linux-x64-musl@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-linux-x64-musl/-/binding-linux-x64-musl-0.36.0.tgz", { "os": "linux", "cpu": "x64" }, "sha512-EFFGkixA39BcmHiCe2ECdrq02D6FCve5ka6ObbvrheXl4V+R0U/E+/uLyVx1X65LW8TA8QQHdnbdDallRekohw=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-openharmony-arm64": ["@oxfmt/binding-openharmony-arm64@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-openharmony-arm64/-/binding-openharmony-arm64-0.36.0.tgz", { "os": "none", "cpu": "arm64" }, "sha512-zr/t369wZWFOj1qf06Z5gGNjFymfUNDrxKMmr7FKiDRVI1sNsdKRCuRL4XVjtcptKQ+ao3FfxLN1vrynivmCYg=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-win32-arm64-msvc": ["@oxfmt/binding-win32-arm64-msvc@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-win32-arm64-msvc/-/binding-win32-arm64-msvc-0.36.0.tgz", { "os": "win32", "cpu": "arm64" }, "sha512-FxO7UksTv8h4olzACgrqAXNF6BP329+H322323iDrMB5V/+a1kcAw07fsOsUmqNrb9iJBsCQgH/zqcqp5903ag=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-win32-ia32-msvc": ["@oxfmt/binding-win32-ia32-msvc@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-win32-ia32-msvc/-/binding-win32-ia32-msvc-0.36.0.tgz", { "os": "win32", "cpu": "ia32" }, "sha512-OjoMQ89H01M0oLMfr/CPNH1zi48ZIwxAKObUl57oh7ssUBNDp/2Vjf7E1TQ8M4oj4VFQ/byxl2SmcPNaI2YNDg=="],
-
-    "@minar-kotonoha/create-miko/@minar-kotonoha/framework/@minar-kotonoha/linter/oxfmt/@oxfmt/binding-win32-x64-msvc": ["@oxfmt/binding-win32-x64-msvc@0.36.0", "https://registry.npmmirror.com/@oxfmt/binding-win32-x64-msvc/-/binding-win32-x64-msvc-0.36.0.tgz", { "os": "win32", "cpu": "x64" }, "sha512-MoyeQ9S36ZTz/4bDhOKJgOBIDROd4dQ5AkT9iezhEaUBxAPdNX9Oq0jD8OSnCj3G4wam/XNxVWKMA52kmzmPtQ=="],
   }
 }
