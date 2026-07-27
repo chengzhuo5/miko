@@ -45,6 +45,10 @@ if (isLib) {
   });
   await promise;
 
+  // 注册 CSS ESM loader hook，避免 SSG 预渲染时 vant 的 .css 文件被 Node.js 当成 ESM 加载报错
+  const { register } = await import('node:module');
+  register('./css-loader.mjs', import.meta.url);
+
   const miko = await defineMikoConfig();
   const config = miko({ command: 'build', mode: 'production', isPreview: false, isSsrBuild: false });
   await viteSsgBuild(undefined, { configFile: false, ...config });
