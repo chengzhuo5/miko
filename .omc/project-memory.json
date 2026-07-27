@@ -210,8 +210,8 @@
     },
     {
       "path": "packages/vite-plugin-miko/package.json",
-      "accessCount": 17,
-      "lastAccessed": 1785133821121,
+      "accessCount": 18,
+      "lastAccessed": 1785149896952,
       "type": "file"
     },
     {
@@ -251,6 +251,12 @@
       "type": "file"
     },
     {
+      "path": "packages/linter/package.json",
+      "accessCount": 7,
+      "lastAccessed": 1785149895242,
+      "type": "file"
+    },
+    {
       "path": "app/index.ts",
       "accessCount": 6,
       "lastAccessed": 1784943829752,
@@ -272,12 +278,6 @@
       "path": "packages/cli/package.json",
       "accessCount": 6,
       "lastAccessed": 1784964879427,
-      "type": "file"
-    },
-    {
-      "path": "packages/linter/package.json",
-      "accessCount": 6,
-      "lastAccessed": 1785149607711,
       "type": "file"
     },
     {
@@ -305,6 +305,12 @@
       "type": "file"
     },
     {
+      "path": "packages/vite-plugin-external/package.json",
+      "accessCount": 5,
+      "lastAccessed": 1785149898549,
+      "type": "file"
+    },
+    {
       "path": "packages/vite-plugin-bootstrap/README.md",
       "accessCount": 4,
       "lastAccessed": 1784958272604,
@@ -314,12 +320,6 @@
       "path": "packages/vite-plugin-bootstrap/package.json",
       "accessCount": 4,
       "lastAccessed": 1784965003982,
-      "type": "file"
-    },
-    {
-      "path": "packages/vite-plugin-external/package.json",
-      "accessCount": 4,
-      "lastAccessed": 1784965006680,
       "type": "file"
     },
     {

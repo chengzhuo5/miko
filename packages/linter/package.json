@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/linter",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "miko 共享 Lint 配置 — Oxlint + ESLint + Oxfmt + tsconfig",
   "type": "module",
   "files": [
