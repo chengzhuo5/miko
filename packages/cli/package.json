@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/miko-cli",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "miko CLI — Vue 3 SSG 构建工具链命令行",
   "type": "module",
   "bin": {
