@@ -432,8 +432,12 @@ export async function defineMikoConfig() {
   // 0. SSR CSS handler — 替换 .css import 为空模块，避免 Node.js ERR_UNKNOWN_FILE_EXTENSION
   plugins.push({
     name: 'miko:ssr-css',
-    resolveId(id, _importer, options) {
-      if (options?.ssr && id.endsWith('.css') && !id.includes('?')) {
+    applyToEnvironment({ name }) {
+      return name === 'ssr';
+    },
+    resolveId(id) {
+      const base = id.split('?')[0];
+      if (base.endsWith('.css')) {
         return '\0miko-ssr-css:' + id;
       }
     },
