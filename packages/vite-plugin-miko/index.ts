@@ -429,6 +429,21 @@ export async function defineMikoConfig() {
 
   const plugins: PluginOption[] = []
 
+  // 0. SSR CSS handler — 替换 .css import 为空模块，避免 Node.js ERR_UNKNOWN_FILE_EXTENSION
+  plugins.push({
+    name: 'miko:ssr-css',
+    resolveId(id, _importer, options) {
+      if (options?.ssr && id.endsWith('.css') && !id.includes('?')) {
+        return '\0miko-ssr-css:' + id;
+      }
+    },
+    load(id) {
+      if (id.startsWith('\0miko-ssr-css:')) {
+        return '';
+      }
+    },
+  } satisfies PluginOption)
+
   // 1. Vue 生态
   plugins.push(
     VueMacros({
