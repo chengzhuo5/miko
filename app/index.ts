@@ -1,9 +1,20 @@
-import type { App } from 'vue';
-import type { Router } from 'vue-router';
-import { createPinia } from 'pinia';
+import type { App } from 'vue'
+import type { Router } from 'vue-router'
+import { createPinia } from 'pinia'
 
-export default (app: App<Element>, _router: Router) => {
-  app.use(createPinia());
+export default (app: App<Element>, _router: Router, initialState?: Record<string, unknown>) => {
+  const pinia = createPinia()
+  app.use(pinia)
+
+  // ===== Pinia SSR 状态序列化 / 注水 =====
+  // pinia.state.value 是 Vue 响应式引用，SSR 时先赋值引用再渲染，渲染结束后 vite-ssg
+  // 通过 transformState 将 initialState 序列化到 window.__INITIAL_STATE__；
+  // 客户端从 __INITIAL_STATE__ 恢复，确保 state() 不会在客户端被二次调用。
+  if (import.meta.env.SSR) {
+    if (initialState) initialState.pinia = pinia.state.value
+  } else if (initialState?.pinia) {
+    pinia.state.value = initialState.pinia as typeof pinia.state.value
+  }
 
   // ===== Janus 前端接口可观测·缓存·契约校验（可选） =====
   // 启用方式：
@@ -17,5 +28,5 @@ export default (app: App<Element>, _router: Router) => {
   //   // 高级配置见 @janus/core README
   // }))
 
-  console.log('当前APP', import.meta.env.VITE_APP_NAME);
-};
+  console.log('当前APP', import.meta.env.VITE_APP_NAME)
+}
