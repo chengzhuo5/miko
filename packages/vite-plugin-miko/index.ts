@@ -111,7 +111,7 @@ const DEFAULTS = {
   extensionsRoute: ['.vue', '.setup.tsx'] as string[],
   extensionsComponent: ['vue', 'tsx', 'ts'] as string[],
   legacyTargets: ['chrome 49', 'ios 10'] as string[],
-  bundledDev: true,
+  bundledDev: false,
 } as const
 
 // ===================================================================
@@ -213,7 +213,10 @@ function resolveConfig(cfg: MikoUserConfig): ResolvedConfig {
   const unoCSS: UnoCSSVitePluginConfig | false =
     cfg.unoCSS === false
       ? false
-      : { configFile: false, ...cfg.unoCSS }
+      : {
+          configFile: existsSync(resolve(cwd, 'uno.config.ts')) ? resolve(cwd, 'uno.config.ts') : false,
+          ...cfg.unoCSS,
+        }
 
   // === Legacy ===
   const legacyResolved: LegacyOptions | false =
@@ -426,6 +429,12 @@ export async function defineMikoConfig() {
 
   const plugins: PluginOption[] = []
 
+  // 0. UnoCSS — 必须在 Vue 前面，否则 Vue SFC 编译器先执行，
+  //    UnoCSS 看到的只有编译后的 JS（class 名已变成 render 函数）
+  if (unoCSSOpts !== false) {
+    plugins.push(UnoCSS({ configFile: false, ...unoCSSOpts } as Parameters<typeof UnoCSS>[0]))
+  }
+
   // 1. Vue 生态
   plugins.push(
     VueMacros({
@@ -481,12 +490,7 @@ export async function defineMikoConfig() {
     }),
   )
 
-  // 6. UnoCSS
-  if (unoCSSOpts !== false) {
-    plugins.push(UnoCSS({ configFile: false, ...unoCSSOpts } as Parameters<typeof UnoCSS>[0]))
-  }
-
-  // 7. Bootstrap（virtual:bootstrap）
+  // 6. Bootstrap（virtual:bootstrap）
   plugins.push(bootstrapPlugin(bootstrapOpts.entryFile))
 
   // 8. External（CDN 外部化）

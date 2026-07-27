@@ -56,6 +56,6 @@ export default {
   // linter: { oxlint: true, eslint: true },
   // bootstrap: { entryFile: 'index.ts' },
   // external: { frameworkCDN: 'https://unpkg.com/@minar-kotonoha/framework@0.1.1/dist/framework_v0.1.1.umd.js' },
-  // dev: { bundledDev: true, port: 5173 },
+  // dev: { bundledDev: false, port: 5173 },
   // janus: false,
 } satisfies MikoUserConfig

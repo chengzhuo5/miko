@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/vite-plugin-index-html",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "virtual:index + dev/prod 根目录分离 — Vite 入口管理插件",
   "type": "module",
   "exports": {

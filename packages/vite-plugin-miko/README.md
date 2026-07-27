@@ -72,7 +72,7 @@ export default {
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `proxy` | `ProxyConfig[]` | `[]` | 开发服务器代理规则 |
-| `dev.bundledDev` | `boolean` | `true` | 启用 Rolldown bundledDev |
+| `dev.bundledDev` | `boolean` | `false` | 启用 Rolldown bundledDev |
 | `dev.port` | `number` | 自动分配 | 开发服务器端口 |
 | `dev.open` | `boolean \| string` | `false` | 自动打开浏览器 |
 

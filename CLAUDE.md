@@ -11,7 +11,7 @@
 bun install
 
 # 启动开发服务器（在 app/ 目录执行）
-bun dev        # 或: bun x miko dev (bundledDev 默认开启)
+bun dev        # 或: bun x miko dev (bundledDev 默认关闭)
 
 # 生产构建（先类型检查，再 SSG 构建）
 bun x miko build
@@ -73,6 +73,7 @@ Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 ### 虚拟模块 indexHTML
 
 `@minar-kotonoha/vite-plugin-index-html` 提供 `virtual:index`，并处理开发/生产环境的根目录分离：
+
 - **开发**：根目录为 `node_modules/.vite_entry`（用于依赖预构建）
 - **生产**：根目录为 `template/` 目录，构建前复制 `index.html`
 
@@ -97,6 +98,7 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 项目支持两种测试模式：
 
 **Playwright Test（推荐）** — 页面级 E2E，导航 dev server、点检 UI、监控 API：
+
 - **配置**: `app/playwright.config.ts`（375×812 移动端视口, chromium, testDir `./tests/e2e`）
 - **测试文件**: `app/tests/e2e/**/*.spec.ts`
 - **运行**: `bun dev &` 先启动 server，再 `bun test:e2e`
@@ -104,6 +106,7 @@ TypeScript 通过 `vue-tsc`（非 `tsc`）进行类型检查，在生产构建�
 - **API 监控**: `page.route()` 拦截配置的 API 前缀
 
 **Vitest Browser Mode** — 组件级浏览器测试，渲染 Vue 组件到真实浏览器：
+
 - **配置**: `app/vitest.browser.config.ts`
 - **测试文件**: `app/tests/components/**/*.test.ts`
 - **运行**: `bun test:e2e:browser`

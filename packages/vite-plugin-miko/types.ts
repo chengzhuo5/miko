@@ -169,7 +169,7 @@ export interface ExternalOptions {
 export interface DevOptions {
   /**
    * 是否启用 bundledDev（Rolldown 原生 dev 模式）
-   * @default true
+   * @default false
    */
   bundledDev?: boolean
   /**
@@ -323,7 +323,7 @@ export interface MikoUserConfig {
 
   /**
    * 开发与构建行为微调。
-   * @default `{ bundledDev: true }`
+   * @default `{ bundledDev: false }`
    */
   dev?: DevOptions
 
