@@ -43,9 +43,17 @@ export function externalPlugin(enableCDN = false) {
           ssr: {
             noExternal: [
               /.*\/vant/,
-              /@sec\//,
               ...(mode === 'development' ? ['vue-router'] : []),
             ],
+          },
+          // Vite 8 Environment API — 确保 SSR 环境也应用 noExternal
+          environments: {
+            ssr: {
+              noExternal: [
+                /.*\/vant/,
+                ...(mode === 'development' ? ['vue-router'] : []),
+              ],
+            },
           },
         };
       },
