@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { build as viteSsgBuild } from 'vite-ssg/node';
 import { defineMikoConfig, loadMikoConfig, createLibConfig } from '@minar-kotonoha/vite-plugin-miko';
+import { fileURLToPath } from 'node:url';
 import { cwd } from 'node:process';
 import { resolve } from 'node:path';
 
@@ -24,14 +25,14 @@ if (isLib) {
   }));
   console.log('[miko] 库构建完成');
 } else {
-  // 使用 file:// URL 避免 Windows 下路径被误判为协议
+  // --import 用 file:// URL（Windows 下路径 D:\ 会被误判为协议），脚本入口用普通路径
   const jitiRegister = import.meta.resolve('jiti/register');
-  const tscUrl = new URL('./tsc.ts', import.meta.url).href;
+  const tscPath = fileURLToPath(new URL('./tsc.ts', import.meta.url));
 
   const { promise, resolve: res, reject: rej } = Promise.withResolvers<void>();
   spawn(process.execPath, [
     '--import', jitiRegister,
-    tscUrl,
+    tscPath,
   ], {
     stdio: 'inherit',
   }).on('exit', (code) => {
