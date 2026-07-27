@@ -1,4 +1,4 @@
-import { fork } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { build as viteSsgBuild } from 'vite-ssg/node';
 import { defineMikoConfig, loadMikoConfig, createLibConfig } from '@minar-kotonoha/vite-plugin-miko';
 import { fileURLToPath } from 'node:url';
@@ -25,8 +25,13 @@ if (isLib) {
   }));
   console.log('[miko] 库构建完成');
 } else {
+  const jitiRegister = fileURLToPath(import.meta.resolve('jiti/register'));
+
   const { promise, resolve: res, reject: rej } = Promise.withResolvers<void>();
-  fork(fileURLToPath(new URL('./tsc.ts', import.meta.url)), {
+  spawn(process.execPath, [
+    '--import', jitiRegister,
+    fileURLToPath(new URL('./tsc.ts', import.meta.url)),
+  ], {
     stdio: 'inherit',
   }).on('exit', (code) => {
     if (code === 0) {
