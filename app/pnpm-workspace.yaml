@@ -1,6 +1,0 @@
-allowBuilds:
-  core-js: set this to true or false
-  esbuild: set this to true or false
-  vue-demi: set this to true or false
-minimumReleaseAgeExclude:
-  - '@minar-kotonoha/vite-plugin-miko@0.2.9'
