@@ -19,7 +19,7 @@ export const createApp = ViteSSG(
   // vue-router options
   { routes: setupLayouts(routes) },
   // function to have custom setups
-  async ({ app, router }) => {
+  async ({ app, router, initialState }) => {
     // const i18n = createI18n({
     //   locale: 'zh-CN',
     //   messages,
@@ -30,7 +30,7 @@ export const createApp = ViteSSG(
       handleHotUpdate(router);
     }
 
-    await bootstrap(app, router);
+    await bootstrap(app, router, initialState);
   },
   {
     hydration: import.meta.env.PROD,
