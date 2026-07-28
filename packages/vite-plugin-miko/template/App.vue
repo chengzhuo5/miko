@@ -15,13 +15,10 @@ const isDev = import.meta.env.DEV;
 
 // 此处在预渲染时完成，故加个判断，客户端代码会剔除这块，减小包体积
 if (import.meta.env.SSR) {
-  // 生产环境 Framework CDN 地址，可通过 VITE_FRAMEWORK_CDN 自定义
-  // 默认使用 unpkg CDN，配合 @minar-kotonoha/framework 发布版本
   const frameworkCDN = import.meta.env.VITE_FRAMEWORK_CDN
     || `https://unpkg.com/@minar-kotonoha/framework@${import.meta.env.VITE_LIB_VERSION}/dist/framework_v${import.meta.env.VITE_LIB_VERSION}.umd.js`;
   const framework = frameworkCDN;
   useHead({
-    style: useSkeleton ? [skeletonStyles] : [hiddenVCloakStyles],
     script: [
       {
         src: framework,
@@ -72,5 +69,62 @@ body {
 /* 同上：https://unocss.dev/integrations/runtime#preventing-fouc */
 [un-cloak] {
   display: none;
+}
+
+// ===== 骨架屏样式（原由 useHead 注入，现移至静态块，绕过 SSR 时 unhead 不产出问题） =====
+// 参考 styles/skeleton.less 和 styles/hiddenVCloak.less
+[v-cloak],
+.skeleton {
+  pointer-events: none !important;
+
+  // 光柱特效
+  &::before {
+    content: '';
+    position: fixed;
+    width: 25vw;
+    height: 100%;
+    top: 0;
+    left: 0;
+    transform: translateX(-25vw);
+    overflow: hidden;
+    background-image: linear-gradient(
+      to left,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: miko-skeleton-shimmer 1.25s linear infinite;
+    z-index: 1000;
+  }
+
+  @keyframes miko-skeleton-shimmer {
+    0% {
+      transform: translateX(-25vw);
+    }
+    100% {
+      transform: translateX(100vw);
+    }
+  }
+
+  * {
+    white-space: nowrap !important;
+    border-color: transparent !important;
+    color: transparent !important;
+    &::first-line {
+      background-color: #e8e6e850;
+    }
+    &::placeholder {
+      color: transparent !important;
+    }
+  }
+  i,
+  img {
+    visibility: hidden !important;
+  }
+}
+
+// 隐藏 v-cloak 闪烁（useSkeleton=false 时备选，与骨架屏互斥）
+[v-cloak].no-skeleton {
+  opacity: 0;
 }
 </style>
