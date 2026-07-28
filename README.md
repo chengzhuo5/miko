@@ -26,15 +26,14 @@ miko/
 │   ├── vite.config.ts         # Vite 配置（含插件用法示例）
 │   ├── miko.config.ts         # miko 插件配置（可选，proxy/路径）
 │   └── index.ts               # 应用初始化入口（bootstrap）
-├── template/                  # Vite 入口模板（App.vue, main.ts, layouts）
-├── packages/
-│   ├── framework/             # CDN 外部化框架包（Vue, vue-router, axios, unhead）
-│   ├── linter/                # 共享 lint/format/tsconfig 配置
-│   ├── vite-plugin-bootstrap/ # virtual:bootstrap 插件
-│   ├── vite-plugin-external/  # CDN 外部化插件
-│   ├── vite-plugin-index-html/# virtual:index + dev/prod 根目录分离插件
-│   └── vite-plugin-miko/      # 总控插件（defineMikoConfig 统一入口）
-└── packages/cli/               # miko CLI（dev, build, preview, tsc）
+└── packages/
+    ├── cli/                   # miko CLI（dev, build, preview, tsc）
+    ├── framework/             # CDN 外部化框架包（Vue, vue-router, axios, unhead）
+    ├── linter/                # 共享 lint/format/tsconfig 配置
+    ├── vite-plugin-bootstrap/ # virtual:bootstrap 插件
+    ├── vite-plugin-external/  # CDN 外部化插件
+    ├── vite-plugin-index-html/# virtual:index + dev/prod 根目录分离插件
+    └── vite-plugin-miko/      # 总控插件（defineMikoConfig + 内置 template/）
 ```
 
 ## 技术栈

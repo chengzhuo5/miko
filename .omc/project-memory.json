@@ -185,27 +185,27 @@
       "type": "file"
     },
     {
+      "path": "CLAUDE.md",
+      "accessCount": 35,
+      "lastAccessed": 1785209223941,
+      "type": "file"
+    },
+    {
       "path": "vite.config.ts",
       "accessCount": 32,
       "lastAccessed": 1784951834533,
       "type": "file"
     },
     {
-      "path": "CLAUDE.md",
-      "accessCount": 32,
-      "lastAccessed": 1785149663934,
-      "type": "file"
-    },
-    {
       "path": "",
-      "accessCount": 25,
-      "lastAccessed": 1785149591022,
+      "accessCount": 26,
+      "lastAccessed": 1785209241000,
       "type": "directory"
     },
     {
       "path": "README.md",
-      "accessCount": 19,
-      "lastAccessed": 1785149670793,
+      "accessCount": 21,
+      "lastAccessed": 1785209234095,
       "type": "file"
     },
     {

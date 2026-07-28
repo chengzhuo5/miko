@@ -122,18 +122,17 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - 自动生成的类型文件（`types/routes.d.ts`、`types/components.d.ts`）在 gitignore 中
 - `.npmrc` 指向私有中国制品仓库（已注释），发布时使用 `--registry` 覆盖或 `publishConfig`
 - `vite` 版本通过 Bun catalog（`catalog:vite`）和 overrides 统一管理
-- `template/` 为 Vite 入口模板（App.vue, main.ts, layouts），`app/` 为项目模板（stores, e2e）
+- `template/` 已内置于 `@minar-kotonoha/vite-plugin-miko` 包中（App.vue, main.ts, layouts），`app/` 为项目模板（stores, e2e）
 - 插件架构：`defineMikoConfig()` 为统一入口，内部直接展开所有插件（Vue/Router/Layouts/Components/UnoCSS/Legacy/Linter/SSG）。`@minar-kotonoha/vite-plugin-{bootstrap,external,index-html}` 为独立子插件可按需使用
 - Pinia SSR：模板 `main.ts` 通过 `initialState` 传递 SSR 上下文给 bootstrap，项目 bootstrap 中 `initialState.pinia = pinia.state.value`（SSR）/ `pinia.state.value = initialState.pinia`（客户端），vite-ssg 自动序列化到 `window.__INITIAL_STATE__`
 - 骨架屏：`App.vue` 通过 `useHead({ style: [skeletonStyles] })` 注入骨架 CSS。`injectHead()` 补设 `head.ssr = true` 解决 unhead v3.x server createHead() 未设 SSR 标记导致条目丢失的问题
 - preview 代理：`miko preview` 支持 `miko.config.ts` 中 `proxy` 配置（Node.js 原生转发，零额外依赖），格式与 dev server 的 proxy 一致
-- 发包：必须用 `bun publish`（npm publish 会丢弃 .ts 格式的 bin 脚本）。认证方式：`export NPM_CONFIG_TOKEN=npm_xxx` 然后 `bun publish --registry https://registry.npmjs.org/ --access public`。批量发布脚本：`scripts/publish-all.sh`
+- 发包：必须用 `bun publish`（npm publish 会丢弃 .ts 格式的 bin 脚本）。认证方式：`export NPM_CONFIG_TOKEN=npm_xxx` 然后 `bun publish --registry https://registry.npmjs.org/ --access public`
 - 包版本（当前发布）：`miko-cli@0.1.11`, `vite-plugin-miko@0.2.17`, `vite-plugin-external@0.1.8`, `vite-plugin-index-html@0.1.4`, `linter@0.1.3`
 - 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 选 UI 库 + 配 proxy（可选）→ `bun dev`
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - `vueDevTools()` 已启用 — 开发时可使用 Vue DevTools 调试
 - `miko.config.ts`（可选）支持所有插件的深度配置（`vue`/`vueJsx`/`vueRouter`/`layouts`/`components`/`unoCSS`/`legacy`/`ssg`/`linter`/`bootstrap`/`external`/`dev`/`janus` + `proxy`/`template`/`entry`/`outDir`/`pagesDir`/`uiLibrary`/`layout`/`lib`），完整类型见 `MikoUserConfig`
-- 发包：必须用 `bun publish`（npm publish 会丢弃 .ts 格式的 bin 脚本）。认证方式：`export NPM_CONFIG_TOKEN=npm_xxx` 然后 `bun publish --registry https://registry.npmjs.org/ --access public`。批量发布脚本：`scripts/publish-all.sh`
 
 ### 依赖版本 (2026-07-21)
 
