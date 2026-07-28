@@ -1,3 +1,8 @@
+---
+name: to-miko
+description: 将任意 Vue 3 + Vite 项目迁移到 miko 架构
+---
+
 # to-miko
 
 将任意 Vue 3 + Vite 项目迁移到 [miko](https://github.com/minar-kotonoha/miko) 架构。
