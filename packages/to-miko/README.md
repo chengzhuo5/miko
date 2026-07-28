@@ -5,8 +5,18 @@
 ## 安装
 
 ```sh
+# 通用（所有支持 Agent Skills 标准的 agent）
+bun add -D @minar-kotonoha/to-miko
+npx agents export                        # 自动检测 agent 类型
+
+# Claude Code
 claude skills install @minar-kotonoha/to-miko
+
+# 或手动
+npm i @minar-kotonoha/to-miko
 ```
+
+支持的 agent：Claude Code · Cursor · Codex · Copilot · OpenCode · Windsurf · Goose · Amp
 
 ## 用法
 
