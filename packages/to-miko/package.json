@@ -5,6 +5,7 @@
   "type": "module",
   "files": [
     "SKILL.md",
+    "README.md",
     "references/"
   ],
   "keywords": ["claude-code", "skill", "miko", "migration", "vue3", "vite", "ssg"],
