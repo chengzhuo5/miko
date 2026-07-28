@@ -1,0 +1,16 @@
+{
+  "name": "@minar-kotonoha/to-miko",
+  "version": "0.1.0",
+  "description": "将 Vue 3 + Vite 项目迁移到 miko 架构 — Claude Code skill",
+  "type": "module",
+  "files": [
+    "SKILL.md",
+    "references/"
+  ],
+  "keywords": ["claude-code", "skill", "miko", "migration", "vue3", "vite", "ssg"],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

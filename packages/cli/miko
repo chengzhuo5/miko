@@ -4,15 +4,20 @@ import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const isBuild = process.argv.includes('build')
 
-if (isBuild) {
-  // build 用 node + jiti（SSR 预渲染需要 Node.js 兼容的运行时）
+// 优先使用 bun（启动更快、原生 TS 支持），不可用时回退到 jiti
+let hasBun = false
+try {
+  hasBun = spawnSync('bun', ['--version'], { stdio: 'pipe', timeout: 5000 }).status === 0
+} catch {
+  hasBun = false
+}
+
+if (hasBun) {
+  const result = spawnSync('bun', [resolve(__dirname, 'index.ts'), ...process.argv.slice(2)], { stdio: 'inherit' })
+  process.exit(result.status ?? 1)
+} else {
   const { createJiti } = await import('jiti')
   const jiti = createJiti(import.meta.url, { interopDefault: true })
   await jiti.import(resolve(__dirname, 'index.ts'))
-} else {
-  // dev 用 bun（更快）
-  const result = spawnSync('bun', [resolve(__dirname, 'index.ts'), ...process.argv.slice(2)], { stdio: 'inherit' })
-  process.exit(result.status ?? 1)
 }

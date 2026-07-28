@@ -1,0 +1,88 @@
+{
+  "description": "常见 Vite/Vue 插件/配置到 miko 等价物的映射表。status: 'replace'（miko内置替换）/ 'adapt'（需适配）/ 'keep'（保留原样）/ 'remove'（可删除）。",
+  "sections": {
+    "vue": {
+      "description": "Vue SFC 编译",
+      "items": {
+        "@vitejs/plugin-vue": { "mikoEquivalent": "内置（miko 自动注册 vue()）", "status": "replace", "note": "miko 同时注册 vueJsx + VueMacros" },
+        "@vitejs/plugin-vue-jsx": { "mikoEquivalent": "内置", "status": "replace" }
+      }
+    },
+    "imports": {
+      "description": "自动导入",
+      "items": {
+        "unplugin-auto-import/vite": { "mikoEquivalent": "内置（VueMacros 提供 autoImports）", "status": "replace", "note": "auto-imports.d.ts 类型文件需从 src/typing/ 移到 typing/" },
+        "unplugin-vue-components/vite": { "mikoEquivalent": "内置（miko 根据 uiLibrary 自动选择 VantResolver/ElementPlusResolver）", "status": "replace", "note": "components.d.ts 类型文件需从 src/typing/ 移到 typing/" }
+      }
+    },
+    "css": {
+      "description": "CSS/原子化CSS",
+      "items": {
+        "unocss/vite": { "mikoEquivalent": "内置（自动检测 cwd/uno.config.ts）", "status": "replace", "note": "保留项目的 uno.config.ts，miko 自动加载" },
+        "sass": { "mikoEquivalent": "无等价物", "status": "keep", "note": "如需 SCSS，保留 sass 依赖；miko 模板默认使用 Less" },
+        "less": { "mikoEquivalent": "内置（miko 模板默认 Less）", "status": "replace" }
+      }
+    },
+    "routing": {
+      "description": "路由",
+      "items": {
+        "手动路由表 (src/router/index.ts)": { "mikoEquivalent": "vue-router/auto-routes（文件系统路由）", "status": "adapt", "note": "需将手动路由转为 pages/ 目录 + <route> SFC block；详见 route-migration.md" },
+        "vue-router@4": { "mikoEquivalent": "vue-router@5", "status": "adapt", "note": "升级到 v5，API 基本兼容" },
+        "createWebHashHistory": { "mikoEquivalent": "createWebHistory（推荐）或保留 hash", "status": "adapt", "note": "SSG 仅支持 HTML5 history；如必须 hash，需禁用 SSG" },
+        "createWebHistory": { "mikoEquivalent": "内置", "status": "replace" }
+      }
+    },
+    "state": {
+      "description": "状态管理",
+      "items": {
+        "pinia": { "mikoEquivalent": "内置（bootstrap 模板含 Pinia SSR 序列化/注水）", "status": "adapt", "note": "将 createPinia() 调用移到 index.ts bootstrap 中" },
+        "vuex": { "mikoEquivalent": "无等价物（推荐迁移到 Pinia）", "status": "adapt", "note": "miko 不内置 Vuex，需手动处理" }
+      }
+    },
+    "ssr": {
+      "description": "SSR/SSG",
+      "items": {
+        "无 SSG": { "mikoEquivalent": "vite-ssg", "status": "adapt", "note": "miko 默认启用 SSG；如不需要可设 ssg: false" },
+        "vite-ssg（手动配置）": { "mikoEquivalent": "内置（miko 自动配置 vite-ssg）", "status": "replace" }
+      }
+    },
+    "legacy": {
+      "description": "浏览器兼容",
+      "items": {
+        "@vitejs/plugin-legacy": { "mikoEquivalent": "内置（可通过 legacy: false 禁用）", "status": "replace", "note": "默认目标 chrome 49, ios 10" }
+      }
+    },
+    "devtools": {
+      "description": "开发工具",
+      "items": {
+        "vite-plugin-vue-devtools": { "mikoEquivalent": "内置（miko 自动注册 vueDevTools()）", "status": "replace" }
+      }
+    },
+    "lint": {
+      "description": "代码检查",
+      "items": {
+        "vite-plugin-eslint": { "mikoEquivalent": "内置（@minar-kotonoha/linter，可通过 linter: false 禁用）", "status": "replace" },
+        "vite-plugin-oxlint": { "mikoEquivalent": "内置", "status": "replace" }
+      }
+    },
+    "customPlugins": {
+      "description": "常见自定义插件",
+      "items": {
+        "htmlInjectPlugin（注入 meta/script）": { "mikoEquivalent": "useHead() from @unhead/vue", "status": "adapt", "note": "在 App.vue 或页面中使用 useHead 替代 html 注入；详见 common-diffs.md" },
+        "自定义 resolve.alias": { "mikoEquivalent": "内置（@ → cwd）", "status": "adapt", "note": "如项目有额外 alias，通过 vite.config.ts 的 defineMikoConfig 参数传入" },
+        "wujie-vue3": { "mikoEquivalent": "无等价物", "status": "keep", "note": "微前端架构不受 miko 迁移影响，保留原样" },
+        "vite-plugin-external": { "mikoEquivalent": "@minar-kotonoha/vite-plugin-external", "status": "replace", "note": "仅当设置 external.frameworkCDN 时启用" }
+      }
+    },
+    "buildConfig": {
+      "description": "构建配置",
+      "items": {
+        "build.outDir": { "mikoEquivalent": "miko.config.ts outDir（默认 ./dist）", "status": "replace" },
+        "build.base": { "mikoEquivalent": "SSG base 路径", "status": "adapt", "note": "通过 vite.config.ts defineMikoConfig 参数覆盖" },
+        "server.proxy": { "mikoEquivalent": "miko.config.ts proxy 数组", "status": "replace" },
+        "server.port": { "mikoEquivalent": "miko.config.ts dev.port", "status": "replace" },
+        "optimizeDeps.include": { "mikoEquivalent": "无需手动配置", "status": "remove", "note": "miko/Vite 8 自动处理" }
+      }
+    }
+  }
+}
