@@ -162,6 +162,10 @@ export interface ExternalOptions {
   frameworkCDN?: string
   /** 额外需要外部化的包名 */
   additionalExternals?: string[]
+  /** 从 Vite dep optimizer 排除的包名列表（修复 pnpm git 依赖 CSS 路径问题） */
+  optimizeDepsExclude?: string[]
+  /** SSR 时不外部化的包名列表 */
+  ssrNoExternal?: string[]
 }
 
 // ===== 开发 / 构建调优 =====
@@ -434,4 +438,17 @@ export interface MikoUserConfig {
    * @default 自动发现（安装了 `@janus/unplugin` 则自动启用）
    */
   janus?: JanusOptions | false
+
+  // === Vite 构建透传 ===
+
+  /**
+   * Vite build 配置透传。
+   * 与 miko 默认值（outDir, emptyOutDir）浅合并，用户值优先级更高。
+   *
+   * @example
+   * ```ts
+   * build: { cssMinify: 'esbuild' } // lightningcss 兼容性修复
+   * ```
+   */
+  build?: import('vite').UserConfig['build']
 }

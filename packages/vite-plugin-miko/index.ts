@@ -520,6 +520,9 @@ export async function defineMikoConfig() {
 
   // ===== 组装 defineConfig =====
 
+  // ssg: false → import.meta.env.VITE_MIKO_SPA === 'true'，供 App.vue 全局走 ClientOnly
+  if (ssgOpts === false) process.env.VITE_MIKO_SPA = 'true'
+
   return defineConfig(() => ({
     server: {
       host: devOpts.host ?? true,
