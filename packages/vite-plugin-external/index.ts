@@ -2,7 +2,7 @@ import { dirname, resolve } from 'node:path';
 import { env } from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import fg from 'fast-glob';
-import type { PluginOption } from 'vite';
+import type { PluginOption, UserConfig } from 'vite';
 import pluginExternal from 'vite-plugin-external';
 import { resolve as esResolve } from '@dual-bundle/import-meta-resolve';
 
@@ -46,15 +46,6 @@ export function externalPlugin(enableCDN = false) {
               ...(mode === 'development' ? ['vue-router'] : []),
             ],
           },
-          // Vite 8 Environment API — 确保 SSR 环境也应用 noExternal
-          environments: {
-            ssr: {
-              noExternal: [
-                /.*\/vant/,
-                ...(mode === 'development' ? ['vue-router'] : []),
-              ],
-            },
-          },
         };
       },
       async resolveId(source: string, _importer: string | undefined, options: { ssr?: boolean }) {
@@ -82,7 +73,7 @@ export function externalPlugin(enableCDN = false) {
     plugins.push({
       ...pluginExternal({
         get externals() {
-          return externalMap;
+          return queryEnableExternal() ? externalMap : {};
         },
         externalizeDeps: ['vue-router/auto', 'vue-router/auto-routes'],
       }),

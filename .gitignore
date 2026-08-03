@@ -46,3 +46,4 @@ types/*.d.ts
 **/types/routes.d.ts
 **/.omc/state
 **/.omc/sessions
+**/.vite-ssg-temp/

@@ -157,7 +157,7 @@ export interface BootstrapOptions {
 export interface ExternalOptions {
   /**
    * Framework CDN 地址，覆盖 .env 中的 VITE_FRAMEWORK_CDN
-   * @default 'https://unpkg.com/@minar-kotonoha/framework@<version>/dist/framework_v<version>.umd.js'
+   * @default 'https://unpkg.com/@minar-kotonoha/framework@<version>/dist/framework.umd.js'
    */
   frameworkCDN?: string
   /** 额外需要外部化的包名 */
@@ -277,6 +277,24 @@ export interface MikoUserConfig {
    * @default `'./dist'`
    */
   outDir?: string
+
+  /**
+   * 部署基础路径（透传给 Vite `base` 选项）。
+   *
+   * 影响 dev 注入 HTML 的资源前缀和构建产物的 `<script>`/`<link>` href 前缀。
+   * 必须以 `/` 开头、以 `/` 结尾（例如 `/cms/`），根路径部署用 `'/'`。
+   *
+   * 也可通过环境变量 `MIKO_BASE` 配置，CLI 优先级高于 miko.config.ts。
+   *
+   * @example
+   * ```ts
+   * // 部署到 https://example.com/cms/
+   * base: '/cms/'
+   * ```
+   *
+   * @default `'/'`
+   */
+  base?: string
 
   /**
    * 页面目录（文件系统路由的扫描根目录）。

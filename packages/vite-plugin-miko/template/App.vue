@@ -6,18 +6,18 @@ import skeletonStyles from './styles/skeleton.less?inline';
 import hiddenVCloakStyles from './styles/hiddenVCloak.less?inline';
 import Fallback from './components/Fallback.vue';
 
-const route = useRoute();
+const appRoute = useRoute();
 
 const onResolve = () => {
   if (!import.meta.env.SSR) {
     document.getElementById('app')!.removeAttribute('v-cloak');
   }
 };
-const useSkeleton = route.meta.useSkeleton ?? true;
+const useSkeleton = appRoute.meta.useSkeleton ?? true;
 const isSpaMode = import.meta.env.VITE_MIKO_SPA === 'true';
 const isDev = import.meta.env.DEV;
 // 仅对标记 clientOnly 的路由，或 SPA 模式下，整体走 <ClientOnly>
-const useClientOnly = computed(() => isSpaMode || route.meta.clientOnly === true);
+const useClientOnly = computed(() => isSpaMode || appRoute.meta.clientOnly === true);
 
 // 此处在预渲染时完成，故加个判断，客户端代码会剔除这块，减小包体积
 if (import.meta.env.SSR) {
@@ -33,7 +33,7 @@ if (import.meta.env.SSR) {
   // 生产环境 Framework CDN 地址，可通过 VITE_FRAMEWORK_CDN 自定义
   // 默认使用 unpkg CDN，配合 @minar-kotonoha/framework 发布版本
   const frameworkCDN = import.meta.env.VITE_FRAMEWORK_CDN
-    || `https://unpkg.com/@minar-kotonoha/framework@${import.meta.env.VITE_LIB_VERSION}/dist/framework_v${import.meta.env.VITE_LIB_VERSION}.umd.js`;
+    || `https://cdn.jsdelivr.net/npm/@minar-kotonoha/framework${import.meta.env.VITE_LIB_VERSION ? `@${import.meta.env.VITE_LIB_VERSION}` : ''}/dist/framework.umd.js`;
   const framework = frameworkCDN;
   useHead({
     style: useSkeleton ? [skeletonStyles] : [hiddenVCloakStyles],
@@ -57,7 +57,7 @@ if (import.meta.env.SSR) {
 <template>
   <RouterView v-slot="{ Component, route }">
     <Suspense @resolve="onResolve">
-      <ClientOnly v-if="useClientOnly">
+      <ClientOnly v-if="useClientOnly || route.meta.clientOnly === true">
         <component :is="Component" />
       </ClientOnly>
       <component :is="Component" v-else />

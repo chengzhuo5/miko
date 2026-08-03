@@ -159,6 +159,7 @@ interface ResolvedConfig {
   template: string
   entry: string
   outDir: string
+  base: string
   pagesDir: string
   uiLibrary: 'vant' | 'element-plus'
   layout: string
@@ -186,6 +187,8 @@ function resolveConfig(cfg: MikoUserConfig): ResolvedConfig {
   const template = cfg.template || detectTemplate()
   const entry = cfg.entry || detectEntry(template)
   const outDir = cfg.outDir ? resolve(cwd, cfg.outDir) : resolve(cwd, DEFAULTS.outDir)
+  // base：用户配置 > MIKO_BASE 环境变量 > 默认 '/'
+  const base = cfg.base ?? process.env.MIKO_BASE ?? '/'
   const pagesDir = cfg.pagesDir ? resolve(cwd, cfg.pagesDir) : resolve(cwd, DEFAULTS.pagesDir)
 
   // === 布局 ===
@@ -280,6 +283,7 @@ function resolveConfig(cfg: MikoUserConfig): ResolvedConfig {
     template,
     entry,
     outDir,
+    base,
     pagesDir,
     uiLibrary: cfg.uiLibrary || DEFAULTS.uiLibrary,
     layout,
@@ -387,6 +391,7 @@ export async function defineMikoConfig() {
 
   // 解构已解析的配置
   const {
+    base,
     template,
     entry,
     outDir,
@@ -409,11 +414,6 @@ export async function defineMikoConfig() {
     dev: devOpts,
     janus: janusOpts,
   } = cfg
-
-  // 设置环境变量（external 插件和 template/App.vue 通过 env 读取）
-  if (externalOpts.frameworkCDN) {
-    process.env.VITE_FRAMEWORK_CDN = externalOpts.frameworkCDN
-  }
 
   // 设置环境变量（自定义 bootstrap 入口文件）
   if (bootstrapOpts.entryFile !== DEFAULTS.entryFile) {
@@ -520,16 +520,14 @@ export async function defineMikoConfig() {
 
   // ===== 组装 defineConfig =====
 
-  // ssg: false → import.meta.env.VITE_MIKO_SPA === 'true'，供 App.vue 全局走 ClientOnly
-  if (ssgOpts === false) process.env.VITE_MIKO_SPA = 'true'
-
   return defineConfig(() => ({
+    base,
     server: {
       host: devOpts.host ?? true,
       port: devOpts.port,
       proxy: proxy ? normalizeProxy(proxy) : undefined,
     },
-    build: { outDir, emptyOutDir: true },
+    build: { outDir, emptyOutDir: true, ...raw.build },
     cacheDir: resolve(cwd, './node_modules/.vite'),
     resolve: { alias: [{ find: '@', replacement: cwd }], tsconfigPaths: true },
     experimental: { bundledDev: devOpts.bundledDev ?? DEFAULTS.bundledDev },
@@ -544,6 +542,7 @@ export async function defineMikoConfig() {
           onPageRendered: ssgOpts.onPageRendered ?? ((_route: string, renderedHTML: string) => renderedHTML),
           onFinished: ssgOpts.onFinished ?? (async () => { await remove(resolve(outDir, '.vite')) }),
         },
+    define: { 'import.meta.env.VITE_MIKO_SPA': ssgOpts === false ? 'true' : 'false' },
     plugins,
   }))
 }

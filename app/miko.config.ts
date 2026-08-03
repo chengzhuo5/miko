@@ -9,6 +9,7 @@
 import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko'
 
 export default {
+  base: '/cms/',
   // ===== 基础路径 =====
   /** UI 组件库：'vant'（默认）| 'element-plus' */
   uiLibrary: 'vant' as const,
@@ -55,7 +56,7 @@ export default {
   // ssg: { beastiesOptions: { external: false }, dirStyle: 'flat', formatting: 'none' },
   // linter: { oxlint: true, eslint: true },
   // bootstrap: { entryFile: 'index.ts' },
-  // external: { frameworkCDN: 'https://unpkg.com/@minar-kotonoha/framework@0.1.1/dist/framework_v0.1.1.umd.js' },
+  // external: { frameworkCDN: 'https://unpkg.com/@minar-kotonoha/framework@0.1.1/dist/framework.umd.js' },
   // dev: { bundledDev: false, port: 5173 },
   // janus: false,
 } satisfies MikoUserConfig

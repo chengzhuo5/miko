@@ -1,7 +1,5 @@
 // 此处不用tsdown打包的原因是tsdown对import.meta.glob的兼容性不佳
 import { defineConfig } from 'vite';
-import pkg from './package.json' assert { type: 'json' };
-
 export default defineConfig({
   build: {
     target: ['chrome49', 'safari10'],
@@ -12,7 +10,7 @@ export default defineConfig({
       formats: ['umd'],
       name: 'framework',
       fileName: (format) => {
-        const baseName = `framework_v${pkg.version}`;
+        const baseName = 'framework';
         switch (format) {
           case 'es':
           case 'esm':

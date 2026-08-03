@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/framework",
-  "version": "0.1.3",
+  "version": "0.1.6",
   "description": "miko 框架 CDN 包 — 聚合 Vue 生态依赖为单个 UMD 包",
   "type": "module",
   "exports": {
@@ -18,16 +18,17 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "prepublishOnly": "bun run build",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "@minar-kotonoha/linter": "workspace:^",
-    "@unhead/dom": "^3.2.0",
-    "@unhead/vue": "^3.2.0",
+    "@unhead/dom": "^2",
+    "@unhead/vue": "^2",
     "@vue/server-renderer": "^3.5.40",
     "axios": "^1.18.1",
-    "unhead": "^3.2.0",
+    "unhead": "^2",
     "vite": "catalog:",
     "vite-ssg": "^28.3.0",
     "vue": "^3.5.40",
