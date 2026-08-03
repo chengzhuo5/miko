@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-此文件为 Claude Code (claude.ai/code) 在此仓库中工作时提供指导。
+此文件为 Codex (Codex.ai/code) 在此仓库中工作时提供指导。
 
 ## 常用命令
 
