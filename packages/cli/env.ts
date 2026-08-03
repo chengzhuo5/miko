@@ -1,15 +1,13 @@
 /**
- * `--env` 参数解析与 `.env.<env>` 加载。
- * 纯函数（normalizeEnvArg / resolveMode）可单测；loadEnvFiles 负责 dotenv 接线。
+ * `--env` / `--mode` 参数解析与 `.env.<env>` 加载。
+ * 纯函数（normalizeEnvArg / pickEnvArg / resolveMode）可单测；loadEnvFiles 负责 dotenv 接线。
  */
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
 import dotenv from 'dotenv';
 
 const ENV_NAME_RE = /^[A-Za-z0-9_-]+$/;
 
 /**
- * 归一化 yargs 解析出的 --env 值。
+ * 归一化 yargs 解析出的环境值。
  * 未传/空值返回 undefined；重复传值取最后一个；非法字符抛错（防路径穿越）。
  */
 export function normalizeEnvArg(value: unknown): string | undefined {
@@ -22,7 +20,14 @@ export function normalizeEnvArg(value: unknown): string | undefined {
 }
 
 /**
- * 根据命令与 --env 解析最终 vite mode。
+ * 从 CLI 参数中选取环境名：--env 优先，其次 --mode（Vite 语义别名），都没有则 undefined。
+ */
+export function pickEnvArg(env: unknown, mode: unknown): string | undefined {
+  return normalizeEnvArg(env ?? mode);
+}
+
+/**
+ * 根据命令与所选环境解析最终 vite mode。
  * build 缺省 production，serve 缺省 development。
  */
 export function resolveMode(envArg: string | undefined, command: 'build' | 'serve'): string {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeEnvArg, resolveMode } from './env';
+import { normalizeEnvArg, pickEnvArg, resolveMode } from './env';
 
 describe('normalizeEnvArg', () => {
   it('未传值时返回 undefined', () => {
@@ -35,5 +35,24 @@ describe('resolveMode', () => {
   it('指定 --env 后覆盖默认值', () => {
     expect(resolveMode('test', 'build')).toBe('test');
     expect(resolveMode('test', 'serve')).toBe('test');
+  });
+});
+
+describe('pickEnvArg', () => {
+  it('都没有时返回 undefined', () => {
+    expect(pickEnvArg(undefined, undefined)).toBeUndefined();
+  });
+
+  it('--env 优先于 --mode', () => {
+    expect(pickEnvArg('test', 'production')).toBe('test');
+  });
+
+  it('仅有 --mode 时使用 --mode', () => {
+    expect(pickEnvArg(undefined, 'test')).toBe('test');
+  });
+
+  it('任一非法都会抛错', () => {
+    expect(() => pickEnvArg(undefined, '../x')).toThrow(/非法 --env/);
+    expect(() => pickEnvArg('../x', 'test')).toThrow(/非法 --env/);
   });
 });
