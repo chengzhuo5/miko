@@ -17,7 +17,7 @@ export const createApp = ViteSSG(
   // the root component
   App,
   // vue-router options
-  { routes: setupLayouts(routes) },
+  { routes: setupLayouts(routes), base: import.meta.env.BASE_URL },
   // function to have custom setups
   async ({ app, router, initialState }) => {
     // const i18n = createI18n({
