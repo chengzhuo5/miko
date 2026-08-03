@@ -1,15 +1,24 @@
-#!/usr/bin/env bun
-import dotenv from 'dotenv';
+#!/usr/bin/env node
 import parser from 'yargs-parser';
+import { normalizeEnvArg, loadEnvFiles } from './env.ts';
 
-if (!process.versions.bun) {
-  dotenv.config();
-}
-
-const { _, lib } = parser(process.argv.slice(2));
+const { _, lib, env } = parser(process.argv.slice(2));
 if (_.length === 0) {
   console.log('请指定命令');
   process.exit(1);
 }
 if (lib) process.env.MIKO_LIB_MODE = '1';
+
+let envArg: string | undefined;
+try {
+  envArg = normalizeEnvArg(env);
+} catch (e) {
+  console.error((e as Error).message);
+  process.exit(1);
+}
+if (envArg) {
+  process.env.MIKO_MODE = envArg;
+}
+loadEnvFiles(envArg);
+
 await import(`./${_[0]}.ts`);
