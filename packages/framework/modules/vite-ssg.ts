@@ -1,1 +1,1 @@
-export * from 'vite-ssg';
+export * from '@minar-kotonoha/vite-ssg';

@@ -1,5 +1,5 @@
 import { spawn, execSync } from 'node:child_process';
-import { build as viteSsgBuild } from 'vite-ssg/node';
+import { build as viteSsgBuild } from '@minar-kotonoha/vite-ssg/node';
 import { defineMikoConfig, loadMikoConfig, createLibConfig } from '@minar-kotonoha/vite-plugin-miko';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { cwd } from 'node:process';

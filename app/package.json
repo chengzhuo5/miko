@@ -21,9 +21,9 @@
     "pinia": "^4.0.2"
   },
   "devDependencies": {
-    "@minar-kotonoha/miko-cli": "^0.1.28",
-    "@minar-kotonoha/framework": "^0.1.5",
+    "@minar-kotonoha/miko-cli": "^0.1.29",
+    "@minar-kotonoha/framework": "^0.1.7",
     "@minar-kotonoha/linter": "^0.1.3",
-    "@minar-kotonoha/vite-plugin-miko": "^0.2.30"
+    "@minar-kotonoha/vite-plugin-miko": "^0.2.31"
   }
 }

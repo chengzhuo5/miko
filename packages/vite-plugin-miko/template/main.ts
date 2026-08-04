@@ -4,7 +4,7 @@ import App from './App.vue';
 // import { createI18n } from 'vue-i18n';
 // import messages from '@intlify/unplugin-vue-i18n/messages';
 
-import { ViteSSG } from 'vite-ssg';
+import { ViteSSG } from '@minar-kotonoha/vite-ssg';
 
 import { setupLayouts } from 'virtual:generated-layouts';
 import { routes, handleHotUpdate } from 'vue-router/auto-routes';
