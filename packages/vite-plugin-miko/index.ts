@@ -1,548 +1,272 @@
 /**
  * # @minar-kotonoha/vite-plugin-miko
  *
- * `defineMikoConfig` — 一行搞定 Vue 3 SSG 项目的全部 Vite 配置。
- *
- * 所有插件直接展开在 defineConfig 中（不嵌套），兼容 vite-ssg。
- *
- * ===== 用法 =====
- *
- * vite.config.ts:
- *   import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
- *   export default await defineMikoConfig()
- *
- * miko.config.ts（可选，零配置即可运行）:
- *   export default {
- *     uiLibrary: 'vant',
- *     proxy: [{ context: ['/api/**'], target: 'https://dev.example.com' }],
- *   } satisfies import('@minar-kotonoha/vite-plugin-miko').MikoUserConfig
+ * 将已解析的 Miko 项目配置转换为完整 Vite 配置。
  */
 
-import { resolve } from 'node:path'
-import { existsSync } from 'node:fs'
-import { createRequire } from 'node:module'
-import { fileURLToPath } from 'node:url'
-import { remove } from 'fs-extra'
-import { defineConfig, mergeConfig } from 'vite'
-import type { PluginOption, ProxyOptions, UserConfig } from 'vite'
+import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { normalizePath } from 'vite';
+import type { PluginOption, UserConfig } from 'vite';
 
-// Vue 生态
-import vue from '@vitejs/plugin-vue'
-import vueJsx from '@vitejs/plugin-vue-jsx'
-import VueRouter from 'vue-router/vite'
-import VueMacros from 'vue-macros/vite'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import vue from '@vitejs/plugin-vue';
+import vueJsx from '@vitejs/plugin-vue-jsx';
+import VueRouter from 'vue-router/vite';
+import VueMacros from 'vue-macros/vite';
+import vueDevTools from 'vite-plugin-vue-devtools';
+import Layouts from 'vite-plugin-vue-layouts-next';
+import linterPlugin from '@minar-kotonoha/linter/vite';
+import legacy from '@vitejs/plugin-legacy';
+import Components from 'unplugin-vue-components/vite';
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+import { VantResolver } from '@vant/auto-import-resolver';
+import UnoCSS from 'unocss/vite';
 
-// Layouts
-import Layouts from 'vite-plugin-vue-layouts-next'
+import { bootstrapPlugin } from '@minar-kotonoha/vite-plugin-bootstrap';
+import { externalPlugin } from '@minar-kotonoha/vite-plugin-external';
+import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html';
 
-// Linter
-import linterPlugin from '@minar-kotonoha/linter/vite'
+import { loadMikoConfig, resolveMikoConfig } from './config';
+import { mergeViteConfig } from './config/merge';
+import type { MikoConfigEnv, ResolvedMikoConfig } from './config/types';
+import type { JanusOptions } from './types';
 
-// Legacy
-import legacy from '@vitejs/plugin-legacy'
+export { defineMikoConfig } from './config/define';
+export { MikoConfigError } from './config/errors';
+export type * from './config/types';
+export type * from './types';
 
-// Components auto-import
-import Components from 'unplugin-vue-components/vite'
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import { VantResolver } from '@vant/auto-import-resolver'
-
-// UnoCSS
-import UnoCSS from 'unocss/vite'
-
-// Miko 子插件
-import { bootstrapPlugin } from '@minar-kotonoha/vite-plugin-bootstrap'
-import { externalPlugin } from '@minar-kotonoha/vite-plugin-external'
-import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html'
-
-// 类型
-import type {
-  MikoUserConfig,
-  ProxyConfig,
-  LibConfig,
-  SSGConfig,
-  VueOptions,
-  VueJsxOptions,
-  VueRouterOptions,
-  LayoutsUserOptions,
-  LegacyOptions,
-  ComponentsOptions,
-  UnoCSSVitePluginConfig,
-  LinterOptions,
-  BootstrapOptions,
-  ExternalOptions,
-  DevOptions,
-  JanusOptions,
-} from './types'
-
-// 重新导出类型供外部使用
-export type {
-  MikoUserConfig,
-  ProxyConfig,
-  LibConfig,
-  SSGConfig,
-  VueOptions,
-  VueJsxOptions,
-  VueRouterOptions,
-  LayoutsUserOptions,
-  LegacyOptions,
-  ComponentsOptions,
-  UnoCSSVitePluginConfig,
-  LinterOptions,
-  BootstrapOptions,
-  ExternalOptions,
-  DevOptions,
-  JanusOptions,
+export function getBundledTemplate(): string {
+  return fileURLToPath(new URL('./template', import.meta.url));
 }
 
-const cwd = process.cwd()
-
-// ===================================================================
-// 默认值常量
-// ===================================================================
-
-const DEFAULTS = {
-  uiLibrary: 'vant' as const,
-  layout: 'flexible',
-  outDir: './dist',
-  pagesDir: './pages',
-  componentsDir: './components',
-  entryFile: 'index.ts',
-  extensionsRoute: ['.vue', '.setup.tsx'] as string[],
-  extensionsComponent: ['vue', 'tsx', 'ts'] as string[],
-  legacyTargets: ['chrome 49', 'ios 10'] as string[],
-  bundledDev: false,
-} as const
-
-// ===================================================================
-// 路径探测
-// ===================================================================
-
-function detectTemplate(): string {
-  // 优先项目本地 template/（用户可覆盖）
-  const local = resolve(cwd, 'template')
-  if (existsSync(local)) return local
-  // 回退到插件内置 template/
-  const bundled = fileURLToPath(new URL('./template', import.meta.url))
-  if (existsSync(bundled)) return bundled
-  return local
+export async function resolveMikoProject(env: MikoConfigEnv): Promise<ResolvedMikoConfig> {
+  const loaded = await loadMikoConfig(env);
+  return resolveMikoConfig(loaded, env, getBundledTemplate());
 }
 
-function detectEntry(template: string): string {
-  return resolve(template, 'main.ts')
-}
-
-// ===================================================================
-// 配置加载
-// ===================================================================
-
-/**
- * 从 `miko.config.ts` 加载用户配置。
- * 文件不存在或解析失败时返回空对象。
- */
-export async function loadMikoConfig(): Promise<MikoUserConfig> {
-  const configPath = resolve(cwd, 'miko.config.ts')
-  if (!existsSync(configPath)) return {}
+function loadJanus(opts: JanusOptions | false, root: string): PluginOption | null {
+  if (opts === false) return null;
   try {
-    const mod = await import(configPath)
-    return (mod.default || mod) as MikoUserConfig
-  } catch {
-    return {}
+    const janusEntry = resolve(root, 'node_modules/@janus/unplugin/dist/unplugin.cjs');
+    if (!existsSync(janusEntry)) return null;
+    const require = createRequire(import.meta.url);
+    const mod = require(janusEntry);
+    return mod?.vite?.(opts) || mod?.default?.vite?.(opts) || null;
+  } catch (error) {
+    console.warn('[miko] Janus 加载失败:', (error as Error)?.message);
+    return null;
   }
 }
 
-// ===================================================================
-// 配置解析 —— 将用户配置与默认值合并
-// ===================================================================
-
-interface ResolvedConfig {
-  template: string
-  entry: string
-  outDir: string
-  base: string
-  pagesDir: string
-  uiLibrary: 'vant' | 'element-plus'
-  layout: string
-  layoutsDirs: string[]
-  proxy: ProxyConfig[] | undefined
-  lib: LibConfig | undefined
-
-  // 插件深度配置
-  vue: VueOptions
-  vueJsx: VueJsxOptions
-  vueRouter: VueRouterOptions
-  layouts: LayoutsUserOptions
-  components: ComponentsOptions
-  unoCSS: UnoCSSVitePluginConfig | false
-  legacy: LegacyOptions | false
-  ssg: SSGConfig | false
-  linter: LinterOptions | false
-  bootstrap: BootstrapOptions
-  external: ExternalOptions
-  dev: DevOptions
-  janus: JanusOptions | false
-}
-
-function resolveConfig(cfg: MikoUserConfig): ResolvedConfig {
-  const template = cfg.template || detectTemplate()
-  const entry = cfg.entry || detectEntry(template)
-  const outDir = cfg.outDir ? resolve(cwd, cfg.outDir) : resolve(cwd, DEFAULTS.outDir)
-  // base：用户配置 > MIKO_BASE 环境变量 > 默认 '/'
-  const base = cfg.base ?? process.env.MIKO_BASE ?? '/'
-  const pagesDir = cfg.pagesDir ? resolve(cwd, cfg.pagesDir) : resolve(cwd, DEFAULTS.pagesDir)
-
-  // === 布局 ===
-  const layout = cfg.layouts?.defaultLayout ?? cfg.layout ?? process.env.VITE_LAYOUT ?? DEFAULTS.layout
-  const layoutsDirs = cfg.layouts?.layoutsDirs
-    ? (Array.isArray(cfg.layouts.layoutsDirs) ? cfg.layouts.layoutsDirs : [cfg.layouts.layoutsDirs])
-    : [resolve(template, 'layouts'), resolve(cwd, './layouts')]
-
-  // === Vue Router ===
-  const vueRouter: VueRouterOptions = {
-    extensions: cfg.vueRouter?.extensions ?? DEFAULTS.extensionsRoute,
-    routesFolder: cfg.vueRouter?.routesFolder ?? pagesDir,
-    dts: cfg.vueRouter?.dts ?? resolve(cwd, 'types', 'routes.d.ts'),
-  }
-
-  // === 组件 ===
-  const components: ComponentsOptions = {
-    dirs: cfg.components?.dirs ?? [resolve(cwd, DEFAULTS.componentsDir)],
-    extensions: cfg.components?.extensions ?? DEFAULTS.extensionsComponent,
-    dts: cfg.components?.dts ?? resolve(cwd, 'types', 'components.d.ts'),
-    resolvers: cfg.components?.resolvers ?? undefined,
-  }
-
-  // === UnoCSS ===
-  const unoCSS: UnoCSSVitePluginConfig | false =
-    cfg.unoCSS === false
-      ? false
-      : {
-          configFile: existsSync(resolve(cwd, 'uno.config.ts')) ? resolve(cwd, 'uno.config.ts') : false,
-          ...cfg.unoCSS,
+async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOption[]> {
+  const { miko } = project;
+  const plugins: PluginOption[] = [
+    {
+      name: 'miko:ssr-css',
+      applyToEnvironment({ name }) {
+        return name === 'ssr';
+      },
+      transform(code, id) {
+        if (/\.(css|less|scss|sass)$/.test(id)) return '';
+        if (/\.(ts|js|tsx|jsx|vue|mjs|cjs)$/.test(id)) {
+          return code.replace(/import\s+['"][^'"]+\.(css|less|scss|sass)['"]\s*;?/g, '');
         }
-
-  // === Legacy ===
-  const legacyResolved: LegacyOptions | false =
-    cfg.legacy === false
-      ? false
-      : {
-          targets: DEFAULTS.legacyTargets,
-          ...cfg.legacy,
-        }
-
-  // === SSG ===
-  const ssg: SSGConfig | false =
-    cfg.ssg === false
-      ? false
-      : (mergeConfig(
-          {
-            beastiesOptions: { external: false },
-            dirStyle: 'flat',
-            formatting: 'none',
-            includedRoutes(paths: string[]) {
-              return paths.filter((p) => !p.includes('node_modules'))
-            },
-            onPageRendered(_route: string, renderedHTML: string) {
-              return renderedHTML
-            },
-            async onFinished() {
-              await remove(resolve(outDir, '.vite'))
-            },
-          } as UserConfig,
-          cfg.ssg as UserConfig,
-        ) as unknown as SSGConfig)
-
-  // === Linter ===
-  const linter: LinterOptions | false =
-    cfg.linter === false
-      ? false
-      : { oxlint: true, eslint: true, ...cfg.linter }
-
-  // === Bootstrap ===
-  const bootstrap: BootstrapOptions = {
-    entryFile: DEFAULTS.entryFile,
-    ...cfg.bootstrap,
-  }
-
-  // === External ===
-  const external: ExternalOptions = {
-    ...cfg.external,
-  }
-
-  // === Dev ===
-  const dev: DevOptions = {
-    bundledDev: DEFAULTS.bundledDev,
-    ...cfg.dev,
-  }
-
-  // === Janus ===
-  const janus: JanusOptions | false =
-    cfg.janus === false ? false : { ...cfg.janus }
-
-  return {
-    template,
-    entry,
-    outDir,
-    base,
-    pagesDir,
-    uiLibrary: cfg.uiLibrary || DEFAULTS.uiLibrary,
-    layout,
-    layoutsDirs,
-    proxy: cfg.proxy,
-    lib: cfg.lib,
-    vue: cfg.vue ?? {},
-    vueJsx: cfg.vueJsx ?? {},
-    vueRouter,
-    layouts: cfg.layouts ?? {},
-    components,
-    unoCSS,
-    legacy: legacyResolved,
-    ssg,
-    linter,
-    bootstrap,
-    external,
-    dev,
-    janus,
-  }
-}
-
-// ===================================================================
-// 工具
-// ===================================================================
-
-function normalizeProxy(proxy: ProxyConfig[] | Record<string, string | ProxyOptions>): Record<string, string | ProxyOptions> {
-  if (Array.isArray(proxy)) {
-    const result: Record<string, string | ProxyOptions> = {}
-    for (const rule of proxy) {
-      const { context, ...options } = rule
-      for (const path of context) {
-        result[path.replace(/\/\*+$/, '')] = options as string | ProxyOptions
-      }
-    }
-    return result
-  }
-  return proxy
-}
-
-function loadJanus(opts: JanusOptions | false): PluginOption | null {
-  if (opts === false) return null
-  try {
-    const janusEntry = resolve(cwd, 'node_modules/@janus/unplugin/dist/unplugin.cjs')
-    if (!existsSync(janusEntry)) return null
-    const _require = createRequire(import.meta.url)
-    const mod = _require(janusEntry)
-    const janusOpts = Object.keys(opts).length > 0 ? opts : {}
-    const plugin = mod?.vite?.(janusOpts) || mod?.default?.vite?.(janusOpts)
-    if (plugin) console.log('[miko] Janus 接口拦截器已启用')
-    return plugin
-  } catch (e: unknown) {
-    console.warn('[miko] Janus 加载失败:', (e as Error)?.message)
-    return null
-  }
-}
-
-// ===================================================================
-// 库模式配置工厂
-// ===================================================================
-
-export function createLibConfig(libOptions: {
-  entry: string
-  formats?: ('es' | 'cjs' | 'umd')[]
-  name?: string
-  fileName?: string
-}) {
-  const { entry, formats = ['es', 'cjs'], name, fileName } = libOptions
-
-  return defineConfig({
-    build: {
-      outDir: resolve(cwd, './dist'),
-      emptyOutDir: true,
-      lib: { entry, formats, name, fileName },
-      rollupOptions: { external: ['vue', 'vue-router', 'pinia', 'axios', '@unhead/vue'] },
-    },
-    resolve: { alias: [{ find: '@', replacement: cwd }], tsconfigPaths: true },
-    plugins: [
-      VueMacros({ plugins: { vue: vue(), vueJsx: vueJsx() } }),
-      UnoCSS({ configFile: false }),
-    ],
-  })
-}
-
-// ===================================================================
-// 主入口
-// ===================================================================
-
-/**
- * 统一配置入口 —— 直接展开所有插件和配置，不嵌套。
- *
- * 返回 sync defineConfig 工厂，兼容 viteSsgBuild。
- *
- * 配置读取优先级：`miko.config.ts`（项目根目录） > 默认值。
- * 所有字段均可选，零配置即可运行。
- *
- * @example
- *   // vite.config.ts
- *   import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
- *   export default await defineMikoConfig()
- */
-export async function defineMikoConfig() {
-  const raw = await loadMikoConfig()
-  const cfg = resolveConfig(raw)
-
-  // 解构已解析的配置
-  const {
-    base,
-    template,
-    entry,
-    outDir,
-    pagesDir,
-    uiLibrary,
-    layout,
-    layoutsDirs,
-    proxy,
-    vue: vueOpts,
-    vueJsx: vueJsxOpts,
-    vueRouter: vueRouterOpts,
-    layouts: layoutsOpts,
-    components: componentsOpts,
-    unoCSS: unoCSSOpts,
-    legacy: legacyOpts,
-    ssg: ssgOpts,
-    linter: linterOpts,
-    bootstrap: bootstrapOpts,
-    external: externalOpts,
-    dev: devOpts,
-    janus: janusOpts,
-  } = cfg
-
-  // 设置环境变量（自定义 bootstrap 入口文件）
-  if (bootstrapOpts.entryFile !== DEFAULTS.entryFile) {
-    process.env.MIKO_BOOTSTRAP_ENTRY = bootstrapOpts.entryFile
-  }
-
-  console.log(`[miko] UI 组件库: ${uiLibrary}`)
-  console.log(`[miko] 布局: ${layout}`)
-  console.log(`[miko] 模板目录: ${template}`)
-  console.log(`[miko] 入口文件: ${entry}`)
-
-  // ===== 构建 PluginOption 数组 =====
-
-  const plugins: PluginOption[] = []
-
-  // 0. SSR CSS handler — 移除 CSS import，避免 Node.js ERR_UNKNOWN_FILE_EXTENSION
-  plugins.push({
-    name: 'miko:ssr-css',
-    applyToEnvironment({ name }) {
-      return name === 'ssr';
-    },
-    transform(code, id) {
-      // CSS 文件本身直接返回空
-      if (/\.(css|less|scss|sass)$/.test(id)) return '';
-      // JS/TS/Vue 文件中移除 CSS/Less 导入语句（含相对路径和裸 specifier）
-      if (/\.(ts|js|tsx|jsx|vue|mjs|cjs)$/.test(id)) {
-        return code.replace(/import\s+['"][^'"]+\.(css|less|scss|sass)['"]\s*;?/g, '');
-      }
-    },
-  } satisfies PluginOption)
-
-  // 1. Vue 生态
-  plugins.push(
+      },
+    } satisfies PluginOption,
     VueMacros({
       plugins: {
-        vue: vue(vueOpts),
-        vueJsx: vueJsx(vueJsxOpts),
+        vue: vue(miko.vuePluginOptions),
+        vueJsx: vueJsx(miko.vueJsxPluginOptions),
         vueRouter: VueRouter({
-          extensions: vueRouterOpts.extensions,
-          routesFolder: vueRouterOpts.routesFolder,
-          dts: vueRouterOpts.dts,
-          extendRoute(route: { path?: string; addAlias: (a: string[]) => void }) {
-            if (route.path) route.addAlias([route.path === '/' ? 'index.html' : `${route.path}.html`])
+          extensions: miko.routerPluginOptions.extensions,
+          routesFolder: miko.routerPluginOptions.routesFolder,
+          dts: miko.routerPluginOptions.dts,
+          extendRoute(route: { path?: string; addAlias: (aliases: string[]) => void }) {
+            if (route.path) {
+              route.addAlias([route.path === '/' ? 'index.html' : `${route.path}.html`]);
+            }
           },
         }),
       },
     }),
     vueDevTools(),
-  )
+  ];
 
-  // 2. 布局
+  if (miko.layoutsPluginOptions !== false) {
+    const layoutsDirs = miko.layoutsPluginOptions.layoutsDirs
+      ? Array.isArray(miko.layoutsPluginOptions.layoutsDirs)
+        ? miko.layoutsPluginOptions.layoutsDirs
+        : [miko.layoutsPluginOptions.layoutsDirs]
+      : [resolve(miko.template, 'layouts'), resolve(project.viteRoot, 'layouts')];
+
+    plugins.push(
+      Layouts({
+        ...miko.layoutsPluginOptions,
+        defaultLayout: miko.layoutsPluginOptions.defaultLayout ?? miko.layout,
+        layoutsDirs,
+        pagesDirs: miko.layoutsPluginOptions.pagesDirs ?? miko.pagesDir,
+      }),
+    );
+  } else {
+    const virtualLayoutsId = 'virtual:generated-layouts';
+    const resolvedVirtualLayoutsId = `\0${virtualLayoutsId}`;
+    plugins.push({
+      name: 'miko:layouts-disabled',
+      resolveId(id) {
+        if (id === virtualLayoutsId) return resolvedVirtualLayoutsId;
+      },
+      load(id) {
+        if (id === resolvedVirtualLayoutsId) {
+          return 'export function setupLayouts(routes) { return routes }';
+        }
+      },
+    });
+  }
+
+  if (miko.linterOptions !== false) plugins.push(linterPlugin);
+  if (miko.legacyPluginOptions !== false) {
+    plugins.push(legacy(miko.legacyPluginOptions));
+  }
+
+  if (miko.componentsPluginOptions !== false) {
+    const componentResolvers =
+      miko.componentsPluginOptions.resolvers ??
+      (miko.uiLibrary === 'vant' ? [VantResolver()] : [ElementPlusResolver()]);
+    const componentDirs = miko.componentsPluginOptions.dirs;
+
+    plugins.push(
+      Components({
+        ...miko.componentsPluginOptions,
+        dirs:
+          componentDirs === undefined
+            ? undefined
+            : Array.isArray(componentDirs)
+              ? componentDirs
+              : [componentDirs],
+        resolvers: componentResolvers as NonNullable<Parameters<typeof Components>[0]>['resolvers'],
+      }),
+    );
+  }
+
+  if (miko.unoCSSPluginOptions !== false) {
+    plugins.push(
+      UnoCSS({
+        configFile: false,
+        ...miko.unoCSSPluginOptions,
+      } as Parameters<typeof UnoCSS>[0]),
+    );
+  } else {
+    const virtualUnoCssId = 'virtual:uno.css';
+    const resolvedVirtualUnoCssId = `\0${virtualUnoCssId}`;
+    plugins.push({
+      name: 'miko:unocss-disabled',
+      resolveId(id) {
+        if (id === virtualUnoCssId) return resolvedVirtualUnoCssId;
+      },
+      load(id) {
+        if (id === resolvedVirtualUnoCssId) return '';
+      },
+    });
+  }
+
+  plugins.push(bootstrapPlugin(miko.bootstrapOptions.entryFile));
+
+  const externalEnabled =
+    miko.externalOptions !== false && Boolean(miko.externalOptions.frameworkCDN);
+  plugins.push(...externalPlugin(externalEnabled));
   plugins.push(
-    Layouts({
-      defaultLayout: layout,
-      layoutsDirs,
-      pagesDirs: layoutsOpts.pagesDirs ?? pagesDir,
+    await indexHTMLPlugin({
+      entry: miko.entry,
+      root: project.viteRoot,
+      template: miko.template,
     }),
-  )
+  );
 
-  // 3. 代码检查
-  if (linterOpts !== false) {
-    // linterPlugin 内部已处理 oxlint/eslint 开关，直接传入
-    plugins.push(linterPlugin)
-  }
+  const janusPlugin = loadJanus(miko.janusOptions, project.viteRoot);
+  if (janusPlugin) plugins.push(janusPlugin);
 
-  // 4. Legacy 浏览器兼容
-  if (legacyOpts !== false) {
-    plugins.push(legacy({ targets: DEFAULTS.legacyTargets, ...legacyOpts }))
-  }
+  return plugins;
+}
 
-  // 5. 组件自动导入
-  const componentResolvers = cfg.components.resolvers
-    ? cfg.components.resolvers
-    : uiLibrary === 'vant'
-      ? [VantResolver()]
-      : [ElementPlusResolver()]
+export async function createMikoViteConfig(project: ResolvedMikoConfig) {
+  const { miko, outDir } = project;
+  const ssgEnabled = miko.rendering === 'ssg';
+  const plugins = await createMikoPlugins(project);
 
-  plugins.push(
-    Components({
-      dirs: Array.isArray(componentsOpts.dirs) ? componentsOpts.dirs : [componentsOpts.dirs],
-      extensions: componentsOpts.extensions,
-      dts: componentsOpts.dts,
-      resolvers: componentResolvers,
-    }),
-  )
-
-  // 6. UnoCSS
-  if (unoCSSOpts !== false) {
-    plugins.push(UnoCSS({ configFile: false, ...unoCSSOpts } as Parameters<typeof UnoCSS>[0]))
-  }
-
-  // 7. Bootstrap（virtual:bootstrap）
-  plugins.push(bootstrapPlugin(bootstrapOpts.entryFile))
-
-  // 8. External（CDN 外部化，仅配置了 frameworkCDN 时启用）
-  plugins.push(...externalPlugin(!!externalOpts.frameworkCDN))
-
-  // 9. IndexHTML
-  plugins.push(await indexHTMLPlugin(entry, template))
-
-  // 10. Janus（可选）
-  const janusPlugin = loadJanus(janusOpts)
-  if (janusPlugin) plugins.push(janusPlugin)
-
-  // ===== 组装 defineConfig =====
-
-  return defineConfig(() => ({
-    base,
-    server: {
-      host: devOpts.host ?? true,
-      port: devOpts.port,
-      proxy: proxy ? normalizeProxy(proxy) : undefined,
+  const generated = {
+    root: project.viteRoot,
+    input: normalizePath(resolve(project.viteRoot, 'index.html')),
+    base: '/',
+    build: {
+      outDir,
+      emptyOutDir: true,
     },
-    build: { outDir, emptyOutDir: true, ...raw.build },
-    cacheDir: resolve(cwd, './node_modules/.vite'),
-    resolve: { alias: [{ find: '@', replacement: cwd }], tsconfigPaths: true },
-    experimental: { bundledDev: devOpts.bundledDev ?? DEFAULTS.bundledDev },
-    ssgOptions: ssgOpts === false
-      ? undefined
-      : {
-          beastiesOptions: ssgOpts.beastiesOptions ?? { external: false },
-          dirStyle: ssgOpts.dirStyle ?? 'flat',
-          entry,
-          formatting: ssgOpts.formatting ?? 'none',
-          includedRoutes: ssgOpts.includedRoutes ?? ((paths: string[]) => paths.filter((p) => !p.includes('node_modules'))),
-          onPageRendered: ssgOpts.onPageRendered ?? ((_route: string, renderedHTML: string) => renderedHTML),
-          onFinished: ssgOpts.onFinished ?? (async () => { await remove(resolve(outDir, '.vite')) }),
-        },
-    define: { 'import.meta.env.VITE_MIKO_SPA': ssgOpts === false ? 'true' : 'false' },
+    cacheDir: normalizePath(resolve(project.viteRoot, 'node_modules/.vite')),
+    resolve: {
+      alias: [{ find: '@', replacement: project.viteRoot }],
+      tsconfigPaths: true,
+    },
+    experimental: {
+      bundledDev: miko.devOptions.bundledDev ?? false,
+    },
+    ssgOptions: ssgEnabled
+      ? {
+          ...miko.ssgOptions,
+          entry: miko.entry,
+        }
+      : undefined,
+    define: {
+      'import.meta.env.VITE_MIKO_SPA': JSON.stringify(ssgEnabled ? 'false' : 'true'),
+    },
     plugins,
-  }))
+  };
+
+  return mergeViteConfig(generated as UserConfig, project.vite) as UserConfig & {
+    input: string;
+  };
+}
+
+export function createLibConfig(options: { config: ResolvedMikoConfig }): UserConfig {
+  const { config } = options;
+  const root = config.viteRoot;
+  const lib = {
+    entry: 'src/index.ts',
+    formats: ['es', 'cjs'] as ('es' | 'cjs' | 'umd')[],
+    ...config.miko.lib,
+  };
+
+  const generated: UserConfig = {
+    root,
+    build: {
+      outDir: config.outDir,
+      emptyOutDir: true,
+      lib: {
+        entry: resolve(root, lib.entry),
+        formats: lib.formats,
+        name: lib.name,
+        fileName: lib.fileName,
+      },
+      rollupOptions: {
+        external: ['vue', 'vue-router', 'pinia', 'axios', '@unhead/vue'],
+      },
+    },
+    resolve: {
+      alias: [{ find: '@', replacement: root }],
+      tsconfigPaths: true,
+    },
+    plugins: [
+      VueMacros({
+        plugins: {
+          vue: vue(config.miko.vuePluginOptions),
+          vueJsx: vueJsx(config.miko.vueJsxPluginOptions),
+        },
+      }),
+      config.miko.unoCSSPluginOptions === false ? null : UnoCSS(config.miko.unoCSSPluginOptions),
+    ],
+  };
+
+  return mergeViteConfig(generated, config.vite);
 }

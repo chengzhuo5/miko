@@ -1,10 +1,11 @@
 import { createServer } from 'vite';
-import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko';
+import { createMikoViteConfig, resolveMikoProject } from '@minar-kotonoha/vite-plugin-miko';
+import { cwd } from 'node:process';
 import { resolveMode } from './env.ts';
 
-const miko = await defineMikoConfig();
 const mode = resolveMode(process.env.MIKO_MODE, 'serve');
-const config = miko({ command: 'serve', mode, isPreview: false, isSsrBuild: false });
-const server = await createServer({ configFile: false, mode, ...config });
+const project = await resolveMikoProject({ command: 'dev', mode, root: cwd() });
+const config = await createMikoViteConfig(project);
+const server = await createServer({ ...config, configFile: false, mode });
 await server.listen();
 server.printUrls();

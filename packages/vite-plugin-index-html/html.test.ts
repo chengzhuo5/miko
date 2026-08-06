@@ -11,8 +11,8 @@ describe('createMikoEntryTags', () => {
         attrs: {
           type: 'module',
           'data-miko-entry': '',
+          src: 'virtual:index',
         },
-        children: "import 'virtual:index'",
         injectTo: 'body',
       },
     ]);

@@ -1,30 +1,22 @@
 import { spawn, execSync } from 'node:child_process';
 import { build as viteSsgBuild } from '@minar-kotonoha/vite-ssg/node';
-import { defineMikoConfig, loadMikoConfig, createLibConfig } from '@minar-kotonoha/vite-plugin-miko';
+import {
+  createLibConfig,
+  createMikoViteConfig,
+  resolveMikoProject,
+} from '@minar-kotonoha/vite-plugin-miko';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { cwd } from 'node:process';
 import { resolveMode } from './env.ts';
 import { resolve } from 'node:path';
+import { build as viteBuild } from 'vite';
 
 const isLib = process.env.MIKO_LIB_MODE === '1';
 const mode = resolveMode(process.env.MIKO_MODE, 'build');
+const project = await resolveMikoProject({ command: 'build', mode, root: cwd() });
 
 if (isLib) {
-  const { build: viteBuild } = await import('vite');
-
-  const cfg = await loadMikoConfig();
-  const libCfg = {
-    entry: 'src/index.ts',
-    formats: ['es', 'cjs'] as ('es' | 'cjs' | 'umd')[],
-    ...cfg.lib,
-  };
-
-  await viteBuild(createLibConfig({
-    entry: resolve(cwd(), libCfg.entry),
-    formats: libCfg.formats,
-    name: libCfg.name as string | undefined,
-    fileName: libCfg.fileName as string | undefined,
-  }));
+  await viteBuild(createLibConfig({ config: project }));
   console.log('[miko] 库构建完成');
 } else {
   // spawn 子进程执行 vue-tsc 类型检查，通过 jiti/register 加载 .ts 文件
@@ -37,10 +29,16 @@ if (isLib) {
   const pnpmRoot = (() => {
     try {
       // workspace 模式下优先用 pnpm root -w
-      return resolve(execSync('pnpm root -w', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(), '..');
+      return resolve(
+        execSync('pnpm root -w', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(),
+        '..',
+      );
     } catch {
       // 单包项目用 pnpm root
-      return resolve(execSync('pnpm root', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(), '..');
+      return resolve(
+        execSync('pnpm root', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim(),
+        '..',
+      );
     }
   })();
 
@@ -50,8 +48,12 @@ if (isLib) {
     stdio: 'inherit',
     env: { ...process.env, NODE_PATH: pnpmRoot },
   }).on('exit', (code) => {
-    if (code === 0) { console.log('TypeScript 类型检查成功'); res(); }
-    else { rej(new Error(`TypeScript 类型检查失败`)); }
+    if (code === 0) {
+      console.log('TypeScript 类型检查成功');
+      res();
+    } else {
+      rej(new Error(`TypeScript 类型检查失败`));
+    }
   });
   await promise;
 
@@ -59,7 +61,12 @@ if (isLib) {
   const { register } = await import('node:module');
   register('./css-loader.mjs', import.meta.url);
 
-  const miko = await defineMikoConfig();
-  const config = miko({ command: 'build', mode, isPreview: false, isSsrBuild: false });
-  await viteSsgBuild(undefined, { configFile: false, mode, ...config });
+  const config = await createMikoViteConfig(project);
+  const inlineConfig = { ...config, configFile: false as const, mode };
+
+  if (project.miko.rendering === 'ssg') {
+    await viteSsgBuild(undefined, inlineConfig);
+  } else {
+    await viteBuild(inlineConfig);
+  }
 }

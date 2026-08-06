@@ -3,10 +3,11 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { normalizePath } from 'vite';
 import type { PluginOption } from 'vite';
-import { createMikoEntryTags } from './html';
+import { createMikoEntryTags, rewriteMikoEntrySource } from './html';
 
 const virtualModuleId = 'virtual:index';
 const resolvedVirtualModuleId = `\0${virtualModuleId}`;
+const devVirtualModuleUrl = `/@id/__x00__${virtualModuleId}`;
 
 export interface IndexHTMLOptions {
   entry: string;
@@ -61,8 +62,11 @@ export async function indexHTMLPlugin(options: IndexHTMLOptions) {
       name: `${pluginName}:entry`,
       transformIndexHtml: {
         order: 'pre',
-        handler(html) {
-          return createMikoEntryTags(html);
+        handler(html, context) {
+          const entrySource = context.server ? devVirtualModuleUrl : virtualModuleId;
+          const entryTags = createMikoEntryTags(html, entrySource);
+          const rewrittenHtml = rewriteMikoEntrySource(html, entrySource);
+          return rewrittenHtml === html ? entryTags : rewrittenHtml;
         },
       },
     },

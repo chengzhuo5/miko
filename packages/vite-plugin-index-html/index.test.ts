@@ -21,7 +21,10 @@ async function createFixture(userHtml?: string) {
     resolve(template, 'index.html'),
     '<!doctype html><html><head><meta name="fallback-shell"></head><body><div id="app"></div></body></html>',
   );
-  await writeFile(entry, `document.querySelector('#app')!.textContent = 'ready'`);
+  await writeFile(
+    entry,
+    `document.querySelector('#app')!.textContent = 'INDEX_HTML_RUNTIME_MARKER'`,
+  );
   if (userHtml) await writeFile(resolve(root, 'index.html'), userHtml);
 
   return { root, template, entry };
@@ -45,6 +48,7 @@ async function compile(fixture: Awaited<ReturnType<typeof createFixture>>) {
     ],
     build: {
       write: false,
+      minify: false,
     },
   });
 
@@ -59,6 +63,10 @@ async function compile(fixture: Awaited<ReturnType<typeof createFixture>>) {
 
   return {
     chunks: output.filter((item) => item.type === 'chunk'),
+    code: output
+      .filter((item) => item.type === 'chunk')
+      .map((item) => ('code' in item ? item.code : ''))
+      .join('\n'),
     html: typeof source === 'string' ? source : source ? new TextDecoder().decode(source) : '',
     resolvedRoot,
   };
@@ -117,6 +125,7 @@ describe('indexHTMLPlugin', () => {
     expect(existsSync(resolve(fixture.root, 'index.html'))).toBe(false);
     expect(result.html).toContain('fallback-shell');
     expect(result.chunks).toHaveLength(1);
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
   it('prefers and transforms a user-owned root/index.html', async () => {
@@ -128,6 +137,7 @@ describe('indexHTMLPlugin', () => {
     expect(result.html).toContain('user-shell');
     expect(result.html).not.toContain('fallback-shell');
     expect(result.chunks).toHaveLength(1);
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
   it('injects the Miko module entry when a classic script uses the virtual id', async () => {
@@ -137,6 +147,7 @@ describe('indexHTMLPlugin', () => {
     const result = await compile(fixture);
 
     expect(result.chunks).toHaveLength(1);
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
   it('reuses an exact module src as the single Miko entry', async () => {
@@ -146,6 +157,7 @@ describe('indexHTMLPlugin', () => {
     const result = await compile(fixture);
 
     expect(result.chunks).toHaveLength(1);
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
   it('injects the Miko entry for non-exact module type values', async () => {
@@ -156,7 +168,68 @@ describe('indexHTMLPlugin', () => {
       const result = await compile(fixture);
 
       expect(result.chunks).toHaveLength(1);
+      expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
     }
+  });
+
+  it('rewrites an exact user module src to the single loadable dev entry', async () => {
+    const fixture = await createFixture(
+      '<!doctype html><html><head><meta name="user-shell"></head><body><div id="app"></div><script type="module" src="virtual:index"></script></body></html>',
+    );
+    const client = await startDevServer(fixture);
+    const html = await client.requestHtml();
+
+    expect(html).toContain('user-shell');
+    expect(html).not.toContain('src="virtual:index"');
+
+    const virtualUrls = [...html.matchAll(/src="(\/@id\/__x00__virtual:index[^"]*)"/g)].map(
+      (match) => match[1],
+    );
+    expect(virtualUrls).toHaveLength(1);
+
+    const virtualResponse = await client.request(virtualUrls[0]!);
+    expect(virtualResponse.status).toBe(200);
+    const virtualModule = await virtualResponse.text();
+    const entryUrl = virtualModule.match(/\bimport\s+["']([^"']+entry\.ts[^"']*)["']/)?.[1];
+    expect(entryUrl).toBeTruthy();
+
+    const entryResponse = await client.request(entryUrl!);
+    expect(entryResponse.status).toBe(200);
+    await expect(entryResponse.text()).resolves.toContain('INDEX_HTML_RUNTIME_MARKER');
+  });
+
+  it('rewrites only the exact module src attribute without serializing user HTML', async () => {
+    const fixture = await createFixture(
+      [
+        '<!doctype html><html><body><div id="app"></div>',
+        '<!-- <script type="module" src="virtual:index"></script> -->',
+        '<script src="virtual:index"></script>',
+        '<script type="module" src="virtual:index-example"></script>',
+        '<script defer type="module" src = \'virtual:index\'></script>',
+        '</body></html>',
+      ].join(''),
+    );
+    const client = await startDevServer(fixture);
+    const html = await client.requestHtml();
+
+    expect(html).toContain('<!-- <script type="module" src="virtual:index"></script> -->');
+    expect(html).toContain('<script src="virtual:index"></script>');
+    expect(html).toContain('<script type="module" src="virtual:index-example"></script>');
+    expect(html).toContain(
+      `<script defer type="module" src = '/@id/__x00__virtual:index'></script>`,
+    );
+  });
+
+  it('still rejects exact user module entries without an app mount node in dev', async () => {
+    const fixture = await createFixture(
+      '<!doctype html><html><body><script type="module" src="virtual:index"></script></body></html>',
+    );
+    const client = await startDevServer(fixture);
+
+    const response = await client.request('/deep/route', 'text/html');
+
+    expect(response.status).toBe(500);
+    await expect(response.text()).resolves.toContain('index.html 必须包含唯一的 #app 挂载节点');
   });
 
   it('serves transformed fallback HTML for deep routes in dev', async () => {
@@ -165,15 +238,9 @@ describe('indexHTMLPlugin', () => {
     const html = await client.requestHtml();
 
     expect(html).toContain('fallback-shell');
-    expect(html).not.toContain('virtual:index');
+    expect(html).not.toContain('src="virtual:index"');
 
-    const proxyUrl = html.match(/src="([^"]*html-proxy[^"]*)"/)?.[1];
-    expect(proxyUrl).toBeTruthy();
-
-    const proxyResponse = await client.request(proxyUrl!);
-    expect(proxyResponse.status).toBe(200);
-    const proxyModule = await proxyResponse.text();
-    const virtualUrl = proxyModule.match(/["'](\/@id\/__x00__virtual:index[^"']*)["']/)?.[1];
+    const virtualUrl = html.match(/src="(\/@id\/__x00__virtual:index[^"]*)"/)?.[1];
     expect(virtualUrl).toBeTruthy();
 
     const virtualResponse = await client.request(virtualUrl!);
@@ -184,7 +251,7 @@ describe('indexHTMLPlugin', () => {
 
     const entryResponse = await client.request(entryUrl!);
     expect(entryResponse.status).toBe(200);
-    await expect(entryResponse.text()).resolves.toContain('ready');
+    await expect(entryResponse.text()).resolves.toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
   it('switches between fallback and user HTML without restarting or changing root', async () => {
@@ -197,11 +264,11 @@ describe('indexHTMLPlugin', () => {
     );
     const userHtml = await client.requestHtml();
     expect(userHtml).toContain('user-shell');
-    expect(userHtml).not.toContain('virtual:index');
+    expect(userHtml).not.toContain('src="virtual:index"');
 
     await rm(resolve(fixture.root, 'index.html'));
     const fallbackHtml = await client.requestHtml();
     expect(fallbackHtml).toContain('fallback-shell');
-    expect(fallbackHtml).not.toContain('virtual:index');
+    expect(fallbackHtml).not.toContain('src="virtual:index"');
   });
 });

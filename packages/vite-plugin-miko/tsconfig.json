@@ -5,6 +5,7 @@
     "target": "esnext",
     "lib": ["esnext", "dom"],
     "strict": true,
+    "skipLibCheck": true,
     "types": ["node", "vite/client"]
   },
   "include": ["index.ts", "types.ts", "config/**/*.ts"]
