@@ -4,7 +4,7 @@
 
 **Goal:** Replace the implicit environment-variable/dynamic-import CLI flow with one testable Node.js command pipeline and one optional `miko.config.ts` that contains both Miko and complete Vite configuration.
 
-**Architecture:** Introduce a pure configuration core under `packages/vite-plugin-miko/config/`, keep the existing plugin assembly behavior behind an adapter, and make CLI commands receive an explicit root/mode/context instead of reading module-level `process.cwd()` or `MIKO_*` state. This slice deliberately does not implement automatic capability detection, performance optimizations, browser white-screen checks, or migration; it creates the stable interfaces those slices will use.
+**Architecture:** Introduce a pure configuration core under `packages/vite-plugin-miko/config/`, keep plugin assembly behind an adapter, and make CLI commands receive an explicit root/mode/context instead of reading module-level `process.cwd()` or `MIKO_*` state. The HTML plugin keeps Vite rooted at the real application directory, uses a user `index.html` when present, and otherwise supplies the same `<viteRoot>/index.html` ID from memory. This slice deliberately does not implement automatic capability detection, performance optimizations, browser white-screen checks, or migration; it creates the stable interfaces those slices will use.
 
 **Tech Stack:** TypeScript, Node.js 20.19+, Bun workspaces, jiti, Vite 8, Vitest 4, Vue 3, vite-ssg.
 
@@ -31,6 +31,12 @@ packages/vite-plugin-miko/config/
 ├─ load.test.ts
 ├─ merge.test.ts
 └─ resolve.test.ts
+packages/vite-plugin-index-html/
+├─ html.ts
+├─ html.test.ts
+└─ index.test.ts
+packages/vite-plugin-bootstrap/
+└─ index.test.ts
 packages/cli/
 ├─ args.ts
 ├─ args.test.ts
@@ -55,6 +61,11 @@ packages/cli/test/
    │  ├─ miko.config.ts
    │  ├─ package.json
    │  └─ pages/index.vue
+   ├─ user-html/
+   │  ├─ index.html
+   │  ├─ miko.config.ts
+   │  ├─ package.json
+   │  └─ pages/index.vue
    └─ invalid-config/
       ├─ miko.config.ts
       └─ package.json
@@ -64,10 +75,17 @@ Modify:
 
 ```text
 package.json
+bun.lock
 packages/vite-plugin-miko/index.ts
-packages/vite-plugin-miko/types.ts
 packages/vite-plugin-miko/package.json
 packages/vite-plugin-miko/tsconfig.json
+packages/vite-plugin-index-html/index.ts
+packages/vite-plugin-index-html/package.json
+packages/vite-plugin-index-html/README.md
+packages/vite-plugin-index-html/tsconfig.json
+packages/vite-plugin-bootstrap/index.ts
+packages/vite-plugin-bootstrap/tsconfig.json
+packages/vite-plugin-miko/template/index.html
 packages/cli/index.ts
 packages/cli/build.ts
 packages/cli/dev.ts
@@ -122,7 +140,7 @@ Add this `scripts` block to the root `package.json`:
   "scripts": {
     "test:packages": "vitest run --config vitest.config.ts",
     "test:packages:watch": "vitest --config vitest.config.ts",
-    "typecheck:packages": "vue-tsc --noEmit -p tsconfig.builder.json && vue-tsc --noEmit -p packages/vite-plugin-miko/tsconfig.json"
+    "typecheck:packages": "vue-tsc --noEmit -p tsconfig.builder.json && vue-tsc --noEmit -p packages/vite-plugin-bootstrap/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-index-html/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-miko/tsconfig.json"
   }
 }
 ```
@@ -358,6 +376,7 @@ git commit -m "feat(config): define unified miko config contract"
 - Create: `packages/vite-plugin-miko/config/load.ts`
 - Create: `packages/vite-plugin-miko/config/load.test.ts`
 - Modify: `packages/vite-plugin-miko/package.json`
+- Modify: `bun.lock`
 
 - [ ] **Step 1: Write failing loader tests**
 
@@ -584,6 +603,14 @@ Add to `packages/vite-plugin-miko/package.json` dependencies:
 }
 ```
 
+Run:
+
+```sh
+bun install
+```
+
+Expected: `bun.lock` records `jiti` as a runtime dependency of `@minar-kotonoha/vite-plugin-miko`.
+
 - [ ] **Step 6: Run the loader tests and verify GREEN**
 
 Run:
@@ -597,7 +624,7 @@ Expected: 5 tests pass, including syntax-error preservation and rejection of leg
 - [ ] **Step 7: Commit the loader**
 
 ```sh
-git add packages/vite-plugin-miko/config packages/vite-plugin-miko/package.json
+git add bun.lock packages/vite-plugin-miko/config packages/vite-plugin-miko/package.json
 git commit -m "feat(config): load miko config with actionable errors"
 ```
 
@@ -840,6 +867,42 @@ describe('resolveMikoConfig', () => {
     expect(result.miko.ssgOptions.dirStyle).toBe('nested')
     expect(result.miko.ssgOptions.beastiesOptions).toEqual({ external: false })
   })
+
+  it('rejects application input overrides owned by Miko', () => {
+    expect(() =>
+      resolveMikoConfig(
+        {
+          config: {
+            vite: {
+              input: 'src/custom.html',
+            },
+          },
+          configFile: null,
+        },
+        env,
+        'D:/packages/miko/template',
+      ),
+    ).toThrow(/vite\.input/)
+
+    expect(() =>
+      resolveMikoConfig(
+        {
+          config: {
+            vite: {
+              build: {
+                rollupOptions: {
+                  input: 'src/custom.html',
+                },
+              },
+            },
+          },
+          configFile: null,
+        },
+        env,
+        'D:/packages/miko/template',
+      ),
+    ).toThrow(/build\.rollupOptions\.input/)
+  })
 })
 ```
 
@@ -862,6 +925,7 @@ import { resolve } from 'node:path'
 import { remove } from 'fs-extra'
 import { mergeConfig } from 'vite'
 import type { UserConfig } from 'vite'
+import { MikoConfigError } from './errors'
 import type { LoadedMikoConfig, MikoConfigEnv, ResolvedMikoConfig } from './types'
 
 function mergeOptions<T extends object>(defaults: T, user: object | undefined): T {
@@ -875,6 +939,23 @@ export function resolveMikoConfig(
 ): ResolvedMikoConfig {
   const raw = loaded.config.miko ?? {}
   const vite = loaded.config.vite ?? {}
+
+  if (vite.input !== undefined) {
+    throw new MikoConfigError({
+      code: 'MIKO_CONFIG_CONFLICT',
+      field: 'vite.input',
+      message: 'SPA/SSG 应用入口由 Miko 管理，请通过根目录 index.html 自定义页面外壳',
+    })
+  }
+
+  if (vite.build?.rollupOptions?.input !== undefined) {
+    throw new MikoConfigError({
+      code: 'MIKO_CONFIG_CONFLICT',
+      field: 'vite.build.rollupOptions.input',
+      message: 'SPA/SSG 应用入口由 Miko 管理，请通过根目录 index.html 自定义页面外壳',
+    })
+  }
+
   const viteRoot = resolve(env.root, vite.root ?? '.')
   const localTemplate = resolve(viteRoot, 'template')
   const template = resolve(
@@ -969,7 +1050,7 @@ Run:
 bun run test:packages -- packages/vite-plugin-miko/config/resolve.test.ts
 ```
 
-Expected: 3 tests pass.
+Expected: 4 tests pass.
 
 - [ ] **Step 5: Add a single config barrel**
 
@@ -992,14 +1073,499 @@ git commit -m "feat(config): resolve project config from explicit root"
 
 ---
 
-### Task 6: Make the Vite factory consume resolved configuration
+### Task 6: Provide a zero-config HTML entry without changing Vite root
+
+**Files:**
+
+- Create: `packages/vite-plugin-index-html/html.ts`
+- Create: `packages/vite-plugin-index-html/html.test.ts`
+- Create: `packages/vite-plugin-index-html/index.test.ts`
+- Modify: `packages/vite-plugin-index-html/index.ts`
+- Modify: `packages/vite-plugin-index-html/package.json`
+- Modify: `packages/vite-plugin-index-html/README.md`
+- Modify: `packages/vite-plugin-index-html/tsconfig.json`
+- Modify: `packages/vite-plugin-miko/template/index.html`
+- Modify: `bun.lock`
+
+- [ ] **Step 1: Write failing HTML validation and injection tests**
+
+```ts
+// packages/vite-plugin-index-html/html.test.ts
+import { describe, expect, it } from 'vitest'
+import { createMikoEntryTags } from './html'
+
+const shell = '<!doctype html><html><body><div id="app"></div></body></html>'
+
+describe('createMikoEntryTags', () => {
+  it('injects the Miko entry into a valid HTML shell', () => {
+    expect(createMikoEntryTags(shell)).toEqual([
+      {
+        tag: 'script',
+        attrs: {
+          type: 'module',
+          'data-miko-entry': '',
+        },
+        children: "import 'virtual:index'",
+        injectTo: 'body',
+      },
+    ])
+  })
+
+  it('does not inject a second Miko entry', () => {
+    expect(
+      createMikoEntryTags(
+        '<html><body><div id="app"></div><script type="module" data-miko-entry>import "virtual:index"</script></body></html>',
+      ),
+    ).toEqual([])
+
+    expect(
+      createMikoEntryTags(
+        '<html><body><div id="app"></div><script type="module">import "virtual:index"</script></body></html>',
+      ),
+    ).toEqual([])
+  })
+
+  it('requires exactly one app mount node', () => {
+    expect(() => createMikoEntryTags('<html><body></body></html>')).toThrow(
+      /唯一的 #app.*当前找到 0 个/,
+    )
+    expect(() =>
+      createMikoEntryTags(
+        '<html><body><div id="app"></div><main id=app></main></body></html>',
+      ),
+    ).toThrow(/唯一的 #app.*当前找到 2 个/)
+  })
+})
+```
+
+- [ ] **Step 2: Write failing Vite build integration tests**
+
+```ts
+// packages/vite-plugin-index-html/index.test.ts
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { build, createServer } from 'vite'
+import type { ViteDevServer } from 'vite'
+import { indexHTMLPlugin } from './index'
+
+const roots: string[] = []
+const servers: ViteDevServer[] = []
+
+async function createFixture(userHtml?: string) {
+  const root = await mkdtemp(join(tmpdir(), 'miko-html-'))
+  const template = resolve(root, 'template')
+  const entry = resolve(root, 'entry.ts')
+  roots.push(root)
+
+  await mkdir(template, { recursive: true })
+  await writeFile(
+    resolve(template, 'index.html'),
+    '<!doctype html><html><head><meta name="fallback-shell"></head><body><div id="app"></div></body></html>',
+  )
+  await writeFile(entry, `document.querySelector('#app')!.textContent = 'ready'`)
+  if (userHtml) await writeFile(resolve(root, 'index.html'), userHtml)
+
+  return { root, template, entry }
+}
+
+async function compile(fixture: Awaited<ReturnType<typeof createFixture>>) {
+  let resolvedRoot = ''
+  const result = await build({
+    root: fixture.root,
+    input: resolve(fixture.root, 'index.html'),
+    configFile: false,
+    publicDir: false,
+    logLevel: 'silent',
+    plugins: [
+      await indexHTMLPlugin(fixture),
+      {
+        name: 'test:capture-root',
+        configResolved(config) {
+          resolvedRoot = config.root
+        },
+      },
+    ],
+    build: {
+      write: false,
+    },
+  })
+
+  const builds = Array.isArray(result) ? result : [result]
+  const output = builds.flatMap(buildResult =>
+    'output' in buildResult ? buildResult.output : [],
+  )
+  const htmlAsset = output.find(item => item.fileName === 'index.html') as
+    | { source: string | Uint8Array }
+    | undefined
+  const source = htmlAsset?.source
+
+  return {
+    chunks: output.filter(item => item.type === 'chunk'),
+    html: typeof source === 'string'
+      ? source
+      : source
+        ? new TextDecoder().decode(source)
+        : '',
+    resolvedRoot,
+  }
+}
+
+async function startDevServer(
+  fixture: Awaited<ReturnType<typeof createFixture>>,
+) {
+  const server = await createServer({
+    root: fixture.root,
+    configFile: false,
+    publicDir: false,
+    logLevel: 'silent',
+    plugins: [await indexHTMLPlugin(fixture)],
+    server: {
+      host: '127.0.0.1',
+      port: 0,
+    },
+  })
+  await server.listen()
+  servers.push(server)
+
+  const address = server.httpServer?.address()
+  if (!address || typeof address === 'string') {
+    throw new Error('Vite dev server did not expose a TCP address')
+  }
+
+  return async () => {
+    const response = await fetch(`http://127.0.0.1:${address.port}/deep/route`, {
+      headers: {
+        accept: 'text/html',
+      },
+    })
+    expect(response.status).toBe(200)
+    return response.text()
+  }
+}
+
+afterEach(async () => {
+  await Promise.all(servers.splice(0).map(server => server.close()))
+  await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })))
+})
+
+describe('indexHTMLPlugin', () => {
+  it('builds from the in-memory fallback without writing or replacing root/index.html', async () => {
+    const fixture = await createFixture()
+    const result = await compile(fixture)
+
+    expect(resolve(result.resolvedRoot)).toBe(resolve(fixture.root))
+    expect(existsSync(resolve(fixture.root, 'index.html'))).toBe(false)
+    expect(result.html).toContain('fallback-shell')
+    expect(result.chunks).toHaveLength(1)
+  })
+
+  it('prefers and transforms a user-owned root/index.html', async () => {
+    const fixture = await createFixture(
+      '<!doctype html><html><head><meta name="user-shell"></head><body><div id="app"></div></body></html>',
+    )
+    const result = await compile(fixture)
+
+    expect(result.html).toContain('user-shell')
+    expect(result.html).not.toContain('fallback-shell')
+    expect(result.chunks).toHaveLength(1)
+  })
+
+  it('serves transformed fallback HTML for deep routes in dev', async () => {
+    const fixture = await createFixture()
+    const requestHtml = await startDevServer(fixture)
+    const html = await requestHtml()
+
+    expect(html).toContain('fallback-shell')
+    expect(html).toContain('data-miko-entry')
+    expect(html).toContain('virtual:index')
+  })
+
+  it('switches between fallback and user HTML without restarting or changing root', async () => {
+    const fixture = await createFixture()
+    const requestHtml = await startDevServer(fixture)
+
+    await writeFile(
+      resolve(fixture.root, 'index.html'),
+      '<!doctype html><html><head><meta name="user-shell"></head><body><div id="app"></div></body></html>',
+    )
+    const userHtml = await requestHtml()
+    expect(userHtml).toContain('user-shell')
+    expect(userHtml).toContain('data-miko-entry')
+
+    await rm(resolve(fixture.root, 'index.html'))
+    const fallbackHtml = await requestHtml()
+    expect(fallbackHtml).toContain('fallback-shell')
+  })
+})
+```
+
+- [ ] **Step 3: Run the tests and verify RED**
+
+Run:
+
+```sh
+bun run test:packages -- packages/vite-plugin-index-html
+```
+
+Expected: FAIL because `html.ts` and the options-based `indexHTMLPlugin()` contract do not exist.
+
+- [ ] **Step 4: Implement pure HTML validation and entry injection**
+
+```ts
+// packages/vite-plugin-index-html/html.ts
+import type { HtmlTagDescriptor } from 'vite'
+
+const START_TAG_RE = /<[a-z][^>]*>/gi
+const ID_ATTR_RE = /\bid\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i
+const MIKO_ENTRY_MARKER_RE = /<script\b[^>]*\bdata-miko-entry\b/i
+const MIKO_ENTRY_IMPORT_RE = /['"]virtual:index['"]/
+
+export function createMikoEntryTags(html: string): HtmlTagDescriptor[] {
+  const appRoots = [...html.matchAll(START_TAG_RE)].filter(([tag]) => {
+    const match = ID_ATTR_RE.exec(tag)
+    return (match?.[1] ?? match?.[2] ?? match?.[3]) === 'app'
+  }).length
+
+  if (appRoots !== 1) {
+    throw new Error(
+      `[miko] index.html 必须包含唯一的 #app 挂载节点，当前找到 ${appRoots} 个`,
+    )
+  }
+
+  if (MIKO_ENTRY_MARKER_RE.test(html) || MIKO_ENTRY_IMPORT_RE.test(html)) return []
+
+  return [
+    {
+      tag: 'script',
+      attrs: {
+        type: 'module',
+        'data-miko-entry': '',
+      },
+      children: "import 'virtual:index'",
+      injectTo: 'body',
+    },
+  ]
+}
+```
+
+- [ ] **Step 5: Replace root switching with a synthetic physical HTML ID**
+
+Replace `packages/vite-plugin-index-html/index.ts` with:
+
+```ts
+import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
+import { resolve } from 'node:path'
+import { normalizePath } from 'vite'
+import type { PluginOption } from 'vite'
+import { createMikoEntryTags } from './html'
+
+const virtualModuleId = 'virtual:index'
+const resolvedVirtualModuleId = `\0${virtualModuleId}`
+
+export interface IndexHTMLOptions {
+  entry: string
+  root: string
+  template: string
+}
+
+export async function indexHTMLPlugin(options: IndexHTMLOptions) {
+  const htmlPath = normalizePath(resolve(options.root, 'index.html'))
+  const fallbackHtml = await readFile(resolve(options.template, 'index.html'), 'utf8')
+  const hasUserHtml = () => existsSync(htmlPath)
+  const isHtmlId = (id: string) =>
+    normalizePath(id.split('?', 1)[0]) === htmlPath
+
+  return {
+    name: '@minar-kotonoha/vite-plugin-index-html',
+    enforce: 'pre',
+
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (hasUserHtml()) return next()
+        if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+        if (!req.headers.accept?.includes('text/html')) return next()
+
+        const url = req.url?.split('?')[0] || '/'
+        try {
+          const transformed = await server.transformIndexHtml(
+            url,
+            fallbackHtml,
+            req.originalUrl,
+          )
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end(req.method === 'HEAD' ? undefined : transformed)
+        } catch (error) {
+          next(error as Error)
+        }
+      })
+    },
+
+    resolveId(id) {
+      if (!hasUserHtml() && isHtmlId(id)) return htmlPath
+      if (id === virtualModuleId) return resolvedVirtualModuleId
+    },
+
+    load(id) {
+      if (!hasUserHtml() && isHtmlId(id)) return fallbackHtml
+      if (id === resolvedVirtualModuleId) {
+        return `import ${JSON.stringify(normalizePath(options.entry))}`
+      }
+    },
+
+    transformIndexHtml(html) {
+      return createMikoEntryTags(html)
+    },
+  } satisfies PluginOption
+}
+```
+
+The HTML ID is deliberately the absolute `<viteRoot>/index.html`, not a `\0virtual:*` ID. This lets Vite keep its normal HTML build pipeline and output name while the file remains absent on disk.
+
+- [ ] **Step 6: Remove the hard-coded entry script from the fallback template**
+
+Set `packages/vite-plugin-miko/template/index.html` to:
+
+```html
+<!doctype html>
+<html lang="zh-cmn-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta
+      content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=0,viewport-fit=cover"
+      name="viewport"
+    />
+  </head>
+  <body>
+    <div id="app" v-cloak="true" data-allow-mismatch=""></div>
+  </body>
+</html>
+```
+
+Both user and fallback HTML now receive the same entry through `transformIndexHtml`.
+
+- [ ] **Step 7: Update package publishing and type-checking boundaries**
+
+Set `packages/vite-plugin-index-html/package.json` to:
+
+```json
+{
+  "name": "@minar-kotonoha/vite-plugin-index-html",
+  "version": "0.1.5",
+  "description": "零配置 index.html 合成 + virtual:index 入口管理插件",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "html.ts",
+    "index.ts"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "peerDependencies": {
+    "vite": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
+```
+
+This removes the now-unused `fs-extra` dependency. The package `exports` map remains unchanged, so consumers can only import the documented root entry.
+
+Set `packages/vite-plugin-index-html/tsconfig.json` to:
+
+```json
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["index.ts", "html.ts", "*.test.ts"]
+}
+```
+
+Run:
+
+```sh
+bun install
+```
+
+Expected: `bun.lock` no longer records `fs-extra` as a direct dependency of `@minar-kotonoha/vite-plugin-index-html`.
+
+Replace `packages/vite-plugin-index-html/README.md` with:
+
+````markdown
+# @minar-kotonoha/vite-plugin-index-html
+
+在不改变 Vite `root` 的前提下提供零配置 HTML 入口和 `virtual:index`。
+
+## 行为
+
+- `<root>/index.html` 存在时使用用户文件。
+- 文件不存在时，以同一个绝对路径 ID 提供内置 HTML，不写临时文件。
+- 两种 HTML 都自动注入唯一的 Miko module 入口。
+- HTML 必须包含唯一的 `#app`。
+- `virtual:index` 解析为应用入口文件。
+
+## 用法
+
+```ts
+import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html'
+
+plugins: [
+  await indexHTMLPlugin({
+    entry: '/project/template/main.ts',
+    root: '/project',
+    template: '/package/template',
+  }),
+]
+```
+````
+
+- [ ] **Step 8: Run the HTML plugin tests and verify GREEN**
+
+Run:
+
+```sh
+bun run test:packages -- packages/vite-plugin-index-html
+```
+
+Expected: 7 tests pass. Build produces `index.html` and one JavaScript chunk without creating `<viteRoot>/index.html`; Dev serves deep routes and switches between fallback/user HTML without restarting or changing root.
+
+- [ ] **Step 9: Commit the zero-config HTML entry**
+
+```sh
+git add bun.lock packages/vite-plugin-index-html packages/vite-plugin-miko/template/index.html
+git commit -m "feat(html): synthesize the default vite entry in memory"
+```
+
+---
+
+### Task 7: Make the Vite factory consume resolved configuration
 
 **Files:**
 
 - Modify: `packages/vite-plugin-miko/index.ts`
 - Create: `packages/vite-plugin-miko/config/factory.test.ts`
+- Create: `packages/vite-plugin-bootstrap/index.test.ts`
+- Modify: `packages/vite-plugin-bootstrap/index.ts`
+- Modify: `packages/vite-plugin-bootstrap/tsconfig.json`
 
-- [ ] **Step 1: Write a failing factory test**
+- [ ] **Step 1: Write failing factory and bootstrap-root tests**
 
 ```ts
 // packages/vite-plugin-miko/config/factory.test.ts
@@ -1046,6 +1612,7 @@ describe('createMikoViteConfig', () => {
     const config = await createMikoViteConfig(project())
 
     expect(config.root).toBe('D:/project')
+    expect(config.input).toBe('D:/project/index.html')
     expect(config.cacheDir).toBe('D:/project/node_modules/.vite')
     expect(config.base).toBe('/cms/')
     expect(config.build).toMatchObject({
@@ -1062,27 +1629,137 @@ describe('createMikoViteConfig', () => {
 })
 ```
 
+```ts
+// packages/vite-plugin-bootstrap/index.test.ts
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { afterEach, describe, expect, it } from 'vitest'
+import { build } from 'vite'
+import { bootstrapPlugin } from './index'
+
+const roots: string[] = []
+
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })))
+})
+
+describe('bootstrapPlugin', () => {
+  it('resolves the optional bootstrap from Vite root instead of process.cwd()', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miko-bootstrap-'))
+    const input = resolve(root, 'main.ts')
+    roots.push(root)
+
+    await writeFile(
+      resolve(root, 'index.ts'),
+      `export default () => { globalThis.__mikoBootstrap = 'ROOT_BOOTSTRAP_MARKER' }`,
+    )
+    await writeFile(
+      input,
+      `import { bootstrap } from 'virtual:bootstrap'; bootstrap()`,
+    )
+
+    const result = await build({
+      root,
+      input,
+      configFile: false,
+      publicDir: false,
+      logLevel: 'silent',
+      plugins: [bootstrapPlugin()],
+      build: {
+        write: false,
+      },
+    })
+    const builds = Array.isArray(result) ? result : [result]
+    const output = builds.flatMap(buildResult =>
+      'output' in buildResult ? buildResult.output : [],
+    )
+    const chunk = output.find(item => item.type === 'chunk') as
+      | { code: string }
+      | undefined
+
+    expect(chunk?.code).toContain('ROOT_BOOTSTRAP_MARKER')
+  })
+})
+```
+
 - [ ] **Step 2: Run the test and verify RED**
 
 Run:
 
 ```sh
-bun run test:packages -- packages/vite-plugin-miko/config/factory.test.ts
+bun run test:packages -- packages/vite-plugin-miko/config/factory.test.ts packages/vite-plugin-bootstrap/index.test.ts
 ```
 
-Expected: FAIL because `createMikoViteConfig` does not accept a resolved project.
+Expected: FAIL because `createMikoViteConfig` does not accept a resolved project and `bootstrapPlugin` still resolves from `process.cwd()`.
 
-- [ ] **Step 3: Remove module-level root state**
+- [ ] **Step 3: Make virtual bootstrap resolve from Vite root**
+
+Replace `packages/vite-plugin-bootstrap/index.ts` with:
+
+```ts
+import { resolve } from 'node:path'
+import { exists } from 'fs-extra'
+import { normalizePath } from 'vite'
+import type { PluginOption } from 'vite'
+
+const virtualModuleId = 'virtual:bootstrap'
+const resolvedVirtualModuleId = `\0${virtualModuleId}`
+
+export function bootstrapPlugin(entryFile = 'index.ts') {
+  let root = ''
+
+  return {
+    name: '@minar-kotonoha/vite-plugin-bootstrap',
+
+    configResolved(config) {
+      root = config.root
+    },
+
+    resolveId(id) {
+      if (id === virtualModuleId) return resolvedVirtualModuleId
+    },
+
+    async load(id) {
+      if (id !== resolvedVirtualModuleId) return
+      if (!root) throw new Error('[miko] bootstrapPlugin 尚未获得 Vite root')
+
+      const entry = normalizePath(resolve(root, entryFile))
+      return (await exists(entry))
+        ? `import * as Index from ${JSON.stringify(entry)};export const bootstrap = Index.default ?? (() => {});`
+        : 'export const bootstrap = () => {}'
+    },
+  } satisfies PluginOption
+}
+```
+
+Set `packages/vite-plugin-bootstrap/tsconfig.json` to:
+
+```json
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["index.ts", "index.test.ts"]
+}
+```
+
+- [ ] **Step 4: Remove module-level root state**
 
 In `packages/vite-plugin-miko/index.ts`:
 
 - Delete `const cwd = process.cwd()`.
-- Change `detectTemplate()` to `detectTemplate(root: string)`.
+- Delete the old `detectTemplate()` and `detectEntry()` helpers; Task 5 now owns template and entry resolution.
 - Change every `resolve(cwd, ...)` to use the root carried by `ResolvedMikoConfig`.
 - Remove the old `loadMikoConfig()` and `resolveConfig()` implementations after all callers are migrated.
 - Remove environment-variable mutations such as `MIKO_BOOTSTRAP_ENTRY`; pass the entry directly to `bootstrapPlugin`.
 
-- [ ] **Step 4: Convert the old async public factory into a resolved-config factory**
+- [ ] **Step 5: Convert the old async public factory into a resolved-config factory**
 
 The exported boundary must become:
 
@@ -1106,6 +1783,7 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
 
   const generated = {
     root: project.viteRoot,
+    input: resolve(project.viteRoot, 'index.html'),
     base: '/',
     build: {
       outDir,
@@ -1226,7 +1904,13 @@ async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOpt
   const externalEnabled = miko.externalOptions !== false
     && Boolean(miko.externalOptions.frameworkCDN)
   plugins.push(...externalPlugin(externalEnabled))
-  plugins.push(await indexHTMLPlugin(miko.entry, miko.template))
+  plugins.push(
+    await indexHTMLPlugin({
+      entry: miko.entry,
+      root: project.viteRoot,
+      template: miko.template,
+    }),
+  )
 
   const janusPlugin = loadJanus(miko.janusOptions, project.viteRoot)
   if (janusPlugin) plugins.push(janusPlugin)
@@ -1255,17 +1939,17 @@ function loadJanus(opts: JanusOptions | false, root: string): PluginOption | nul
 
 Do not change plugin defaults or ordering beyond the new modern default `legacyPluginOptions: false`; automatic detection belongs to Slice 2.
 
-- [ ] **Step 5: Run the factory and configuration tests**
+- [ ] **Step 6: Run the factory and configuration tests**
 
 Run:
 
 ```sh
-bun run test:packages -- packages/vite-plugin-miko/config
+bun run test:packages -- packages/vite-plugin-bootstrap packages/vite-plugin-miko/config
 ```
 
 Expected: all config tests pass.
 
-- [ ] **Step 6: Run package type checking**
+- [ ] **Step 7: Run package type checking**
 
 Run:
 
@@ -1275,16 +1959,16 @@ bun run typecheck:packages
 
 Expected: exit code 0.
 
-- [ ] **Step 7: Commit the factory boundary**
+- [ ] **Step 8: Commit the factory boundary**
 
 ```sh
-git add packages/vite-plugin-miko
+git add packages/vite-plugin-bootstrap packages/vite-plugin-miko
 git commit -m "refactor(miko): build vite config from resolved project"
 ```
 
 ---
 
-### Task 7: Replace dynamic CLI dispatch with a typed command pipeline
+### Task 8: Replace dynamic CLI dispatch with a typed command pipeline
 
 **Files:**
 
@@ -1581,7 +2265,7 @@ git commit -m "refactor(cli): add typed command dispatch"
 
 ---
 
-### Task 8: Refactor dev/build/preview into injected command runners
+### Task 9: Refactor dev/build/preview into injected command runners
 
 **Files:**
 
@@ -1595,6 +2279,7 @@ git commit -m "refactor(cli): add typed command dispatch"
 - Modify: `packages/cli/env.ts`
 - Modify: `packages/cli/env.test.ts`
 - Modify: `packages/cli/package.json`
+- Modify: `bun.lock`
 
 - [ ] **Step 1: Add a failing process-exit regression test**
 
@@ -1932,6 +2617,14 @@ Set `packages/cli/package.json#files` to:
 
 Remove `dotenv` from `dependencies`. Keep `jiti` because the executable and type-check child require it.
 
+Run:
+
+```sh
+bun install
+```
+
+Expected: `bun.lock` no longer records `dotenv` as a direct dependency of `@minar-kotonoha/miko-cli`.
+
 - [ ] **Step 10: Run all package tests and type checking**
 
 Run:
@@ -1946,13 +2639,13 @@ Expected: all tests pass; no command imports `pnpm`, `dotenv`, or reads `MIKO_MO
 - [ ] **Step 11: Commit the command runners**
 
 ```sh
-git add packages/cli packages/vite-plugin-miko
+git add bun.lock packages/cli packages/vite-plugin-miko
 git commit -m "refactor(cli): run commands from one resolved project config"
 ```
 
 ---
 
-### Task 9: Migrate the starter and prove zero-config behavior
+### Task 10: Migrate the starter and prove zero-config behavior
 
 **Files:**
 
@@ -1963,6 +2656,10 @@ git commit -m "refactor(cli): run commands from one resolved project config"
 - Create: `packages/cli/test/fixtures/spa-config/miko.config.ts`
 - Create: `packages/cli/test/fixtures/spa-config/package.json`
 - Create: `packages/cli/test/fixtures/spa-config/pages/index.vue`
+- Create: `packages/cli/test/fixtures/user-html/index.html`
+- Create: `packages/cli/test/fixtures/user-html/miko.config.ts`
+- Create: `packages/cli/test/fixtures/user-html/package.json`
+- Create: `packages/cli/test/fixtures/user-html/pages/index.vue`
 - Create: `packages/cli/test/fixtures/invalid-config/package.json`
 - Create: `packages/cli/test/fixtures/invalid-config/miko.config.ts`
 - Create: `packages/cli/test/cli.integration.test.ts`
@@ -1981,6 +2678,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const cli = resolve(here, '../miko')
 const zeroConfig = resolve(here, 'fixtures/zero-config')
 const spaConfig = resolve(here, 'fixtures/spa-config')
+const userHtml = resolve(here, 'fixtures/user-html')
 const invalidConfig = resolve(here, 'fixtures/invalid-config')
 
 async function execute(args: string[]) {
@@ -2004,7 +2702,7 @@ async function execute(args: string[]) {
 
 afterEach(async () => {
   await Promise.all(
-    [zeroConfig, spaConfig].map(root =>
+    [zeroConfig, spaConfig, userHtml].map(root =>
       rm(resolve(root, 'dist'), { recursive: true, force: true }),
     ),
   )
@@ -2028,6 +2726,15 @@ describe('miko CLI integration', () => {
     await expect(readFile(resolve(spaConfig, 'dist/index.html'), 'utf8')).resolves.not.toContain(
       'SPA Config',
     )
+  }, 120_000)
+
+  it('preserves a user HTML shell and injects the application entry', async () => {
+    const result = await execute(['build', '--root', userHtml])
+    const html = await readFile(resolve(userHtml, 'dist/index.html'), 'utf8')
+
+    expect(result.code).toBe(0)
+    expect(html).toContain('name="miko-user-html"')
+    expect(html).toMatch(/<script[^>]+src="[^"]*assets\/[^"]+\.js"/)
   }, 120_000)
 
   it('returns a configuration exit code and path for invalid config', async () => {
@@ -2101,7 +2808,50 @@ export default defineMikoConfig({
 </template>
 ```
 
-- [ ] **Step 5: Add the invalid-config fixture**
+- [ ] **Step 5: Add the user-owned HTML fixture**
+
+```json
+// packages/cli/test/fixtures/user-html/package.json
+{
+  "name": "miko-user-html-fixture",
+  "private": true,
+  "type": "module"
+}
+```
+
+```ts
+// packages/cli/test/fixtures/user-html/miko.config.ts
+import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
+
+export default defineMikoConfig({
+  miko: {
+    rendering: 'spa',
+  },
+})
+```
+
+```html
+<!-- packages/cli/test/fixtures/user-html/index.html -->
+<!doctype html>
+<html lang="zh-cmn-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="miko-user-html" content="preserved" />
+  </head>
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
+```
+
+```vue
+<!-- packages/cli/test/fixtures/user-html/pages/index.vue -->
+<template>
+  <main>User HTML</main>
+</template>
+```
+
+- [ ] **Step 6: Add the invalid-config fixture**
 
 ```json
 // packages/cli/test/fixtures/invalid-config/package.json
@@ -2121,7 +2871,7 @@ export default {
 }
 ```
 
-- [ ] **Step 6: Migrate the starter to the sole configuration file**
+- [ ] **Step 7: Migrate the starter to the sole configuration file**
 
 Replace `app/miko.config.ts` with:
 
@@ -2140,7 +2890,7 @@ export default defineMikoConfig({
 
 Delete `app/vite.config.ts`.
 
-- [ ] **Step 7: Run the integration tests and verify GREEN**
+- [ ] **Step 8: Run the integration tests and verify GREEN**
 
 Run:
 
@@ -2148,9 +2898,9 @@ Run:
 bun run test:packages -- packages/cli/test/cli.integration.test.ts
 ```
 
-Expected: all three integration tests pass under `process.execPath` (Node), proving default SSG, explicit SPA, actionable invalid-config errors, and that Bun is not the required runtime.
+Expected: all four integration tests pass under `process.execPath` (Node), proving default SSG, explicit SPA, user HTML precedence with automatic entry injection, actionable invalid-config errors, and that Bun is not the required runtime.
 
-- [ ] **Step 8: Build the real starter**
+- [ ] **Step 9: Build the real starter**
 
 Run:
 
@@ -2161,7 +2911,7 @@ bun run build
 
 Expected: type checking succeeds, SSG output is written under `app/dist`, and no `vite.config.ts` is loaded.
 
-- [ ] **Step 9: Commit the starter migration**
+- [ ] **Step 10: Commit the starter migration**
 
 ```sh
 git add app/miko.config.ts app/vite.config.ts packages/cli/test
@@ -2170,7 +2920,7 @@ git commit -m "test: verify zero-config node build"
 
 ---
 
-### Task 10: Finish public exports, documentation, and slice acceptance
+### Task 11: Finish public exports, documentation, and slice acceptance
 
 **Files:**
 
@@ -2240,6 +2990,8 @@ State that:
 - Zero-config projects do not need a configuration file.
 - `vite.config.ts` is unsupported.
 - CLI is mandatory.
+- A user `<viteRoot>/index.html` is preserved and receives the Miko entry automatically; when absent, Miko supplies the same HTML entry from memory without changing `vite.root`.
+- SPA/SSG application input is owned by Miko; Library Mode uses `miko.lib.entry`.
 - Bun is the package manager; Node.js + jiti is the supported runtime path.
 - Slice 1 keeps existing plugin behavior except the modern default disables Legacy.
 
@@ -2250,7 +3002,7 @@ Append a concise entry to `.remember/now.md`:
 ```markdown
 ## 2026-08-06 | Miko v1 Slice 1
 
-Unified the CLI and configuration pipeline: CLI is the only execution path, `miko.config.ts` is the sole optional build config, configuration loading is root-aware and fails loudly, Vite options live under `vite`, and Node.js no longer probes pnpm or depends on Bun runtime APIs.
+Unified the CLI and configuration pipeline: CLI is the only execution path, `miko.config.ts` is the sole optional build config, configuration loading is root-aware and fails loudly, Vite options live under `vite`, and Node.js no longer probes pnpm or depends on Bun runtime APIs. Vite root remains the real application directory; user HTML is preferred, while a missing `<viteRoot>/index.html` is synthesized in memory and receives the Miko entry automatically.
 ```
 
 - [ ] **Step 5: Run the complete slice verification**
@@ -2271,8 +3023,10 @@ Expected:
 - Package type checking passes.
 - Existing app unit tests pass.
 - Starter SSG build passes.
+- HTML plugin tests prove user HTML precedence, fallback synthesis, automatic entry injection, no temporary HTML file, and unchanged Vite root.
 - No tracked `vite.config.ts` remains in the starter.
 - `rg -n "MIKO_MODE|MIKO_LIB_MODE|pnpm root|loadEnvFiles|rejectUnauthorized: false" packages` returns no matches.
+- `rg -n "root: template|process\\.cwd\\(\\)" packages/vite-plugin-index-html packages/vite-plugin-bootstrap` returns no matches.
 
 - [ ] **Step 6: Inspect the final diff**
 
@@ -2288,7 +3042,7 @@ Expected: no whitespace errors; only Slice 1 files and the pre-existing user-own
 - [ ] **Step 7: Commit Slice 1**
 
 ```sh
-git add package.json vitest.config.ts packages/cli packages/vite-plugin-miko app/miko.config.ts app/vite.config.ts README.md AGENTS.md
+git add package.json vitest.config.ts packages/cli packages/vite-plugin-index-html packages/vite-plugin-miko app/miko.config.ts app/vite.config.ts README.md AGENTS.md
 git commit -m "feat!: unify miko cli and configuration core"
 ```
 
