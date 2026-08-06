@@ -7,5 +7,5 @@
     "strict": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["index.ts", "types.ts"]
+  "include": ["index.ts", "types.ts", "config/**/*.ts"]
 }
