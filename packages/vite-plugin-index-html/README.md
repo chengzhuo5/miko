@@ -1,24 +1,25 @@
 # @minar-kotonoha/vite-plugin-index-html
 
-虚拟模块 `virtual:index` + dev/prod 根目录分离。
+在不改变 Vite `root` 的前提下提供零配置 HTML 入口和 `virtual:index`。
 
-## 功能
+## 行为
 
-- **开发模式**：将 Vite root 指向 `node_modules/.vite_entry`，使 root 和 cwd 在同一位置，保证依赖预构建性能
-- **生产模式**：将 Vite root 设为模板目录
-- **虚拟模块**：`virtual:index` 解析为应用入口文件
+- `<root>/index.html` 存在时使用用户文件。
+- 文件不存在时，以同一个绝对路径 ID 提供内置 HTML，不写临时文件。
+- 两种 HTML 都自动注入唯一的 Miko module 入口。
+- HTML 必须包含唯一的 `#app`。
+- `virtual:index` 解析为应用入口文件。
 
 ## 用法
 
 ```ts
-// vite.config.ts
-import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html'
+import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html';
 
-export default defineConfig({
-  plugins: [indexHTMLPlugin(entry, template)]
-})
+plugins: [
+  await indexHTMLPlugin({
+    entry: '/project/template/main.ts',
+    root: '/project',
+    template: '/package/template',
+  }),
+];
 ```
-
-参数：
-- `entry`：应用入口文件路径（如 `template/main.ts`）
-- `template`：模板目录路径
