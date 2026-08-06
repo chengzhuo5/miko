@@ -88,6 +88,40 @@ miko preview
 
 Miko 自动发现页面、入口、布局、组件、环境和已安装集成，并默认执行 SSG 构建。需要纯 SPA 时，在 `miko.config.ts` 中设置 `miko.rendering = 'spa'`。项目根 `index.ts` 继续作为可选 bootstrap 入口；不存在时使用空实现。
 
+### HTML 入口契约
+
+Miko 应用始终保持最终解析出的 Vite `root` 指向真实应用目录。这里记为 `<viteRoot>`：默认等于 CLI `--root`，用户显式设置 `vite.root` 时则使用该目录。不得为了提供默认 HTML 而把它改到 `node_modules`、缓存目录或内置模板目录。
+
+HTML 入口按以下规则解析：
+
+```text
+<viteRoot>/index.html 存在
+ → 使用用户文件
+<viteRoot>/index.html 不存在
+ → 使用 Miko 内置 HTML 内容
+ → 入口身份仍然是 <viteRoot>/index.html
+```
+
+内置 HTML 不复制到项目或 `node_modules`。Miko HTML 插件只在文件缺失时，通过 Vite 插件的 `resolveId`/`load` 为绝对路径 `<viteRoot>/index.html` 提供合成内容。它使用真实 HTML 路径身份而不是 `\0virtual:*.html`，使 Vite 的标准 HTML 转换、资源处理和最终 `index.html` 输出继续生效。
+
+开发模式遵循同一来源优先级：
+
+- 用户 HTML 存在时交给 Vite 原生 HTML 和 SPA fallback 中间件。
+- 用户 HTML 不存在时，Miko 中间件为首页、`/index.html` 和 SPA 导航请求读取已缓存的内置 HTML，并调用 `server.transformIndexHtml()` 后返回。
+- 用户在开发期间新增或删除 `index.html` 时，下一次 HTML 请求按当前文件状态重新选择来源，不要求改变 `root`。
+
+用户 HTML 和内置 HTML 都经过统一的 `transformIndexHtml` 钩子。Miko 自动注入唯一的 module 入口脚本，用户不需要手写 `virtual:index` 或模板 `main.ts`：
+
+```html
+<script type="module" data-miko-entry>
+  import 'virtual:index'
+</script>
+```
+
+注入器检测 `data-miko-entry` 和既有 Miko 虚拟入口，避免重复执行。用户 HTML 可以包含自己的 module script、Meta、Link 和页面结构，但必须包含唯一的 `#app` 挂载节点；缺失或重复时在 Dev 返回 HTML 或 Build 调用 Vite 前给出明确错误。
+
+应用模式的 HTML input 是 Miko 不可关闭的核心约定。用户可以自定义 `index.html` 内容，但不能把 SPA/SSG 应用改成另一个 HTML/JavaScript input；需要多页入口或完全自定义入口图的项目应直接使用 Vite。Library Mode 不使用该 HTML 入口契约。
+
 ### 高级配置
 
 只有需要改变默认行为时才创建 `miko.config.ts`：
@@ -156,6 +190,7 @@ CLI 的配置处理流程固定为：
  → 校验 Miko 配置
  → 自动检测项目能力
  → 解析 Miko 默认值
+ → 解析用户或内置 HTML 入口
  → 合并内置插件选项
  → 合并完整 Vite 配置
  → 校验最终插件和构建不变量
@@ -226,7 +261,7 @@ export default defineMikoConfig({
 | `resolve.alias` | 统一规范化为数组；相同 `find` 的用户项优先，其余保序合并 |
 | `optimizeDeps.include/exclude` | 合并去重；同一包同时 include/exclude 时失败 |
 | `ssr.noExternal` | `true` 直接生效；数组/正则保序合并；与 external 冲突时失败 |
-| `build.rollupOptions.input` | SPA 可以自定义；SSG 由 Miko 控制，用户设置时失败并提示使用 Miko entry/template 字段 |
+| `input` / `build.rollupOptions.input` | SPA/SSG 应用均由 Miko 固定为 `<viteRoot>/index.html`；用户设置时失败。Library Mode 使用独立入口 |
 | `build.rollupOptions.output` | 对象递归合并；数组逐项保留，不跨项猜测合并 |
 | `build.lib` | 只在 `miko build --lib` 中接受；普通 SPA/SSG 构建设置时失败 |
 | `root/base/publicDir/envDir/build.outDir` | 用户值作为最终来源，Miko 路由、模板和 SSG 必须跟随 |
@@ -340,6 +375,7 @@ miko migrate
 - 可选能力使用动态导入。
 - CDN 未启用时不解析 framework 模块映射。
 - 内置 HTML 模板缓存，文件变化时失效。
+- HTML fallback 只提供内容，不写临时文件、不改变 Vite `root`。
 - Dev Server 优先启动，类型检查和 Lint 在后台执行。
 - 路由、布局、组件和依赖扫描结果在插件之间复用。
 
@@ -475,6 +511,7 @@ Vue adapter 在首次 ready 前临时接入 `app.config.errorHandler` 和 `app.c
 - 自动检测和冲突。
 - 插件顺序和重复插件。
 - 虚拟模块。
+- 用户 HTML 优先、缺失文件时合成 HTML、入口自动注入与 `#app` 校验。
 - root/base/outDir。
 - Proxy context、TLS 和错误处理。
 - CLI 参数、退出码和日志脱敏。
@@ -483,6 +520,7 @@ Vue adapter 在首次 ready 前临时接入 `app.config.errorHandler` 和 `app.c
 ### 集成测试
 
 - 无配置文件项目。
+- 有/无用户 `index.html` 的 Dev、SPA Build 和 SSG Build。
 - 完整 `miko.config.ts`。
 - SPA、SSG、Library Mode。
 - 深层路由和非根 base。
@@ -516,6 +554,7 @@ Vue adapter 在首次 ready 前临时接入 `app.config.errorHandler` 和 `app.c
 | 需求 | 主要测试 |
 |---|---|
 | 零配置默认 SSG | `fixtures/zero-config` CLI 集成测试 + 首页浏览器测试 |
+| 零配置 HTML 入口 | 用户 HTML 优先、缺失文件合成入口、无临时文件、root 不变和重复注入测试 |
 | SPA 切换 | `fixtures/spa-config` 构建测试 + 无 SSG 输出断言 |
 | 唯一配置和完整 Vite 表面 | 配置加载、字段策略和禁止 `vite.config.ts` 测试 |
 | 自动能力 | 每项能力的依赖/文件/显式覆盖 fixture |
