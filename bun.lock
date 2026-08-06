@@ -162,6 +162,7 @@
         "@vitejs/plugin-vue": "^6.0.8",
         "@vitejs/plugin-vue-jsx": "^5.1.6",
         "fs-extra": "^11.3.6",
+        "jiti": "^2.7.0",
         "unocss": "^66.7.5",
         "unplugin-vue-components": "^32.1.0",
         "vite-plugin-vue-devtools": "^8.1.5",
