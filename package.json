@@ -10,6 +10,11 @@
     "app"
   ],
   "type": "module",
+  "scripts": {
+    "test:packages": "vitest run --config vitest.config.ts",
+    "test:packages:watch": "vitest --config vitest.config.ts",
+    "typecheck:packages": "vue-tsc --noEmit -p tsconfig.builder.json && vue-tsc --noEmit -p packages/vite-plugin-bootstrap/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-index-html/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-miko/tsconfig.json"
+  },
   "dependencies": {
     "@dual-bundle/import-meta-resolve": "^4.2.1",
     "@minar-kotonoha/framework": "workspace:^",
