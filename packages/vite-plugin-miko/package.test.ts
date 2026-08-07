@@ -14,6 +14,7 @@ describe('vite-plugin-miko package', () => {
     expect(packageJson.files).toEqual(
       expect.arrayContaining(['capabilities/', 'config/', 'plugins/']),
     );
+    expect(packageJson.files).toContain('!**/*.test.ts');
   });
 
   it('exports the capability diagnostics surface', async () => {
