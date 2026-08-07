@@ -16,7 +16,7 @@ describe('cli package', () => {
     ) as { files?: string[] };
 
     expect(packageJson.files).toEqual(
-      expect.arrayContaining(['args.ts', 'context.ts', 'errors.ts', 'run.ts']),
+      expect.arrayContaining(['args.ts', 'context.ts', 'errors.ts', 'preview-config.ts', 'run.ts']),
     );
   });
 });
