@@ -35,10 +35,15 @@ export interface RuntimeMetrics {
   unvisitedRouteRequested: boolean;
 }
 
-export interface PerformanceReport {
+export interface BuildPerformanceReport {
   schemaVersion: 1;
   environment: EnvironmentFingerprint;
   createdAt: string;
+  commit: string;
+  workerRuntime: string;
   build: Record<BuildFixtureName, BuildMetrics>;
+}
+
+export interface PerformanceReport extends BuildPerformanceReport {
   runtime: RuntimeMetrics;
 }

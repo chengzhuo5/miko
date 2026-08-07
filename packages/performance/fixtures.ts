@@ -73,13 +73,37 @@ async function writeCommonFiles(
       path: join(root, 'miko.config.ts'),
       content: [
         'export default {',
+        '  miko: {',
+        '    linterOptions: false,',
+        '  },',
         '  vite: {',
+        '    cacheDir: ".miko-cache/vite",',
         '    logLevel: "silent",',
         '    publicDir: false,',
         '  },',
         '}',
         '',
       ].join('\n'),
+    },
+    {
+      path: join(root, 'tsconfig.json'),
+      content: `${JSON.stringify(
+        {
+          include: ['**/*', '**/*.vue'],
+          compilerOptions: {
+            target: 'ESNext',
+            module: 'ESNext',
+            moduleResolution: 'Bundler',
+            strict: true,
+            skipLibCheck: true,
+            lib: ['ESNext', 'DOM', 'DOM.Iterable'],
+            types: ['vite/client'],
+            jsx: 'preserve',
+          },
+        },
+        null,
+        2,
+      )}\n`,
     },
   ]);
 }

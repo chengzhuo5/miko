@@ -62,6 +62,8 @@ function report(
     schemaVersion: 1,
     environment: environment(overrides.environment),
     createdAt: '2026-08-07T00:00:00.000Z',
+    commit: 'test-commit',
+    workerRuntime: 'node.exe',
     build: {
       small: { ...buildMetrics(), ...overrides.small },
       medium: buildMetrics(),

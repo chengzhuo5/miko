@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "baseline": "bun index.ts baseline",
-    "measure": "bun index.ts measure",
-    "check": "bun index.ts check"
+    "baseline": "node runner.mjs baseline",
+    "measure": "node runner.mjs measure",
+    "check": "node runner.mjs check"
   },
   "dependencies": {
     "@minar-kotonoha/miko-cli": "workspace:^",

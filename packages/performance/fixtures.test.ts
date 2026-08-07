@@ -82,6 +82,38 @@ describe('generateFixture', () => {
     }
   });
 
+  it('keeps Vite cache outside the shared node_modules junction', async () => {
+    const fixture = await generateFixture(await createParent(), 'small');
+    const config = await readFile(join(fixture.root, 'miko.config.ts'), 'utf8');
+
+    expect(config).toContain('cacheDir: ".miko-cache/vite"');
+    expect(config).not.toContain('node_modules/.vite');
+    expect(config).toContain('linterOptions: false');
+  });
+
+  it('includes the minimal TypeScript project required by the real Miko build', async () => {
+    const fixture = await generateFixture(await createParent(), 'small');
+    const config = JSON.parse(
+      await readFile(join(fixture.root, 'tsconfig.json'), 'utf8'),
+    ) as {
+      extends?: string;
+      include?: string[];
+      compilerOptions?: {
+        module?: string;
+        moduleResolution?: string;
+        types?: string[];
+      };
+    };
+
+    expect(config.extends).toBeUndefined();
+    expect(config.include).toEqual(['**/*', '**/*.vue']);
+    expect(config.compilerOptions).toMatchObject({
+      module: 'ESNext',
+      moduleResolution: 'Bundler',
+      types: ['vite/client'],
+    });
+  });
+
   it('creates the runtime Pinia, Head, ClientOnly and route-splitting signals', async () => {
     const fixture = await generateFixture(await createParent(), 'runtime');
     const packageJson = await readFile(join(fixture.root, 'package.json'), 'utf8');
