@@ -7,13 +7,13 @@
 ```sh
 # 通用（所有支持 Agent Skills 标准的 agent）
 bun add -D @minar-kotonoha/to-miko
-npx agents export                        # 自动检测 agent 类型
+bunx agents export                       # 自动检测 agent 类型
 
 # Claude Code
 claude skills install @minar-kotonoha/to-miko
 
 # 或手动
-npm i @minar-kotonoha/to-miko
+bun add -D @minar-kotonoha/to-miko
 ```
 
 支持的 agent：Claude Code · Cursor · Codex · Copilot · OpenCode · Windsurf · Goose · Amp
@@ -27,6 +27,7 @@ npm i @minar-kotonoha/to-miko
 ```
 
 Skill 会自动：
+
 1. **分析源项目** — 通读 vite.config.ts、router、入口文件、package.json
 2. **分流决策** — 对比 Vite 配置模式 vs CLI 模式，检查兼容性
 3. **执行迁移** — 创建 miko.config.ts、改造路由为文件系统路由、重写入口为 bootstrap、更新依赖

@@ -5,7 +5,7 @@
  * 每个功能点独立测试 + 截图保存至 tests/e2e/screenshots/。
  *
  * 前置条件: bun dev
- * 运行: npx playwright test
+ * 运行: bun test:e2e
  */
 import type { Page, Route } from '@playwright/test'
 

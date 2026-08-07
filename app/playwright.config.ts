@@ -5,9 +5,9 @@
  * 开发服务器需提前启动: bun dev
  *
  * 用法:
- *   npx playwright test                    # 运行所有 E2E
- *   npx playwright test --ui               # 交互式 UI
- *   npx playwright test --headed           # 有头模式调试
+ *   bun test:e2e                            # 运行所有 E2E
+ *   bun test:e2e -- --ui                    # 交互式 UI
+ *   bun test:e2e -- --headed                # 有头模式调试
  */
 import { defineConfig, devices } from '@playwright/test'
 

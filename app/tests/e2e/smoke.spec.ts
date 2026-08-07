@@ -5,7 +5,7 @@
  *   F01 首页可访问
  *   F02 无 JS 运行时错误
  *
- * 运行: npx playwright test
+ * 运行: bun test:e2e
  * 前置: bun dev
  */
 import { test, expect } from '@playwright/test'
