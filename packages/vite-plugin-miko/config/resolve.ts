@@ -11,6 +11,10 @@ function mergeOptions<T extends object>(defaults: T, user: object | undefined): 
   return mergeConfig(defaults as UserConfig, (user ?? {}) as UserConfig) as T;
 }
 
+function enabledOptions<T extends object>(value: true | T | undefined): T | undefined {
+  return value === true ? undefined : value;
+}
+
 export function resolveMikoConfig(
   loaded: LoadedMikoConfig,
   env: MikoConfigEnv,
@@ -103,25 +107,31 @@ export function resolveMikoConfig(
         raw.routerPluginOptions,
       ),
       layoutsPluginOptions:
-        raw.layoutsPluginOptions === false ? false : mergeOptions({}, raw.layoutsPluginOptions),
+        raw.layoutsPluginOptions === false
+          ? false
+          : mergeOptions({}, enabledOptions(raw.layoutsPluginOptions)),
       componentsPluginOptions:
         raw.componentsPluginOptions === false
           ? false
-          : mergeOptions(defaultComponents, raw.componentsPluginOptions),
+          : mergeOptions(defaultComponents, enabledOptions(raw.componentsPluginOptions)),
       unoCSSPluginOptions:
         raw.unoCSSPluginOptions === false
           ? false
-          : mergeOptions({ configFile: false as const }, raw.unoCSSPluginOptions),
-      legacyPluginOptions: raw.legacyPluginOptions ?? false,
+          : mergeOptions({ configFile: false as const }, enabledOptions(raw.unoCSSPluginOptions)),
+      legacyPluginOptions:
+        raw.legacyPluginOptions === undefined || raw.legacyPluginOptions === false
+          ? false
+          : mergeOptions({}, enabledOptions(raw.legacyPluginOptions)),
       ssgOptions: mergeOptions(defaultSsgOptions, raw.ssgOptions),
       linterOptions:
         raw.linterOptions === false
           ? false
-          : mergeOptions({ oxlint: true, eslint: true }, raw.linterOptions),
+          : mergeOptions({ oxlint: true, eslint: true }, enabledOptions(raw.linterOptions)),
       bootstrapOptions: mergeOptions({ entryFile: 'index.ts' }, raw.bootstrapOptions),
       externalOptions: raw.externalOptions ?? false,
       devOptions: mergeOptions({ bundledDev: false }, raw.devOptions),
-      janusOptions: raw.janusOptions === false ? false : mergeOptions({}, raw.janusOptions),
+      janusOptions:
+        raw.janusOptions === false ? false : mergeOptions({}, enabledOptions(raw.janusOptions)),
     },
   };
 }

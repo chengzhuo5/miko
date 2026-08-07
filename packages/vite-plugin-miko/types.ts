@@ -12,6 +12,7 @@ import type { Options as VueJsxOptions } from '@vitejs/plugin-vue-jsx';
 import type { Options as LegacyOptions } from '@vitejs/plugin-legacy';
 import type { UserOptions as LayoutsUserOptions } from 'vite-plugin-vue-layouts-next';
 import type { VitePluginConfig as UnoCSSVitePluginConfig } from '@unocss/vite';
+import type { VitePluginVueDevToolsOptions as DevToolsOptions } from 'vite-plugin-vue-devtools';
 
 export type MikoUserConfig = import('./config/types').MikoConfig;
 
@@ -21,6 +22,7 @@ export type {
   LegacyOptions,
   LayoutsUserOptions,
   UnoCSSVitePluginConfig,
+  DevToolsOptions,
 };
 
 /** 开发服务器代理规则（旧项目迁移辅助；新配置优先使用 `vite.server.proxy`） */

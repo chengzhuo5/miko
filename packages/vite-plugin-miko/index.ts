@@ -35,6 +35,7 @@ import type { JanusOptions } from './types';
 
 export { defineMikoConfig } from './config/define';
 export { MikoConfigError } from './config/errors';
+export * from './capabilities';
 export type * from './config/types';
 export type * from './types';
 

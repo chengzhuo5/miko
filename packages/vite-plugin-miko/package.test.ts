@@ -13,4 +13,10 @@ describe('vite-plugin-miko package', () => {
     expect(packageJson.dependencies?.browserslist).toBeDefined();
     expect(packageJson.files).toEqual(expect.arrayContaining(['capabilities/', 'config/']));
   });
+
+  it('exports the capability diagnostics surface', async () => {
+    const source = await readFile(new URL('./index.ts', import.meta.url), 'utf8');
+
+    expect(source).toContain("export * from './capabilities'");
+  });
 });

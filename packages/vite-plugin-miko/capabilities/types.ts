@@ -16,3 +16,18 @@ export interface ProjectSignals {
   watchedFiles: string[];
   watchedDirectories: string[];
 }
+
+export type CapabilitySource =
+  | 'explicit'
+  | 'convention'
+  | 'dependency'
+  | 'command'
+  | 'default'
+  | 'builtin';
+
+export interface ResolvedCapability<T> {
+  enabled: boolean;
+  value: T;
+  source: CapabilitySource;
+  reason: string;
+}

@@ -71,6 +71,35 @@ describe('resolveMikoConfig', () => {
     expect(result.miko.ssgOptions.beastiesOptions).toEqual({ external: false });
   });
 
+  it('treats true tri-state plugin options as enabled defaults', () => {
+    const result = resolveMikoConfig(
+      {
+        config: {
+          miko: {
+            componentsPluginOptions: true,
+            janusOptions: true,
+            layoutsPluginOptions: true,
+            legacyPluginOptions: true,
+            linterOptions: true,
+            unoCSSPluginOptions: true,
+          },
+        } as never,
+        configFile: null,
+      },
+      env,
+      'D:/packages/miko/template',
+    );
+
+    expect(result.miko.componentsPluginOptions).toMatchObject({
+      dirs: [resolve(env.root, 'components')],
+    });
+    expect(result.miko.layoutsPluginOptions).toEqual({});
+    expect(result.miko.legacyPluginOptions).toEqual({});
+    expect(result.miko.linterOptions).toMatchObject({ eslint: true, oxlint: true });
+    expect(result.miko.unoCSSPluginOptions).toMatchObject({ configFile: false });
+    expect(result.miko.janusOptions).toEqual({});
+  });
+
   it('rejects application input overrides owned by Miko', () => {
     expect(() =>
       resolveMikoConfig(
