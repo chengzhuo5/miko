@@ -58,7 +58,7 @@
     },
     "packages/cli": {
       "name": "@minar-kotonoha/miko-cli",
-      "version": "0.1.28",
+      "version": "0.1.30",
       "bin": {
         "miko": "./miko",
       },
@@ -75,7 +75,7 @@
     },
     "packages/framework": {
       "name": "@minar-kotonoha/framework",
-      "version": "0.1.6",
+      "version": "0.1.8",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@minar-kotonoha/vite-ssg": "^28.3.4",
@@ -152,7 +152,7 @@
     },
     "packages/vite-plugin-miko": {
       "name": "@minar-kotonoha/vite-plugin-miko",
-      "version": "0.2.30",
+      "version": "0.2.32",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@minar-kotonoha/vite-plugin-bootstrap": "workspace:^",
@@ -162,6 +162,7 @@
         "@vitejs/plugin-legacy": "^8.2.2",
         "@vitejs/plugin-vue": "^6.0.8",
         "@vitejs/plugin-vue-jsx": "^5.1.6",
+        "browserslist": "^4.28.7",
         "fs-extra": "^11.3.6",
         "jiti": "^2.7.0",
         "unocss": "^66.7.5",

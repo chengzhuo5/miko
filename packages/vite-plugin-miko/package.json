@@ -1,19 +1,22 @@
 {
   "name": "@minar-kotonoha/vite-plugin-miko",
   "version": "0.2.32",
+  "files": [
+    "index.ts",
+    "types.ts",
+    "capabilities/",
+    "config/",
+    "template/"
+  ],
   "type": "module",
   "exports": {
     ".": "./index.ts",
     "./package.json": "./package.json"
   },
-  "peerDependencies": {
-    "vite": "catalog:"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
-  "files": [
-    "index.ts",
-    "types.ts",
-    "template/"
-  ],
   "dependencies": {
     "@minar-kotonoha/linter": "workspace:^",
     "@minar-kotonoha/vite-plugin-bootstrap": "workspace:^",
@@ -23,6 +26,7 @@
     "@vitejs/plugin-legacy": "^8.2.2",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
+    "browserslist": "^4.28.7",
     "fs-extra": "^11.3.6",
     "jiti": "^2.7.0",
     "unocss": "^66.7.5",
@@ -32,8 +36,7 @@
     "vue-macros": "^3.1.4",
     "vue-router": "^5.2.0"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "peerDependencies": {
+    "vite": "catalog:"
   }
 }
