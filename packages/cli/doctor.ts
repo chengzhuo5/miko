@@ -10,6 +10,7 @@ export interface DoctorCapabilityReport {
   enabled: boolean;
   source: string;
   reason: string;
+  value?: boolean | number | string | null;
 }
 
 export interface DoctorReport {
@@ -28,14 +29,22 @@ export function createDoctorReport(
   const capabilities = Object.fromEntries(
     Object.entries(project.capabilities)
       .sort(([left], [right]) => left.localeCompare(right))
-      .map(([name, capability]) => [
-        name,
-        {
+      .map(([name, capability]) => {
+        const value =
+          capability.value === null ||
+          ['boolean', 'number', 'string'].includes(typeof capability.value)
+            ? (capability.value as boolean | number | string | null)
+            : undefined;
+        return [
+          name,
+          {
           enabled: capability.enabled,
           source: capability.source,
           reason: capability.reason,
-        },
-      ]),
+            ...(value === undefined ? {} : { value }),
+          },
+        ];
+      }),
   );
 
   return {
@@ -59,7 +68,8 @@ export function renderDoctorText(report: DoctorReport): string {
 
   for (const [name, capability] of Object.entries(report.capabilities)) {
     const state = capability.enabled ? 'enabled' : 'disabled';
-    lines.push(`  ${name}: ${state} [${capability.source}] — ${capability.reason}`);
+    const value = capability.value === undefined ? '' : ` = ${String(capability.value)}`;
+    lines.push(`  ${name}: ${state} [${capability.source}]${value} — ${capability.reason}`);
   }
 
   lines.push('Plugin order:');
@@ -73,6 +83,16 @@ export function renderDoctorText(report: DoctorReport): string {
   return lines.join('\n');
 }
 
+async function assembleDoctorPlugins(project: ResolvedMikoConfig): Promise<PluginAssembly> {
+  const originalLog = console.log;
+  console.log = () => {};
+  try {
+    return await assembleMikoPlugins(project);
+  } finally {
+    console.log = originalLog;
+  }
+}
+
 export async function runDoctor(
   context: CommandContext,
   output: (message: string) => void = console.log,
@@ -82,7 +102,7 @@ export async function runDoctor(
     mode: context.mode,
     root: context.root,
   });
-  const assembly = await assembleMikoPlugins(project);
+  const assembly = await assembleDoctorPlugins(project);
   const report = createDoctorReport(project, assembly);
   output(context.json ? JSON.stringify(report, null, 2) : renderDoctorText(report));
 }
