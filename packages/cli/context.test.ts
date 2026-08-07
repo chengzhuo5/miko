@@ -6,6 +6,7 @@ describe('createCommandContext', () => {
   it('defaults dev to development and resolves an absolute root', () => {
     expect(createCommandContext({ command: 'dev', lib: false }, 'D:/repo')).toMatchObject({
       mode: 'development',
+      modeArg: undefined,
       root: resolve('D:/repo'),
     });
   });
@@ -17,5 +18,14 @@ describe('createCommandContext', () => {
     expect(createCommandContext({ command: 'preview', lib: false }, 'D:/repo').mode).toBe(
       'production',
     );
+  });
+
+  it('retains whether the mode was explicitly selected for dotenv loading', () => {
+    expect(
+      createCommandContext({ command: 'build', modeArg: 'test', lib: false }, 'D:/repo'),
+    ).toMatchObject({
+      mode: 'test',
+      modeArg: 'test',
+    });
   });
 });

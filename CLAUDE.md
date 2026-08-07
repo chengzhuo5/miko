@@ -4,55 +4,55 @@
 
 ## 常用命令
 
-所有命令使用 **pnpm** 作为包管理器。运行时使用 **Node.js + jiti**（不再依赖 Bun）。
+所有依赖安装、工作区管理和脚本执行使用 **Bun**。CLI 运行时使用 **Node.js + jiti**，不要求 Bun runtime。
 
 ```sh
 # 安装依赖（在根目录执行）
-pnpm install
+bun install
 
 # 启动开发服务器（在 app/ 目录执行）
-pnpm dev        # 或: npx miko dev (bundledDev 默认关闭)
+bun dev        # 或: bun run miko dev (bundledDev 默认关闭)
 
 # 生产构建（先类型检查，再 SSG 构建）
-npx miko build
+bun run build
 
 # 库构建（输出 ESM + CJS + 类型声明）
-npx miko build --lib
+bun run miko build --lib
 
 # 指定环境构建（加载 .env.test，产物输出 dist/）
-npx miko build --env test
+bun run miko build --env test
 
 # 指定环境开发（加载 .env.test）
-npx miko dev --env test
+bun run miko dev --env test
 
 # 仅类型检查
-npx vue-tsc --noEmit  # 类型检查（TypeScript 7 通过 typescript-native-bridge 适配 vue-tsc）
+bun run vue-tsc --noEmit  # 类型检查（TypeScript 7 通过 typescript-native-bridge 适配 vue-tsc）
 
 # 预览生产构建
-npx miko preview
+bun run preview
 
 # 代码检查（oxlint + eslint，均带 --fix）
-pnpm lint
+bun lint
 
 # 格式化
-pnpm format      # 使用 oxfmt
+bun format      # 使用 oxfmt
 
 # 单元测试（在 app/ 目录执行）
-cd app && pnpm test:unit
+cd app && bun test:unit
 
 # E2E 测试 — Playwright Test（推荐，需先启动 dev server）
-cd app && pnpm dev &         # 先启动开发服务器
-cd app && pnpm test:e2e       # TypeScript E2E（@playwright/test, tests/e2e/）
+cd app && bun dev &         # 先启动开发服务器
+cd app && bun test:e2e       # TypeScript E2E（@playwright/test, tests/e2e/）
 
 # E2E 测试 — Vitest 浏览器模式（组件级浏览器测试）
-cd app && pnpm test:e2e:browser  # @vitest/browser-playwright, tests/components/
+cd app && bun test:e2e:browser  # @vitest/browser-playwright, tests/components/
 ```
 
 `miko` 命令行工具位于 `packages/cli/`，分发到 `packages/cli/<子命令>.ts`。运行时使用 Node.js + jiti（入口 `miko` shell 脚本通过 `createJiti` 加载 TypeScript）。
 
 ## 大仓结构
 
-pnpm workspaces：`packages/*` + `app`。三个包加应用模板：
+Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 
 | 包 | 用途 |
 |---------|---------|
@@ -138,7 +138,7 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 选 UI 库 + 配 proxy（可选）→ `bun dev`
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - `vueDevTools()` 已启用 — 开发时可使用 Vue DevTools 调试
-- `miko.config.ts`（可选）支持所有插件的深度配置（`vue`/`vueJsx`/`vueRouter`/`layouts`/`components`/`unoCSS`/`legacy`/`ssg`/`linter`/`bootstrap`/`external`/`dev`/`janus` + `proxy`/`template`/`entry`/`outDir`/`pagesDir`/`uiLibrary`/`layout`/`lib`），完整类型见 `MikoUserConfig`
+- `miko.config.ts`（可选）严格使用 `{ miko, vite }` 两个命名空间。`miko` 放框架能力（如 `rendering`、`uiLibrary`、`vuePluginOptions`、`legacyPluginOptions`、`externalOptions`），`vite` 接受 Vite 原生配置；入口 input 仍由 Miko 管理。完整类型见 `MikoUserConfig`
 
 ### 依赖版本 (2026-07-21)
 
@@ -161,16 +161,18 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 
 ### ExternalOptions 扩展 (0.2.18+)
 
-`miko.config.ts` 的 `external` 配置支持额外字段，解决 pnpm git 依赖与 Vite dep optimizer 的路径冲突：
+`miko.config.ts` 的 `miko.externalOptions` 支持额外字段，解决特殊依赖与 Vite dep optimizer 的路径冲突：
 
 ```ts
-external: {
-  optimizeDepsExclude: ['vant'],  // 从 Vite dep 预构建中排除
-  ssrNoExternal: ['vant'],        // SSR 时内联打包
+miko: {
+  externalOptions: {
+    optimizeDepsExclude: ['vant'],  // 从 Vite dep 预构建中排除
+    ssrNoExternal: ['vant'],        // SSR 时内联打包
+  },
 }
 ```
 `ExternalOptions` 类型定义在 `packages/vite-plugin-miko/types.ts`，逻辑在 `packages/vite-plugin-miko/index.ts` 的 `defineMikoConfig` 中读取并传给 Vite。
 
 ### TypeScript 类型检查 (0.1.23+)
 
-`packages/cli/build.ts` 通过 `spawn(process.execPath, ['--import', jitiUrl, '--eval', ...])` 在子进程中执行 `vue-tsc` 类型检查。`jitiUrl` / `tscUrl` 使用 `import.meta.resolve` / `pathToFileURL` 生成 `file://` URL（Node.js ESM 在 Windows 上需要此格式）。`NODE_PATH` 通过 `pnpm root -w`（workspace）或 `pnpm root`（单包）获取，确保 pnpm 隔离下子进程能解析模块。
+`packages/cli/build.ts` 通过 `spawn(process.execPath, ['--import', jitiUrl, '--eval', ...])` 在子进程中执行 `vue-tsc` 类型检查。`jitiUrl` / `tscUrl` 使用 `import.meta.resolve` / `pathToFileURL` 生成 `file://` URL（Node.js ESM 在 Windows 上需要此格式）。子进程以项目根目录为 `cwd`，依赖由 Bun 安装的标准 `node_modules` 结构交给 Node.js 正常解析。

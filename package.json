@@ -11,6 +11,8 @@
   ],
   "type": "module",
   "scripts": {
+    "format": "oxfmt --write .",
+    "lint": "oxlint --fix . && eslint --fix .",
     "test:packages": "vitest run --config vitest.config.ts",
     "test:packages:watch": "vitest --config vitest.config.ts",
     "typecheck:packages": "vue-tsc --noEmit -p tsconfig.builder.json && vue-tsc --noEmit -p packages/vite-plugin-bootstrap/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-index-html/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-miko/tsconfig.json"
@@ -33,9 +35,9 @@
     "fs-extra": "^11.4.0",
     "jsdom": "^30.0.0",
     "less": "^4.8.1",
+    "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
     "unocss": "^66.7.5",
     "unplugin-vue-components": "^32.1.0",
-    "typescript": "npm:typescript-native-bridge@6.0.3-bridge.7.tsgo.7.0.2",
     "vite": "^8.1.5",
     "vite-plugin-external": "^6.2.2",
     "vite-plugin-vue-devtools": "^8.2.1",
@@ -58,6 +60,7 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
+  "packageManager": "bun@1.3.14",
   "catalog": {
     "vite": "^8.1.0"
   },

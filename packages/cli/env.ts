@@ -44,7 +44,7 @@ export function loadEnvFiles(
 ): void {
   if (envArg) {
     const envPath = `.env.${envArg}`;
-    const result = dotenv.config({ path: envPath, override: true });
+    const result = dotenv.config({ path: envPath, override: true, quiet: true });
     if (result.error) {
       const code = (result.error as NodeJS.ErrnoException).code;
       if (code === 'ENOENT') {
@@ -54,5 +54,5 @@ export function loadEnvFiles(
       }
     }
   }
-  dotenv.config();
+  dotenv.config({ quiet: true });
 }

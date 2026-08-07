@@ -10,46 +10,69 @@ export interface CommandRunners {
 
 export interface RunCliDependencies {
   cwd: () => string;
+  output?: (message: string) => void;
   runners: CommandRunners;
 }
 
-type CommandLoader = () => Promise<unknown>;
+type CommandRunner = (context: CommandContext) => Promise<void>;
+type CommandLoader = () => Promise<CommandRunner>;
 
 const commandLoaders = {
-  build: () => import('./build.ts'),
-  dev: () => import('./dev.ts'),
-  preview: () => import('./preview.ts'),
+  build: async () => (await import('./build.ts')).runBuild,
+  dev: async () => (await import('./dev.ts')).runDev,
+  preview: async () => (await import('./preview.ts')).runPreview,
 } satisfies Record<ImplementedCommand, CommandLoader>;
 
-function restoreEnv(name: 'MIKO_MODE' | 'MIKO_LIB_MODE', value: string | undefined): void {
-  if (value === undefined) delete process.env[name];
-  else process.env[name] = value;
+let environmentQueue = Promise.resolve();
+
+function restoreProcessEnv(previousEnv: NodeJS.ProcessEnv): void {
+  for (const name of Object.keys(process.env)) {
+    if (!Object.hasOwn(previousEnv, name)) delete process.env[name];
+  }
+  for (const [name, value] of Object.entries(previousEnv)) {
+    if (value === undefined) delete process.env[name];
+    else process.env[name] = value;
+  }
 }
 
-export async function runWithLegacyEnvironment(
+async function executeWithLegacyEnvironment(
   context: CommandContext,
-  loader: CommandLoader,
+  loader: () => Promise<unknown>,
 ): Promise<void> {
   const previousCwd = process.cwd();
-  const previousMode = process.env.MIKO_MODE;
-  const previousLibMode = process.env.MIKO_LIB_MODE;
+  const previousEnv = { ...process.env };
 
   try {
     process.chdir(context.root);
-    loadEnvFiles(context.mode);
+    loadEnvFiles(context.modeArg);
     process.env.MIKO_MODE = context.mode;
     if (context.lib) process.env.MIKO_LIB_MODE = '1';
     else delete process.env.MIKO_LIB_MODE;
     await loader();
   } finally {
-    restoreEnv('MIKO_MODE', previousMode);
-    restoreEnv('MIKO_LIB_MODE', previousLibMode);
-    process.chdir(previousCwd);
+    try {
+      restoreProcessEnv(previousEnv);
+    } finally {
+      process.chdir(previousCwd);
+    }
   }
 }
 
+export function runWithLegacyEnvironment(
+  context: CommandContext,
+  loader: () => Promise<unknown>,
+): Promise<void> {
+  const execution = environmentQueue.then(() => executeWithLegacyEnvironment(context, loader));
+  environmentQueue = execution.then(
+    () => undefined,
+    () => undefined,
+  );
+  return execution;
+}
+
 async function runLegacyCommand(context: CommandContext): Promise<void> {
-  await runWithLegacyEnvironment(context, commandLoaders[context.command]);
+  const runner = await commandLoaders[context.command]();
+  await runWithLegacyEnvironment(context, () => runner(context));
 }
 
 export const legacyCommandRunners: CommandRunners = {
@@ -58,8 +81,26 @@ export const legacyCommandRunners: CommandRunners = {
   preview: runLegacyCommand,
 };
 
+export function createCliHelp(command?: ImplementedCommand): string {
+  const usage = command ? `miko ${command} [options]` : 'miko <dev|build|preview> [options]';
+  return [
+    `Usage: ${usage}`,
+    '',
+    'Options:',
+    '  --root <dir>     项目根目录',
+    '  --env <name>     加载 .env.<name> 并作为 Vite mode',
+    '  --mode <name>    --env 的别名',
+    '  --lib            构建库（仅 build）',
+    '  -h, --help       显示帮助',
+  ].join('\n');
+}
+
 export async function runCli(argv: string[], dependencies: RunCliDependencies): Promise<void> {
   const options = parseCliArgs(argv);
+  if (options.help) {
+    (dependencies.output ?? console.log)(createCliHelp(options.command));
+    return;
+  }
   const context = createCommandContext(options, dependencies.cwd());
   await dependencies.runners[context.command](context);
 }

@@ -15,8 +15,14 @@
 import { externalPlugin } from '@minar-kotonoha/vite-plugin-external';
 
 export default defineConfig({
-  plugins: [externalPlugin(process.cwd())],
+  plugins: externalPlugin(process.cwd(), true),
 });
 ```
 
 需要安装 `@minar-kotonoha/framework`，并在生产环境通过 CDN 加载其 UMD 包。
+
+为兼容旧版本，`externalPlugin(true)` 仍表示“以当前工作目录解析依赖并启用 CDN 外部化”。新增外部包可通过第三个参数传入：
+
+```ts
+externalPlugin(process.cwd(), true, ['custom-runtime']);
+```

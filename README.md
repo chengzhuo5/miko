@@ -67,23 +67,30 @@ cd app && bun test:e2e:browser
 
 ## 项目配置
 
-`vite.config.ts` — 一行搞定所有插件：
+零配置项目不需要配置文件。需要覆盖默认值时，只创建 `miko.config.ts`：
 
 ```ts
-import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
-export default await defineMikoConfig()
-```
+import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko'
 
-可选创建 `miko.config.ts` 覆盖默认值：
-
-```ts
 export default {
-  uiLibrary: 'vant',     // 'vant' | 'element-plus'
-  proxy: [
-    { context: ['/api/**'], target: 'https://dev.example.com', changeOrigin: true },
-  ],
-}
+  miko: {
+    uiLibrary: 'vant',
+  },
+  vite: {
+    base: '/cms/',
+    server: {
+      proxy: {
+        '/api': {
+          target: 'https://dev.example.com',
+          changeOrigin: true,
+        },
+      },
+    },
+  },
+} satisfies MikoUserConfig
 ```
+
+`miko` 放框架能力，`vite` 接受 Vite 原生配置；`vite.config.ts` 不参与 Miko CLI 构建。
 
 ## 新建项目
 

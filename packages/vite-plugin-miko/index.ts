@@ -176,7 +176,9 @@ async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOpt
 
   const externalEnabled =
     miko.externalOptions !== false && Boolean(miko.externalOptions.frameworkCDN);
-  plugins.push(...externalPlugin(project.viteRoot, externalEnabled));
+  const additionalExternals =
+    miko.externalOptions === false ? [] : (miko.externalOptions.additionalExternals ?? []);
+  plugins.push(...externalPlugin(project.viteRoot, externalEnabled, additionalExternals));
   plugins.push(
     await indexHTMLPlugin({
       entry: miko.entry,
@@ -194,6 +196,7 @@ async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOpt
 export async function createMikoViteConfig(project: ResolvedMikoConfig) {
   const { miko, outDir } = project;
   const ssgEnabled = miko.rendering === 'ssg';
+  const externalOptions = miko.externalOptions === false ? undefined : miko.externalOptions;
   const plugins = await createMikoPlugins(project);
 
   const generated = {
@@ -212,6 +215,12 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
     experimental: {
       bundledDev: miko.devOptions.bundledDev ?? false,
     },
+    optimizeDeps: externalOptions?.optimizeDepsExclude?.length
+      ? { exclude: externalOptions.optimizeDepsExclude }
+      : undefined,
+    ssr: externalOptions?.ssrNoExternal?.length
+      ? { noExternal: externalOptions.ssrNoExternal }
+      : undefined,
     ssgOptions: ssgEnabled
       ? {
           ...miko.ssgOptions,
@@ -220,6 +229,11 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
       : undefined,
     define: {
       'import.meta.env.VITE_MIKO_SPA': JSON.stringify(ssgEnabled ? 'false' : 'true'),
+      ...(externalOptions?.frameworkCDN
+        ? {
+            'import.meta.env.VITE_FRAMEWORK_CDN': JSON.stringify(externalOptions.frameworkCDN),
+          }
+        : {}),
     },
     plugins,
   };

@@ -23,4 +23,32 @@ describe('parseCliArgs', () => {
       }),
     );
   });
+
+  it('rejects unknown flags and extra positional arguments', () => {
+    for (const argv of [
+      ['build', '--unknown'],
+      ['build', 'extra'],
+    ]) {
+      expect(() => parseCliArgs(argv)).toThrowError(
+        expect.objectContaining({
+          code: 'MIKO_CLI_ARGS',
+          exitCode: 2,
+        }),
+      );
+    }
+  });
+
+  it('rejects duplicate root values with a structured CLI error', () => {
+    expect(() => parseCliArgs(['build', '--root', 'app', '--root', 'other'])).toThrowError(
+      expect.objectContaining({
+        code: 'MIKO_CLI_ARGS',
+        exitCode: 2,
+      }),
+    );
+  });
+
+  it('accepts global and command help without requiring a command', () => {
+    expect(parseCliArgs(['--help'])).toMatchObject({ help: true });
+    expect(parseCliArgs(['build', '--help'])).toMatchObject({ command: 'build', help: true });
+  });
 });

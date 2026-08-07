@@ -6,57 +6,58 @@
  * @see {@link import('@minar-kotonoha/vite-plugin-miko').MikoUserConfig}
  */
 
-import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko'
+import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
 
 export default {
-  base: '/cms/',
-  // ===== 基础路径 =====
-  /** UI 组件库：'vant'（默认）| 'element-plus' */
-  uiLibrary: 'vant' as const,
+  miko: {
+    /** UI 组件库：'vant'（默认）| 'element-plus' */
+    uiLibrary: 'vant' as const,
 
-  /** 默认布局名（layouts.defaultLayout 的快捷方式） */
-  // layout: 'flexible',
+    /** 默认布局名（layoutsPluginOptions.defaultLayout 的快捷方式） */
+    // layout: 'flexible',
 
-  /** 模板目录路径（默认自动探测） */
-  // template: 'template',
+    /** 模板目录路径（默认自动探测） */
+    // template: 'template',
 
-  /** 应用入口文件路径（默认 <template>/main.ts） */
-  // entry: 'template/main.ts',
+    /** 应用入口文件路径（默认 <template>/main.ts） */
+    // entry: 'template/main.ts',
 
-  /** 构建输出目录（默认 ./dist） */
-  // outDir: 'dist',
+    /** 页面目录 — 文件系统路由扫描根目录（默认 ./pages） */
+    // pagesDir: 'pages',
 
-  /** 页面目录 — 文件系统路由扫描根目录（默认 ./pages） */
-  // pagesDir: 'pages',
-
-  // ===== 开发服务器 =====
-  proxy: [
-    // {
-    //   context: ['/api/**'],
-    //   target: 'https://dev.example.com',
-    //   changeOrigin: true,
+    // ===== 库模式（miko build --lib 使用）=====
+    // lib: {
+    //   entry: 'src/index.ts',
+    //   formats: ['es', 'cjs'],
     // },
-  ],
 
-  // ===== 库模式（miko build --lib 使用）=====
-  // lib: {
-  //   entry: 'src/index.ts',
-  //   formats: ['es', 'cjs'],
-  // },
-
-  // ===== 各插件深度配置（均含默认值，按需覆盖）=====
-
-  // vue: { /* @vitejs/plugin-vue 选项 */ },
-  // vueJsx: { /* @vitejs/plugin-vue-jsx 选项 */ },
-  // vueRouter: { extensions: ['.vue', '.setup.tsx'] },
-  // layouts: { defaultLayout: 'flexible', layoutsDirs: ['template/layouts', './layouts'] },
-  // components: { dirs: ['./components'], extensions: ['vue', 'tsx', 'ts'] },
-  // unoCSS: { configFile: false },
-  // legacy: { targets: ['chrome 49', 'ios 10'] },
-  // ssg: { beastiesOptions: { external: false }, dirStyle: 'flat', formatting: 'none' },
-  // linter: { oxlint: true, eslint: true },
-  // bootstrap: { entryFile: 'index.ts' },
-  // external: { frameworkCDN: 'https://unpkg.com/@minar-kotonoha/framework@0.1.1/dist/framework.umd.js' },
-  // dev: { bundledDev: false, port: 5173 },
-  // janus: false,
-} satisfies MikoUserConfig
+    // ===== 各插件深度配置（均含默认值，按需覆盖）=====
+    // vuePluginOptions: { /* @vitejs/plugin-vue 选项 */ },
+    // vueJsxPluginOptions: { /* @vitejs/plugin-vue-jsx 选项 */ },
+    // routerPluginOptions: { extensions: ['.vue', '.setup.tsx'] },
+    // layoutsPluginOptions: { defaultLayout: 'flexible' },
+    // componentsPluginOptions: { dirs: ['./components'], extensions: ['vue', 'tsx', 'ts'] },
+    // unoCSSPluginOptions: { configFile: false },
+    // legacyPluginOptions: { targets: ['chrome 49', 'ios 10'] },
+    // ssgOptions: { beastiesOptions: { external: false }, dirStyle: 'flat', formatting: 'none' },
+    // linterOptions: { oxlint: true, eslint: true },
+    // bootstrapOptions: { entryFile: 'index.ts' },
+    // externalOptions: { frameworkCDN: 'https://unpkg.com/@minar-kotonoha/framework/dist/framework.umd.js' },
+    // devOptions: { bundledDev: false },
+    // janusOptions: false,
+  },
+  vite: {
+    /** 部署基础路径：所有 Vite 配置都放在 vite 命名空间 */
+    base: '/cms/',
+    // build: { outDir: 'dist' },
+    // server: { host: '127.0.0.1', port: 5173, open: false },
+    // server: {
+    //   proxy: {
+    //     '/api': {
+    //       target: 'https://dev.example.com',
+    //       changeOrigin: true,
+    //     },
+    //   },
+    // },
+  },
+} satisfies MikoUserConfig;

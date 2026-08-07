@@ -33,7 +33,28 @@ const externalMap = Object.fromEntries(
   externalPkgs.map((pkg) => [pkg, `(framework['${pkg}'] || framework.default['${pkg}'])`] as const),
 );
 
-export function externalPlugin(root: string, enableCDN = false) {
+export function externalPlugin(enableCDN?: boolean): PluginOption[];
+export function externalPlugin(
+  root: string,
+  enableCDN?: boolean,
+  additionalExternals?: string[],
+): PluginOption[];
+export function externalPlugin(
+  rootOrEnableCDN: string | boolean = process.cwd(),
+  enableCDN = false,
+  additionalExternals: string[] = [],
+) {
+  const root = typeof rootOrEnableCDN === 'string' ? rootOrEnableCDN : process.cwd();
+  const resolvedEnableCDN = typeof rootOrEnableCDN === 'boolean' ? rootOrEnableCDN : enableCDN;
+  const resolvedExternalMap = {
+    ...externalMap,
+    ...Object.fromEntries(
+      additionalExternals.map((pkg) => [
+        pkg,
+        `(framework['${pkg}'] || framework.default['${pkg}'])`,
+      ]),
+    ),
+  };
   const plugins: PluginOption[] = [
     {
       name: '@minar-kotonoha/vite-plugin-external',
@@ -65,11 +86,11 @@ export function externalPlugin(root: string, enableCDN = false) {
     },
   ];
 
-  if (enableCDN) {
+  if (resolvedEnableCDN) {
     plugins.push({
       ...pluginExternal({
         get externals() {
-          return queryEnableExternal() ? externalMap : {};
+          return queryEnableExternal() ? resolvedExternalMap : {};
         },
         externalizeDeps: ['vue-router/auto', 'vue-router/auto-routes'],
       }),

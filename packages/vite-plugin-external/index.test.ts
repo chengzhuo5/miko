@@ -12,6 +12,12 @@ afterEach(async () => {
 });
 
 describe('externalPlugin', () => {
+  it('keeps the legacy boolean signature for CDN externalization', () => {
+    expect(externalPlugin(false)).toHaveLength(1);
+    expect(externalPlugin(true)).toHaveLength(2);
+    expect(externalPlugin(process.cwd(), true, ['custom-runtime'])).toHaveLength(2);
+  });
+
   it('resolves dependencies from the explicit target root', async () => {
     const root = await mkdtemp(join(tmpdir(), 'miko-external-root-'));
     const packageRoot = resolve(root, 'node_modules/miko-target-root-fixture');
