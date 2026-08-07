@@ -11,6 +11,7 @@ import {
   linterPlugins,
 } from './integrations';
 import { runtimePlugin } from './runtime';
+import { capabilityRestartPlugin } from './restart';
 
 export interface PluginAssembly {
   plugins: PluginOption[];
@@ -50,6 +51,15 @@ export async function assembleMikoPlugins(project: ResolvedMikoConfig): Promise<
   add('miko:external-cdn', external.cdn);
   add('miko:html-entry', await htmlEntryPlugins(project));
   add('miko:janus', janusPlugins(project));
+  if (project.env.command === 'dev') {
+    add(
+      'miko:restart-on-capability-change',
+      capabilityRestartPlugin(
+        project.signals.watchedFiles,
+        project.signals.watchedDirectories,
+      ),
+    );
+  }
 
   const protectedPluginNames = plugins.flatMap((plugin) => {
     if (!plugin || Array.isArray(plugin) || !('name' in plugin)) return [];

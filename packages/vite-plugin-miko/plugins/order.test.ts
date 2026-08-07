@@ -121,4 +121,14 @@ describe('assembleMikoPlugins', () => {
       'miko:html-entry',
     ]);
   });
+
+  it('adds the capability restart watcher last for dev only', async () => {
+    const configured = project();
+    configured.env.command = 'dev';
+
+    const result = await assembleMikoPlugins(configured);
+
+    expect(result.order.at(-1)).toBe('miko:restart-on-capability-change');
+    expect(flattenNames(result.plugins)).toContain('miko:restart-on-capability-change');
+  });
 });
