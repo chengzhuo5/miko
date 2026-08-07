@@ -2,8 +2,15 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMikoViteConfig } from '../index';
 import type { ResolvedMikoConfig } from './types';
 
+const mocks = vi.hoisted(() => ({
+  externalPlugin: vi.fn<(root: string, enableCDN?: boolean) => []>(() => []),
+}));
+
 vi.mock('@minar-kotonoha/vite-plugin-index-html', () => ({
   indexHTMLPlugin: async () => [],
+}));
+vi.mock('@minar-kotonoha/vite-plugin-external', () => ({
+  externalPlugin: mocks.externalPlugin,
 }));
 
 function project(): ResolvedMikoConfig {
@@ -44,6 +51,7 @@ describe('createMikoViteConfig', () => {
   it('preserves user Vite config while adding Miko defaults', async () => {
     const config = await createMikoViteConfig(project());
 
+    expect(mocks.externalPlugin).toHaveBeenCalledWith('D:/project', false);
     expect(config.root).toBe('D:/project');
     expect(config.input).toBe('D:/project/index.html');
     expect(config.cacheDir).toBe('D:/project/node_modules/.vite');

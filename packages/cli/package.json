@@ -2,39 +2,43 @@
   "name": "@minar-kotonoha/miko-cli",
   "version": "0.1.30",
   "description": "miko CLI — Vue 3 SSG 构建工具链命令行",
-  "type": "module",
   "bin": {
     "miko": "./miko"
   },
-  "exports": {
-    ".": "./index.ts",
-    "./package.json": "./package.json"
-  },
   "files": [
     "miko",
+    "args.ts",
+    "context.ts",
+    "errors.ts",
     "env.ts",
     "index.ts",
+    "run.ts",
     "dev.ts",
     "build.ts",
     "preview.ts",
     "tsc.ts",
     "css-loader.mjs"
   ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "@minar-kotonoha/framework": "workspace:^",
-    "@minar-kotonoha/vite-ssg": "^28.3.4",
     "@minar-kotonoha/vite-plugin-miko": "workspace:^",
+    "@minar-kotonoha/vite-ssg": "^28.3.4",
     "dotenv": "^17.4.0",
     "jiti": "^2.7.0",
     "vite": "catalog:",
     "vue-tsc": "~3.3.8",
     "yargs-parser": "^22.0.0"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

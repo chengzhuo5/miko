@@ -1,8 +1,8 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { build, preview } from 'vite';
 import type { PreviewServer } from 'vite';
@@ -13,6 +13,7 @@ import type { MikoOptions } from './types';
 const roots: string[] = [];
 const browsers: BrowserHandle[] = [];
 const previewServers: PreviewServer[] = [];
+const workspaceNodeModules = fileURLToPath(new URL('../../../node_modules', import.meta.url));
 
 interface BrowserPage {
   on(event: 'console', listener: (message: { text(): string }) => void): void;
@@ -41,6 +42,14 @@ async function loadChromium() {
   return playwright.chromium;
 }
 
+async function linkWorkspaceNodeModules(root: string): Promise<void> {
+  await symlink(
+    workspaceNodeModules,
+    resolve(root, 'node_modules'),
+    process.platform === 'win32' ? 'junction' : 'dir',
+  );
+}
+
 afterEach(async () => {
   await Promise.all(browsers.splice(0).map((browser) => browser.close()));
   await Promise.all(previewServers.splice(0).map((server) => server.close()));
@@ -54,6 +63,7 @@ async function buildSpa(
   const pagesDir = resolve(root, 'pages');
   roots.push(root);
 
+  await linkWorkspaceNodeModules(root);
   await mkdir(pagesDir, { recursive: true });
   await writeFile(
     resolve(pagesDir, 'index.vue'),
@@ -126,6 +136,7 @@ describe('createMikoViteConfig SPA build', () => {
     const pagesDir = resolve(root, 'pages');
     roots.push(root);
 
+    await linkWorkspaceNodeModules(root);
     await mkdir(resolve(template, 'layouts'), { recursive: true });
     await mkdir(pagesDir, { recursive: true });
     await writeFile(

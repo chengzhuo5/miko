@@ -176,7 +176,7 @@ async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOpt
 
   const externalEnabled =
     miko.externalOptions !== false && Boolean(miko.externalOptions.frameworkCDN);
-  plugins.push(...externalPlugin(externalEnabled));
+  plugins.push(...externalPlugin(project.viteRoot, externalEnabled));
   plugins.push(
     await indexHTMLPlugin({
       entry: miko.entry,

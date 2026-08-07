@@ -32,19 +32,15 @@ const queryEnableExternal = () => env.VITE_SSG !== 'true';
 const externalMap = Object.fromEntries(
   externalPkgs.map((pkg) => [pkg, `(framework['${pkg}'] || framework.default['${pkg}'])`] as const),
 );
-const cwd = process.cwd();
 
-export function externalPlugin(enableCDN = false) {
+export function externalPlugin(root: string, enableCDN = false) {
   const plugins: PluginOption[] = [
     {
       name: '@minar-kotonoha/vite-plugin-external',
       config: (_: UserConfig, { mode }: { mode: string }) => {
         return {
           ssr: {
-            noExternal: [
-              /.*\/vant/,
-              ...(mode === 'development' ? ['vue-router'] : []),
-            ],
+            noExternal: [/.*\/vant/, ...(mode === 'development' ? ['vue-router'] : [])],
           },
         };
       },
@@ -60,7 +56,7 @@ export function externalPlugin(enableCDN = false) {
           return;
         }
         try {
-          const resolvedId = await resolveModule(source, cwd);
+          const resolvedId = await resolveModule(source, root);
           return resolvedId;
         } catch {
           return;

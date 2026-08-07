@@ -12,11 +12,11 @@
 
 ```ts
 // vite.config.ts
-import { externalPlugin } from '@minar-kotonoha/vite-plugin-external'
+import { externalPlugin } from '@minar-kotonoha/vite-plugin-external';
 
 export default defineConfig({
-  plugins: [externalPlugin()]
-})
+  plugins: [externalPlugin(process.cwd())],
+});
 ```
 
 需要安装 `@minar-kotonoha/framework`，并在生产环境通过 CDN 加载其 UMD 包。
