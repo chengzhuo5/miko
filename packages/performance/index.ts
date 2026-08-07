@@ -6,11 +6,12 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { version as viteVersion } from 'vite';
 import { measureBuildSuite } from './build';
+import { measureRuntimeFixture } from './runtime';
 import type {
   BuildFixtureName,
   BuildMetrics,
-  BuildPerformanceReport,
   EnvironmentFingerprint,
+  PerformanceReport,
 } from './types';
 
 const FIXTURES: BuildFixtureName[] = ['small', 'medium', 'large', 'runtime'];
@@ -53,7 +54,7 @@ async function writeJsonAtomic(path: string, value: unknown): Promise<void> {
   await rename(temporaryPath, path);
 }
 
-async function measureBuildReport(): Promise<BuildPerformanceReport> {
+async function measurePerformanceReport(): Promise<PerformanceReport> {
   const parent = await mkdtemp(join(tmpdir(), 'miko-performance-baseline-'));
   try {
     const build = await measureBuildSuite(parent, {
@@ -67,6 +68,18 @@ async function measureBuildReport(): Promise<BuildPerformanceReport> {
     if (FIXTURES.some(fixture => !build[fixture])) {
       throw new Error('Performance build suite did not return every fixture');
     }
+    const runtime = await measureRuntimeFixture(
+      {
+        root: join(parent, 'runtime'),
+        unvisitedRoute: '/unvisited',
+      },
+      {
+        samples: 5,
+        onSampleStart(sample, total) {
+          console.log(`[miko:perf] measuring browser runtime ${sample}/${total}`);
+        },
+      },
+    );
 
     return {
       schemaVersion: 1,
@@ -75,6 +88,7 @@ async function measureBuildReport(): Promise<BuildPerformanceReport> {
       commit: readCommit(),
       workerRuntime: process.execPath,
       build: build as Record<BuildFixtureName, BuildMetrics>,
+      runtime,
     };
   } finally {
     await rm(parent, { recursive: true, force: true });
@@ -90,7 +104,7 @@ export async function runPerformanceCli(argv: string[]): Promise<void> {
     throw new Error('Runtime performance metrics must be implemented before perf:check can run');
   }
 
-  const report = await measureBuildReport();
+  const report = await measurePerformanceReport();
   const outputPath = command === 'baseline' ? baselinePath : resultPath;
   await writeJsonAtomic(outputPath, report);
   console.log(`[miko:perf] wrote ${outputPath}`);
