@@ -95,9 +95,12 @@ export interface ResolvedMikoOptions extends Required<
   legacyPluginOptions: LegacyOptions | false;
   ssgOptions: SSGConfig;
   linterOptions: LinterOptions | false;
+  devToolsPluginOptions: DevToolsOptions | false;
   bootstrapOptions: BootstrapOptions;
   externalOptions: ExternalOptions | false;
   devOptions: DevOptions;
+  pinia: boolean;
+  unhead: boolean;
   janusOptions: JanusOptions | false;
 }
 
@@ -108,4 +111,6 @@ export interface ResolvedMikoConfig {
   miko: ResolvedMikoOptions;
   vite: UserConfig;
   outDir: string;
+  signals: import('../capabilities/types').ProjectSignals;
+  capabilities: ResolvedCapabilities;
 }

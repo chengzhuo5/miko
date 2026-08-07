@@ -312,7 +312,9 @@ Legacy classification uses Browserslist's normalized target list. Treat IE, Oper
 below 80, Chrome/Edge below 80, Firefox below 78, Safari/iOS below 13 as legacy. Handle normalized
 mobile names (`and_chr`, `and_ff`, `ios_saf`) and version ranges deterministically.
 
-CDN remains explicit-only: `frameworkCDN` is required.
+CDN remains explicit-only: only `frameworkCDN` enables CDN externalization. An
+`externalOptions` object containing only `optimizeDepsExclude`, `ssrNoExternal`, or additional
+resolution options remains valid and does not enable CDN.
 
 Unhead resolves as `builtin` for both Miko rendering modes because the selected ViteSSG runtime
 owns and installs the single head instance; `unhead: false` is rejected instead of installing a

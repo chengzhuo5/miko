@@ -28,9 +28,11 @@ import { bootstrapPlugin } from '@minar-kotonoha/vite-plugin-bootstrap';
 import { externalPlugin } from '@minar-kotonoha/vite-plugin-external';
 import { indexHTMLPlugin } from '@minar-kotonoha/vite-plugin-index-html';
 
+import { inspectProject, resolveCapabilities } from './capabilities';
 import { loadMikoConfig, resolveMikoConfig } from './config';
 import { mergeViteConfig } from './config/merge';
 import type { MikoConfigEnv, ResolvedMikoConfig } from './config/types';
+import { validateFinalConfig, validateResolvedProject } from './config/validate';
 import type { JanusOptions } from './types';
 
 export { defineMikoConfig } from './config/define';
@@ -44,8 +46,14 @@ export function getBundledTemplate(): string {
 }
 
 export async function resolveMikoProject(env: MikoConfigEnv): Promise<ResolvedMikoConfig> {
-  const loaded = await loadMikoConfig(env);
-  return resolveMikoConfig(loaded, env, getBundledTemplate());
+  const [loaded, signals] = await Promise.all([
+    loadMikoConfig(env),
+    inspectProject(env.root, env.mode),
+  ]);
+  const capabilities = resolveCapabilities(loaded.config.miko ?? {}, signals, env);
+  const project = resolveMikoConfig(loaded, env, getBundledTemplate(), capabilities, signals);
+  validateResolvedProject(project);
+  return project;
 }
 
 function loadJanus(opts: JanusOptions | false, root: string): PluginOption | null {
@@ -93,8 +101,11 @@ async function createMikoPlugins(project: ResolvedMikoConfig): Promise<PluginOpt
         }),
       },
     }),
-    vueDevTools(),
   ];
+
+  if (miko.devToolsPluginOptions !== false) {
+    plugins.push(vueDevTools(miko.devToolsPluginOptions));
+  }
 
   if (miko.layoutsPluginOptions !== false) {
     const layoutsDirs = miko.layoutsPluginOptions.layoutsDirs
@@ -239,9 +250,11 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
     plugins,
   };
 
-  return mergeViteConfig(generated as UserConfig, project.vite) as UserConfig & {
+  const config = mergeViteConfig(generated as UserConfig, project.vite) as UserConfig & {
     input: string;
   };
+  await validateFinalConfig(project, config);
+  return config;
 }
 
 export function createLibConfig(options: { config: ResolvedMikoConfig }): UserConfig {

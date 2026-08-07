@@ -10,27 +10,21 @@ import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
 
 export default {
   miko: {
-    /** UI 组件库：'vant'（默认）| 'element-plus' */
-    uiLibrary: 'vant' as const,
-
+    /** UI 组件库会根据直接依赖自动检测；多库并存时再显式选择 */
+    // uiLibrary: 'vant',
     /** 默认布局名（layoutsPluginOptions.defaultLayout 的快捷方式） */
     // layout: 'flexible',
-
     /** 模板目录路径（默认自动探测） */
     // template: 'template',
-
     /** 应用入口文件路径（默认 <template>/main.ts） */
     // entry: 'template/main.ts',
-
     /** 页面目录 — 文件系统路由扫描根目录（默认 ./pages） */
     // pagesDir: 'pages',
-
     // ===== 库模式（miko build --lib 使用）=====
     // lib: {
     //   entry: 'src/index.ts',
     //   formats: ['es', 'cjs'],
     // },
-
     // ===== 各插件深度配置（均含默认值，按需覆盖）=====
     // vuePluginOptions: { /* @vitejs/plugin-vue 选项 */ },
     // vueJsxPluginOptions: { /* @vitejs/plugin-vue-jsx 选项 */ },

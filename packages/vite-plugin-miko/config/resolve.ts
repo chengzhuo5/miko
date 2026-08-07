@@ -3,22 +3,26 @@ import { resolve } from 'node:path';
 import { remove } from 'fs-extra';
 import { mergeConfig } from 'vite';
 import type { UserConfig } from 'vite';
+import type { ProjectSignals } from '../capabilities/types';
 import { MikoConfigError } from './errors';
 import { mergeViteConfig } from './merge';
-import type { LoadedMikoConfig, MikoConfigEnv, ResolvedMikoConfig } from './types';
+import type {
+  LoadedMikoConfig,
+  MikoConfigEnv,
+  ResolvedCapabilities,
+  ResolvedMikoConfig,
+} from './types';
 
 function mergeOptions<T extends object>(defaults: T, user: object | undefined): T {
   return mergeConfig(defaults as UserConfig, (user ?? {}) as UserConfig) as T;
-}
-
-function enabledOptions<T extends object>(value: true | T | undefined): T | undefined {
-  return value === true ? undefined : value;
 }
 
 export function resolveMikoConfig(
   loaded: LoadedMikoConfig,
   env: MikoConfigEnv,
   bundledTemplate: string,
+  capabilities: ResolvedCapabilities,
+  signals: ProjectSignals,
 ): ResolvedMikoConfig {
   const raw = loaded.config.miko ?? {};
   const vite = loaded.config.vite ?? {};
@@ -84,6 +88,8 @@ export function resolveMikoConfig(
     configFile: loaded.configFile,
     viteRoot,
     outDir,
+    signals,
+    capabilities,
     vite: mergeViteConfig(vite, {
       root: viteRoot,
       build: { outDir },
@@ -93,7 +99,7 @@ export function resolveMikoConfig(
       template,
       entry: resolve(viteRoot, raw.entry ?? resolve(template, 'main.ts')),
       pagesDir,
-      uiLibrary: raw.uiLibrary ?? 'vant',
+      uiLibrary: capabilities.uiLibrary.value,
       layout: raw.layout ?? 'flexible',
       lib: raw.lib,
       vuePluginOptions: mergeOptions({}, raw.vuePluginOptions),
@@ -106,32 +112,32 @@ export function resolveMikoConfig(
         },
         raw.routerPluginOptions,
       ),
-      layoutsPluginOptions:
-        raw.layoutsPluginOptions === false
-          ? false
-          : mergeOptions({}, enabledOptions(raw.layoutsPluginOptions)),
-      componentsPluginOptions:
-        raw.componentsPluginOptions === false
-          ? false
-          : mergeOptions(defaultComponents, enabledOptions(raw.componentsPluginOptions)),
-      unoCSSPluginOptions:
-        raw.unoCSSPluginOptions === false
-          ? false
-          : mergeOptions({ configFile: false as const }, enabledOptions(raw.unoCSSPluginOptions)),
-      legacyPluginOptions:
-        raw.legacyPluginOptions === undefined || raw.legacyPluginOptions === false
-          ? false
-          : mergeOptions({}, enabledOptions(raw.legacyPluginOptions)),
+      layoutsPluginOptions: capabilities.layouts.enabled
+        ? mergeOptions({}, capabilities.layouts.value)
+        : false,
+      componentsPluginOptions: capabilities.components.enabled
+        ? mergeOptions(defaultComponents, capabilities.components.value)
+        : false,
+      unoCSSPluginOptions: capabilities.unoCSS.enabled
+        ? mergeOptions({ configFile: false as const }, capabilities.unoCSS.value)
+        : false,
+      legacyPluginOptions: capabilities.legacy.enabled
+        ? mergeOptions({}, capabilities.legacy.value)
+        : false,
       ssgOptions: mergeOptions(defaultSsgOptions, raw.ssgOptions),
-      linterOptions:
-        raw.linterOptions === false
-          ? false
-          : mergeOptions({ oxlint: true, eslint: true }, enabledOptions(raw.linterOptions)),
+      linterOptions: capabilities.linter.enabled
+        ? mergeOptions({ oxlint: true, eslint: true }, capabilities.linter.value)
+        : false,
+      devToolsPluginOptions: capabilities.devtools.enabled
+        ? mergeOptions({}, capabilities.devtools.value)
+        : false,
       bootstrapOptions: mergeOptions({ entryFile: 'index.ts' }, raw.bootstrapOptions),
-      externalOptions: raw.externalOptions ?? false,
+      externalOptions:
+        capabilities.cdn.source === 'explicit' ? mergeOptions({}, capabilities.cdn.value) : false,
       devOptions: mergeOptions({ bundledDev: false }, raw.devOptions),
-      janusOptions:
-        raw.janusOptions === false ? false : mergeOptions({}, enabledOptions(raw.janusOptions)),
+      pinia: capabilities.pinia.enabled,
+      unhead: capabilities.unhead.enabled,
+      janusOptions: capabilities.janus.enabled ? mergeOptions({}, capabilities.janus.value) : false,
     },
   };
 }

@@ -180,11 +180,19 @@ describe('resolveCapabilities', () => {
     });
   });
 
-  it('keeps CDN explicit-only and requires a framework URL', () => {
+  it('keeps CDN explicit-only while preserving non-CDN external options', () => {
     expect(resolveCapabilities(raw(), signals(), env()).cdn.enabled).toBe(false);
-    expect(() => resolveCapabilities(raw({ externalOptions: {} }), signals(), env())).toThrowError(
-      expect.objectContaining({ code: 'MIKO_CAPABILITY_INVALID' }),
-    );
+    expect(
+      resolveCapabilities(
+        raw({ externalOptions: { optimizeDepsExclude: ['vant'] } }),
+        signals(),
+        env(),
+      ).cdn,
+    ).toMatchObject({
+      enabled: false,
+      source: 'explicit',
+      value: { optimizeDepsExclude: ['vant'] },
+    });
     expect(
       resolveCapabilities(
         raw({

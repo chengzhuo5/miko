@@ -1,7 +1,19 @@
-import { resolve } from 'node:path';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import type { UserConfig } from 'vite';
-import { describe, expect, it } from 'vitest';
-import { resolveMikoConfig } from './index';
+import { afterEach, describe, expect, it } from 'vitest';
+import { resolveCapabilities } from '../capabilities';
+import type { ProjectSignals } from '../capabilities/types';
+import { resolveMikoProject } from '../index';
+import { resolveMikoConfig as resolveMikoConfigRaw } from './index';
+import type { LoadedMikoConfig, MikoConfigEnv } from './types';
+
+const roots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(roots.splice(0).map((root) => rm(root, { force: true, recursive: true })));
+});
 
 const env = {
   command: 'build' as const,
@@ -9,7 +21,53 @@ const env = {
   root: 'D:/projects/demo',
 };
 
+function signals(root: string): ProjectSignals {
+  return {
+    root,
+    packageJsonPath: resolve(root, 'package.json'),
+    dependencies: ['@janus/unplugin'],
+    browserslist: [],
+    browserslistConfigFile: null,
+    conventions: {
+      components: false,
+      janusSchemas: null,
+      layouts: false,
+      lintConfig: null,
+      unoConfig: null,
+    },
+    watchedDirectories: [],
+    watchedFiles: [],
+  };
+}
+
+function resolveMikoConfig(loaded: LoadedMikoConfig, environment: MikoConfigEnv, template: string) {
+  const projectSignals = signals(environment.root);
+  const capabilities = resolveCapabilities(loaded.config.miko ?? {}, projectSignals, environment);
+  return resolveMikoConfigRaw(loaded, environment, template, capabilities, projectSignals);
+}
+
 describe('resolveMikoConfig', () => {
+  it('returns project signals and capability provenance', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miko-resolved-project-'));
+    roots.push(root);
+    await writeFile(
+      resolve(root, 'package.json'),
+      `${JSON.stringify({ dependencies: { pinia: '^4.0.0' } }, null, 2)}\n`,
+    );
+
+    const project = await resolveMikoProject({
+      command: 'build',
+      mode: 'production',
+      root,
+    });
+
+    expect(project.signals.packageJsonPath).toBe(resolve(root, 'package.json'));
+    expect(project.capabilities.pinia).toMatchObject({
+      enabled: true,
+      source: 'dependency',
+    });
+  });
+
   it('uses SSG and conventional paths by default', () => {
     const result = resolveMikoConfig(
       { config: {}, configFile: null },

@@ -179,14 +179,14 @@ function resolveCdn(raw: MikoOptions): ResolvedCapabilities['cdn'] {
       raw.externalOptions === false ? 'miko.externalOptions 显式关闭' : 'CDN 只允许显式启用',
     );
   }
-  if (!raw.externalOptions.frameworkCDN) {
-    throw new MikoConfigError({
-      code: 'MIKO_CAPABILITY_INVALID',
-      field: 'miko.externalOptions.frameworkCDN',
-      message: '启用 CDN 外部化时必须提供 miko.externalOptions.frameworkCDN',
-    });
-  }
-  return capability(true, raw.externalOptions, 'explicit', '已提供 Framework CDN 地址');
+  return raw.externalOptions.frameworkCDN
+    ? capability(true, raw.externalOptions, 'explicit', '已提供 Framework CDN 地址')
+    : capability(
+        false,
+        raw.externalOptions,
+        'explicit',
+        '保留非 CDN External 配置，但未启用 CDN 外部化',
+      );
 }
 
 export function resolveCapabilities(

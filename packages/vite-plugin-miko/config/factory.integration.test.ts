@@ -6,9 +6,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { build, preview } from 'vite';
 import type { PreviewServer } from 'vite';
+import { resolveCapabilities } from '../capabilities';
+import type { ProjectSignals } from '../capabilities/types';
 import { createMikoViteConfig, getBundledTemplate } from '../index';
-import { resolveMikoConfig } from './resolve';
-import type { MikoOptions } from './types';
+import { resolveMikoConfig as resolveMikoConfigRaw } from './resolve';
+import type { LoadedMikoConfig, MikoConfigEnv, MikoOptions } from './types';
 
 const roots: string[] = [];
 const browsers: BrowserHandle[] = [];
@@ -47,6 +49,32 @@ async function linkWorkspaceNodeModules(root: string): Promise<void> {
     workspaceNodeModules,
     resolve(root, 'node_modules'),
     process.platform === 'win32' ? 'junction' : 'dir',
+  );
+}
+
+function resolveMikoConfig(loaded: LoadedMikoConfig, env: MikoConfigEnv, template: string) {
+  const signals: ProjectSignals = {
+    root: env.root,
+    packageJsonPath: null,
+    dependencies: [],
+    browserslist: [],
+    browserslistConfigFile: null,
+    conventions: {
+      components: false,
+      janusSchemas: null,
+      layouts: false,
+      lintConfig: null,
+      unoConfig: null,
+    },
+    watchedDirectories: [],
+    watchedFiles: [],
+  };
+  return resolveMikoConfigRaw(
+    loaded,
+    env,
+    template,
+    resolveCapabilities(loaded.config.miko ?? {}, signals, env),
+    signals,
   );
 }
 

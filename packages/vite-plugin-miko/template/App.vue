@@ -30,26 +30,27 @@ if (import.meta.env.SSR) {
     if (h && !h.ssr) h.ssr = true;
   } catch {}
 
-  // 生产环境 Framework CDN 地址，可通过 VITE_FRAMEWORK_CDN 自定义
-  // 默认使用 unpkg CDN，配合 @minar-kotonoha/framework 发布版本
-  const frameworkCDN = import.meta.env.VITE_FRAMEWORK_CDN
-    || `https://cdn.jsdelivr.net/npm/@minar-kotonoha/framework${import.meta.env.VITE_LIB_VERSION ? `@${import.meta.env.VITE_LIB_VERSION}` : ''}/dist/framework.umd.js`;
-  const framework = frameworkCDN;
+  // 只有显式配置 Framework CDN 时才注入外部脚本；默认使用应用内正常打包。
+  const frameworkCDN = import.meta.env.VITE_FRAMEWORK_CDN;
   useHead({
     style: useSkeleton ? [skeletonStyles] : [hiddenVCloakStyles],
-    script: [
-      {
-        src: framework,
-        tagPosition: 'bodyClose',
-      },
-    ],
-    link: [
-      {
-        rel: 'preload',
-        href: framework,
-        as: 'script',
-      },
-    ],
+    ...(frameworkCDN
+      ? {
+          script: [
+            {
+              src: frameworkCDN,
+              tagPosition: 'bodyClose' as const,
+            },
+          ],
+          link: [
+            {
+              rel: 'preload',
+              href: frameworkCDN,
+              as: 'script',
+            },
+          ],
+        }
+      : {}),
   });
 }
 </script>

@@ -30,7 +30,7 @@ describe('loadMikoConfig', () => {
       root: fileURLToPath(new URL('../../../app/', import.meta.url)),
     });
 
-    expect(loaded.config.miko?.uiLibrary).toBe('vant');
+    expect(loaded.config.miko?.uiLibrary).toBeUndefined();
     expect(loaded.config.vite?.base).toBe('/cms/');
   });
 
