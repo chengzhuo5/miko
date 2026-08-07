@@ -1,0 +1,17 @@
+{
+  "name": "@minar-kotonoha/performance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "baseline": "bun index.ts baseline",
+    "measure": "bun index.ts measure",
+    "check": "bun index.ts check"
+  },
+  "dependencies": {
+    "@minar-kotonoha/miko-cli": "workspace:^",
+    "@minar-kotonoha/vite-plugin-miko": "workspace:^",
+    "@playwright/test": "^1.62.1",
+    "jiti": "^2.7.0",
+    "vite": "catalog:"
+  }
+}

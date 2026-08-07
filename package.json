@@ -13,6 +13,9 @@
   "scripts": {
     "format": "oxfmt --write .",
     "lint": "oxlint --fix . && eslint --fix .",
+    "perf:baseline": "bun --cwd packages/performance baseline",
+    "perf:measure": "bun --cwd packages/performance measure",
+    "perf:check": "bun --cwd packages/performance check",
     "test:packages": "vitest run --config vitest.config.ts",
     "test:packages:watch": "vitest --config vitest.config.ts",
     "typecheck:packages": "vue-tsc --noEmit -p tsconfig.builder.json && vue-tsc --noEmit -p packages/vite-plugin-bootstrap/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-index-html/tsconfig.json && vue-tsc --noEmit -p packages/vite-plugin-miko/tsconfig.json"
