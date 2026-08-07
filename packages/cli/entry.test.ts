@@ -14,9 +14,11 @@ describe('cli entry', () => {
     expect(buildSource).not.toContain('NODE_PATH');
     expect(runSource).toContain("import('./build.ts')");
     expect(runSource).toContain("import('./dev.ts')");
+    expect(runSource).toContain("import('./doctor.ts')");
     expect(runSource).toContain("import('./preview.ts')");
     expect(runSource).toContain('.runBuild');
     expect(runSource).toContain('.runDev');
+    expect(runSource).toContain('.runDoctor');
     expect(runSource).toContain('.runPreview');
     expect(runSource).not.toMatch(/import\(`\.\/\$\{/u);
   });

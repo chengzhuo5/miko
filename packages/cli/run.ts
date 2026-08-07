@@ -5,6 +5,7 @@ import { loadEnvFiles } from './env';
 export interface CommandRunners {
   dev(context: CommandContext): Promise<void>;
   build(context: CommandContext): Promise<void>;
+  doctor(context: CommandContext): Promise<void>;
   preview(context: CommandContext): Promise<void>;
 }
 
@@ -20,6 +21,7 @@ type CommandLoader = () => Promise<CommandRunner>;
 const commandLoaders = {
   build: async () => (await import('./build.ts')).runBuild,
   dev: async () => (await import('./dev.ts')).runDev,
+  doctor: async () => (await import('./doctor.ts')).runDoctor,
   preview: async () => (await import('./preview.ts')).runPreview,
 } satisfies Record<ImplementedCommand, CommandLoader>;
 
@@ -78,11 +80,12 @@ async function runLegacyCommand(context: CommandContext): Promise<void> {
 export const legacyCommandRunners: CommandRunners = {
   build: runLegacyCommand,
   dev: runLegacyCommand,
+  doctor: runLegacyCommand,
   preview: runLegacyCommand,
 };
 
 export function createCliHelp(command?: ImplementedCommand): string {
-  const usage = command ? `miko ${command} [options]` : 'miko <dev|build|preview> [options]';
+  const usage = command ? `miko ${command} [options]` : 'miko <dev|build|preview|doctor> [options]';
   return [
     `Usage: ${usage}`,
     '',
@@ -91,6 +94,7 @@ export function createCliHelp(command?: ImplementedCommand): string {
     '  --env <name>     加载 .env.<name> 并作为 Vite mode',
     '  --mode <name>    --env 的别名',
     '  --lib            构建库（仅 build）',
+    '  --json           输出 JSON（仅 doctor）',
     '  -h, --help       显示帮助',
   ].join('\n');
 }

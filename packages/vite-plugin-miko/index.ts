@@ -25,6 +25,7 @@ export { defineMikoConfig } from './config/define';
 export { MikoConfigError } from './config/errors';
 export * from './capabilities';
 export { assembleMikoPlugins } from './plugins';
+export type { PluginAssembly } from './plugins';
 export type * from './config/types';
 export type * from './types';
 

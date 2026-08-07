@@ -2,18 +2,19 @@ import parser from 'yargs-parser';
 import { MikoCliError } from './errors';
 import { normalizeEnvArg } from './env';
 
-export type ImplementedCommand = 'dev' | 'build' | 'preview';
+export type ImplementedCommand = 'dev' | 'build' | 'preview' | 'doctor';
 
 export interface CliOptions {
   command?: ImplementedCommand;
   rootArg?: string;
   modeArg?: string;
   lib: boolean;
+  json: boolean;
   help?: boolean;
 }
 
-const COMMANDS = new Set<ImplementedCommand>(['dev', 'build', 'preview']);
-const PARSED_KEYS = new Set(['_', 'env', 'h', 'help', 'lib', 'mode', 'root']);
+const COMMANDS = new Set<ImplementedCommand>(['dev', 'build', 'preview', 'doctor']);
+const PARSED_KEYS = new Set(['_', 'env', 'h', 'help', 'json', 'lib', 'mode', 'root']);
 
 function invalidArgs(message: string): never {
   throw new MikoCliError('MIKO_CLI_ARGS', message, 2);
@@ -28,7 +29,7 @@ function readRootArg(value: unknown): string | undefined {
 
 export function parseCliArgs(argv: string[]): CliOptions {
   const parsed = parser(argv, {
-    boolean: ['help', 'lib'],
+    boolean: ['help', 'json', 'lib'],
     string: ['root', 'env', 'mode'],
     alias: { h: 'help' },
     configuration: {
@@ -50,6 +51,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
   if (command === undefined && !help) {
     throw new MikoCliError('MIKO_CLI_COMMAND', '未知命令: (空)', 2);
   }
+  if (parsed.json === true && command !== 'doctor') invalidArgs('--json 仅适用于 doctor 命令');
 
   let modeArg: string | undefined;
   try {
@@ -63,6 +65,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
     rootArg: readRootArg(parsed.root),
     modeArg,
     lib: parsed.lib === true,
+    json: parsed.json === true,
     help,
   };
 }

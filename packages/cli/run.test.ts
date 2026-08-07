@@ -27,6 +27,7 @@ describe('runCli', () => {
       runners: {
         build,
         dev: vi.fn<CommandRunners['dev']>(),
+        doctor: vi.fn<CommandRunners['doctor']>(),
         preview: vi.fn<CommandRunners['preview']>(),
       },
     });
@@ -45,6 +46,7 @@ describe('runCli', () => {
     const runners = {
       build: vi.fn<CommandRunners['build']>(),
       dev: vi.fn<CommandRunners['dev']>(),
+      doctor: vi.fn<CommandRunners['doctor']>(),
       preview: vi.fn<CommandRunners['preview']>(),
     };
 
@@ -57,7 +59,31 @@ describe('runCli', () => {
     expect(output).toHaveBeenCalledWith(expect.stringContaining('miko build'));
     expect(runners.build).not.toHaveBeenCalled();
     expect(runners.dev).not.toHaveBeenCalled();
+    expect(runners.doctor).not.toHaveBeenCalled();
     expect(runners.preview).not.toHaveBeenCalled();
+  });
+
+  it('dispatches doctor with JSON output enabled', async () => {
+    const doctor = vi.fn<CommandRunners['doctor']>().mockResolvedValue(undefined);
+
+    await runCli(['doctor', '--root', 'app', '--json'], {
+      cwd: () => 'D:/repo',
+      runners: {
+        build: vi.fn<CommandRunners['build']>(),
+        dev: vi.fn<CommandRunners['dev']>(),
+        doctor,
+        preview: vi.fn<CommandRunners['preview']>(),
+      },
+    });
+
+    expect(doctor).toHaveBeenCalledWith(
+      expect.objectContaining({
+        command: 'doctor',
+        root: resolve('D:/repo', 'app'),
+        mode: 'production',
+        json: true,
+      }),
+    );
   });
 
   it('sets and restores the legacy process environment after success', async () => {
@@ -77,6 +103,7 @@ describe('runCli', () => {
           root,
           mode: 'test',
           lib: true,
+          json: false,
         },
         async () => {
           expect(process.cwd()).toBe(root);
@@ -117,6 +144,7 @@ describe('runCli', () => {
             root,
             mode: 'production',
             lib: false,
+            json: false,
           },
           async () => {
             expect(process.cwd()).toBe(root);
@@ -157,6 +185,7 @@ describe('runCli', () => {
           mode: 'test',
           modeArg: 'test',
           lib: false,
+          json: false,
         },
         async () => {
           expect(process.env[envName]).toBe('from-dotenv');
@@ -188,6 +217,7 @@ describe('runCli', () => {
           mode: 'first',
           modeArg: 'first',
           lib: false,
+          json: false,
         },
         async () => {
           markFirstEntered();
@@ -205,6 +235,7 @@ describe('runCli', () => {
           mode: 'second',
           modeArg: 'second',
           lib: false,
+          json: false,
         },
         async () => {
           secondEntered = true;

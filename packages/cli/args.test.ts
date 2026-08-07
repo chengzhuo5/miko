@@ -11,6 +11,23 @@ describe('parseCliArgs', () => {
     });
   });
 
+  it('parses doctor JSON output', () => {
+    expect(parseCliArgs(['doctor', '--root', 'app', '--json'])).toMatchObject({
+      command: 'doctor',
+      rootArg: 'app',
+      json: true,
+    });
+  });
+
+  it('rejects --json outside doctor', () => {
+    expect(() => parseCliArgs(['build', '--json'])).toThrowError(
+      expect.objectContaining({
+        code: 'MIKO_CLI_ARGS',
+        exitCode: 2,
+      }),
+    );
+  });
+
   it('rejects unknown commands instead of dynamically importing a filename', () => {
     expect(() => parseCliArgs(['../../evil'])).toThrow(/未知命令/);
   });

@@ -36,4 +36,17 @@ describe('toMikoCliError', () => {
       cause: failure,
     });
   });
+
+  it('maps capability failures to exit code three', async () => {
+    const toMikoCliError = await loadErrorNormalizer();
+    const failure = Object.assign(new Error('ambiguous UI libraries'), {
+      code: 'MIKO_CAPABILITY_CONFLICT',
+    });
+
+    expect(toMikoCliError(failure)).toMatchObject({
+      code: 'MIKO_CAPABILITY_CONFLICT',
+      exitCode: 3,
+      cause: failure,
+    });
+  });
 });

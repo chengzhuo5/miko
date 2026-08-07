@@ -19,7 +19,8 @@ export function toMikoCliError(error: unknown): MikoCliError {
     typeof error.code === 'string' &&
     error.code.startsWith('MIKO_')
   ) {
-    return new MikoCliError(error.code, error.message, 2, error);
+    const exitCode = error.code.startsWith('MIKO_CAPABILITY_') ? 3 : 2;
+    return new MikoCliError(error.code, error.message, exitCode, error);
   }
 
   return new MikoCliError(

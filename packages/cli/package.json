@@ -15,6 +15,7 @@
     "run.ts",
     "dev.ts",
     "build.ts",
+    "doctor.ts",
     "preview.ts",
     "preview-config.ts",
     "tsc.ts",
