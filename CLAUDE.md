@@ -31,6 +31,10 @@ bun run vue-tsc --noEmit  # 类型检查（TypeScript 7 通过 typescript-native
 # 预览生产构建
 bun run preview
 
+# 检查实际能力、来源和插件顺序
+bunx miko doctor
+bunx miko doctor --json
+
 # 代码检查（oxlint + eslint，均带 --fix）
 bun lint
 
@@ -58,30 +62,27 @@ Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 |---------|---------|
 | `@minar-kotonoha/framework`（`packages/framework/`） | 核心框架：将 Vue 生态依赖聚合为 UMD 包，供 CDN 加载 |
 | `@minar-kotonoha/linter`（`packages/linter/`） | 共享的 ESLint/Oxlint/Oxfmt 配置 + Vite 代码检查插件 + 共享 tsconfig |
-| `@minar-kotonoha/cli`（`packages/cli/`） | miko CLI（dev、build、preview、tsc） |
+| `@minar-kotonoha/cli`（`packages/cli/`） | miko CLI（dev、build、preview、doctor） |
 | `@minar-kotonoha/vite-plugin-*`（`packages/vite-plugin-*/`） | 四个 Vite 插件（bootstrap、external、indexHTML、miko 总控） |
 | `@minar-kotonoha/create-miko`（`app/`） | Starter 模板 |
 
 ## 架构
 
-### 框架 CDN 外部化
+### 可选框架 CDN 外部化
 
-框架包将 Vue、vue-router、axios、unhead 及相关依赖构建为单个 UMD 包（`framework.umd.js`）。构建目标为 `chrome49, safari10`，以支持旧版浏览器。
+应用在 SPA、SSG 和开发模式下都默认正常打包依赖。只有 `miko.externalOptions.frameworkCDN` 显式提供 URL 时，`@minar-kotonoha/vite-plugin-external` 才把框架依赖映射到 `framework` 全局对象；此时项目必须直接依赖 `@minar-kotonoha/framework`。
 
-在**生产模式**（非 SSG）下，这些依赖被外部化：应用不打包它们，而是引用从 CDN 加载的全局 `framework` 对象（通过 `VITE_FRAMEWORK_CDN` 环境变量配置，默认使用 unpkg）。`@minar-kotonoha/vite-plugin-external` 将 `import { ref } from 'vue'` 映射为 `framework['vue'].ref`。
-
-在 **SSG/开发模式**下，依赖不会被外部化——Vite 正常打包它们。`vant` UI 库始终不参与外部化（其 CSS-in-JS 在 SSR 中会出错）。
+只配置 `optimizeDepsExclude`、`ssrNoExternal` 或额外解析选项不会启用 CDN。默认路径保持 tree-shaking、代码分割和无额外运行时网络依赖。
 
 ### 虚拟模块启动模式
 
 应用入口是 `template/main.ts`，它导入 `virtual:bootstrap`。`@minar-kotonoha/vite-plugin-bootstrap` 将此虚拟模块解析到项目 `index.ts` 的默认导出，将 Vue 应用实例作为参数传入。这样应用代码可以在框架初始化后运行，而无需硬编码导入路径。
 
-### 虚拟模块 indexHTML
+### 零配置 HTML 入口
 
-`@minar-kotonoha/vite-plugin-index-html` 提供 `virtual:index`，并处理开发/生产环境的根目录分离：
+Vite `root` 始终保持真实项目目录。根目录存在 `index.html` 时使用用户文件；不存在时，`@minar-kotonoha/vite-plugin-index-html` 以相同绝对路径身份在内存中提供内置 HTML。两种来源都经过 `transformIndexHtml`，自动注入唯一 Miko 模块入口并校验唯一 `#app`。
 
-- **开发**：根目录为 `node_modules/.vite_entry`（用于依赖预构建）
-- **生产**：根目录为 `template/` 目录，构建前复制 `index.html`
+不会复制临时 `index.html`，也不会把 root 指向 `node_modules` 或模板目录。
 
 ### 代码检查分层
 
@@ -129,18 +130,21 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - `.npmrc` 指向私有中国制品仓库（已注释），发布时使用 `--registry` 覆盖或 `publishConfig`
 - `vite` 版本通过 Bun catalog（`catalog:vite`）和 overrides 统一管理
 - `template/` 已内置于 `@minar-kotonoha/vite-plugin-miko` 包中（App.vue, main.ts, layouts），`app/` 为项目模板（stores, e2e）
-- 插件架构：`defineMikoConfig()` 为统一入口，内部直接展开所有插件（Vue/Router/Layouts/Components/UnoCSS/Legacy/Linter/SSG）。`@minar-kotonoha/vite-plugin-{bootstrap,external,index-html}` 为独立子插件可按需使用
-- Pinia SSR：模板 `main.ts` 通过 `initialState` 传递 SSR 上下文给 bootstrap，项目 bootstrap 中 `initialState.pinia = pinia.state.value`（SSR）/ `pinia.state.value = initialState.pinia`（客户端），vite-ssg 自动序列化到 `window.__INITIAL_STATE__`
+- 插件架构：`resolveMikoProject()` 先生成唯一能力图，再按固定顺序装配 Vue/Router/Runtime/Layouts/Components/UnoCSS/Linter/DevTools/Legacy/Bootstrap/External/HTML/Janus；各插件不得自行重复探测项目
+- 能力优先级：显式配置 → 根目录约定文件 → `package.json` 直接依赖 → 当前命令 → 安全默认值；`undefined` 自动、`false` 禁用、对象合并覆盖默认项
+- Pinia SSR：检测到 `pinia` 直接依赖后，`virtual:miko-runtime` 在 bootstrap 前安装唯一实例，客户端恢复 `initialState.pinia`，SSG 后写回 state；项目 `index.ts` 不再手动创建或注水
 - 骨架屏：`App.vue` 通过 `useHead({ style: [skeletonStyles] })` 注入骨架 CSS。`injectHead()` 补设 `head.ssr = true` 解决 unhead v3.x server createHead() 未设 SSR 标记导致条目丢失的问题
-- preview 代理：`miko preview` 支持 `miko.config.ts` 中 `proxy` 配置（Node.js 原生转发，零额外依赖），格式与 dev server 的 proxy 一致
+- preview 代理：优先使用 `vite.preview.proxy`，否则浅克隆并复用 `vite.server.proxy`；使用 Vite 原生代理，不注入 `secure: false` / `rejectUnauthorized: false`
+- Doctor：`miko doctor [--json]` 复用同一项目解析和插件装配，只读输出能力来源、实际标量值、插件顺序和警告；能力错误退出码为 3
+- Dev 重启：package、Miko/Browserslist/Uno 配置或 schemas 内容变化时合并触发一次 server restart；页面和组件继续使用 HMR
 - 发包：使用 `bun publish --registry https://registry.npmjs.org/ --access public`（bun 会自动把 `workspace:^` / `catalog:` 改写为真实版本号；`prepublishOnly` 已配置为 `bun run build`）。认证沿用 `~/.npmrc` 的 token（`npm login` 或 `NPM_CONFIG_TOKEN` 均可）。**认证需要浏览器确认**：`bun publish` 会输出形如 `https://www.npmjs.com/auth/cli/<id>` 的确认链接并等待。Agent 发包时必须持续检测发布日志，提取该链接并**自动打开浏览器**让用户确认；发布流程会等待确认，未确认前不要误判为卡死或提前中断。若直接调用被沙箱策略拦截，可用 `explorer.exe <url>` 或 `rundll32 url.dll,FileProtocolHandler <url>` 打开
-- 包版本（当前发布）：`miko-cli@0.1.23`, `vite-plugin-miko@0.2.18`, `vite-plugin-external@0.1.8`, `vite-plugin-index-html@0.1.4`, `linter@0.1.3`
-- 新建项目: 复制 `app/` 结构 → 编辑 `miko.config.ts` 选 UI 库 + 配 proxy（可选）→ `bun dev`
+- 包版本以各 `package.json` 和 npm registry 验证结果为准，不依赖文档中的历史发布号
+- 新建项目: 复制 `app/` 结构 → `bun install` → `bun dev`；`miko.config.ts` 仅在覆盖自动能力或 Vite 默认值时创建
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
-- `vueDevTools()` 已启用 — 开发时可使用 Vue DevTools 调试
+- Vue DevTools 仅在 `miko dev` 自动启用，Build / Preview / Doctor 不加载
 - `miko.config.ts`（可选）严格使用 `{ miko, vite }` 两个命名空间。`miko` 放框架能力（如 `rendering`、`uiLibrary`、`vuePluginOptions`、`legacyPluginOptions`、`externalOptions`），`vite` 接受 Vite 原生配置；入口 input 仍由 Miko 管理。完整类型见 `MikoUserConfig`
 
-### 依赖版本 (2026-07-21)
+### 依赖版本 (2026-08-07)
 
 | 类别 | 包 | 版本 |
 |------|-----|------|
@@ -149,13 +153,13 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 | | vue-tsc | ~3.3.8 |
 | 测试 | vitest | 4.1.10 |
 | | @vitest/browser | 4.1.10 |
-| | @playwright/test | 1.61.1 |
+| | @playwright/test | 1.62.1 |
 | 框架 | vue | 3.5.40 |
 | | vue-router | 5.2.0 |
 | | pinia | 4.0.2 |
 | | @unhead/* | 3.2.1 |
 | | @vitejs/plugin-vue | 6.0.8 |
-| | @vitejs/plugin-legacy | 8.2.1 |
+| | @vitejs/plugin-legacy | 8.2.2 |
 | Lint | oxlint / oxfmt | 1.74 / 0.59 |
 | | eslint | 10.7.0 |
 
