@@ -10,6 +10,7 @@ import { setupLayouts } from 'virtual:generated-layouts';
 import { routes, handleHotUpdate } from 'vue-router/auto-routes';
 
 import { bootstrap } from 'virtual:bootstrap';
+import { setupMikoRuntime } from 'virtual:miko-runtime';
 
 import 'virtual:uno.css';
 
@@ -30,7 +31,9 @@ export const createApp = ViteSSG(
       handleHotUpdate(router);
     }
 
+    const runtime = setupMikoRuntime(app, initialState);
     await bootstrap(app, router, initialState);
+    await runtime.afterBootstrap();
   },
   {
     hydration: import.meta.env.PROD,

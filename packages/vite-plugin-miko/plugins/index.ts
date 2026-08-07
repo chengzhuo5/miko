@@ -36,7 +36,7 @@ export async function assembleMikoPlugins(project: ResolvedMikoConfig): Promise<
 
   add('miko:ssr-css', ssrCssPlugin());
   add('miko:vue', vueCorePlugins(project));
-  add('miko:runtime', runtimePlugin());
+  add('miko:runtime', runtimePlugin(project));
   add('miko:layouts', layoutPlugins(project));
   add('miko:components', componentPlugins(project));
   add('miko:unocss', unoCssPlugins(project));
