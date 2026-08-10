@@ -17,6 +17,14 @@ bun run preview
 # 查看 Miko 实际解析结果
 bunx miko doctor
 bunx miko doctor --json
+
+# 隔离构建和浏览器检查
+bunx miko check
+bunx miko check --all-routes
+
+# v1 配置迁移（默认只分析）
+bunx miko migrate
+bunx miko migrate --write --check
 ```
 
 零配置项目不需要 `vite.config.ts` 或 `miko.config.ts`。CLI 是唯一入口；只有需要覆盖约定时才创建 `miko.config.ts`。
@@ -29,17 +37,18 @@ Miko 使用固定优先级解析能力：
 显式配置 → 根目录约定文件 → package.json 直接依赖 → 当前命令 → 安全默认值
 ```
 
-| 能力 | 默认行为 |
-|------|----------|
-| 渲染 | 默认 SSG，可显式切换 SPA |
-| HTML | 保持真实项目 root；有 `index.html` 就使用，没有则在内存中提供内置入口 |
-| 构建目标 | 默认现代构建；Browserslist 包含旧浏览器时自动启用 Legacy |
-| 依赖 | 默认正常打包；只有显式提供 `frameworkCDN` 才启用 CDN 外部化 |
-| Pinia | 检测到直接依赖后自动创建唯一实例并完成 SSG 注水 |
-| UI | 从直接依赖自动识别 Vant 或 Element Plus；同时存在时要求显式选择 |
-| 组件 / UnoCSS | 根据根目录约定和直接依赖自动启用 |
-| DevTools | 仅 `miko dev` 自动启用 |
-| Lint | 默认使用 Miko 内置 Oxlint / ESLint 配置 |
+| 能力          | 默认行为                                                              |
+| ------------- | --------------------------------------------------------------------- |
+| 渲染          | 默认 SSG，可显式切换 SPA                                              |
+| HTML          | 保持真实项目 root；有 `index.html` 就使用，没有则在内存中提供内置入口 |
+| 构建目标      | 默认现代构建；Browserslist 包含旧浏览器时自动启用 Legacy              |
+| 依赖          | 默认正常打包；只有显式提供 `frameworkCDN` 才启用 CDN 外部化           |
+| Pinia         | 检测到直接依赖后自动创建唯一实例并完成 SSG 注水                       |
+| UI            | 从直接依赖自动识别 Vant 或 Element Plus；同时存在时要求显式选择       |
+| 组件 / UnoCSS | 根据根目录约定和直接依赖自动启用                                      |
+| DevTools      | 仅 `miko dev` 自动启用                                                |
+| Lint          | 默认使用 Miko 内置 Oxlint / ESLint 配置                               |
+| 白屏保护      | 默认启用独立启动监控；构建和 `miko check` 同时验证                    |
 
 能力输入发生变化时，开发服务器自动重启；普通页面和组件源码仍使用 Vite HMR。
 
@@ -48,7 +57,7 @@ Miko 使用固定优先级解析能力：
 `miko.config.ts` 严格使用 `{ miko, vite }` 两个命名空间：
 
 ```ts
-import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko'
+import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
 
 export default {
   miko: {
@@ -68,7 +77,7 @@ export default {
       },
     },
   },
-} satisfies MikoUserConfig
+} satisfies MikoUserConfig;
 ```
 
 - `miko`：Miko 管理的框架能力与内置插件选项。
@@ -90,7 +99,7 @@ export default {
       ssrNoExternal: ['custom-runtime'],
     },
   },
-}
+};
 ```
 
 启用 CDN 时项目必须直接依赖 `@minar-kotonoha/framework`。只配置 `optimizeDepsExclude` 或 `ssrNoExternal` 不会开启 CDN。
@@ -105,7 +114,7 @@ miko/
 │   ├── tests/                   # 单元、组件浏览器与 E2E 测试
 │   └── index.ts                 # 应用 bootstrap
 └── packages/
-    ├── cli/                     # miko dev/build/preview/doctor
+    ├── cli/                     # miko dev/build/preview/check/doctor/migrate
     ├── framework/               # 可选 CDN framework.umd.js
     ├── linter/                  # 共享 lint/format/tsconfig
     ├── vite-plugin-bootstrap/   # virtual:bootstrap
@@ -116,15 +125,15 @@ miko/
 
 ## 技术栈
 
-| 类别 | 技术 |
-|------|------|
-| 包管理 | Bun workspace + `bun.lock` |
-| CLI 运行时 | Node.js 20/22 + jiti |
-| 构建 | Vite 8、Rolldown |
-| 框架 | Vue 3、Vue Router、Pinia、Unhead |
-| 渲染 | SPA + 构建期 SSG |
-| 测试 | Vitest、Playwright |
-| 代码质量 | Oxlint、ESLint、Oxfmt、vue-tsc |
+| 类别       | 技术                             |
+| ---------- | -------------------------------- |
+| 包管理     | Bun workspace + `bun.lock`       |
+| CLI 运行时 | Node.js 20/22 + jiti             |
+| 构建       | Vite 8、Rolldown                 |
+| 框架       | Vue 3、Vue Router、Pinia、Unhead |
+| 渲染       | SPA + 构建期 SSG                 |
+| 测试       | Vitest、Playwright               |
+| 代码质量   | Oxlint、ESLint、Oxfmt、vue-tsc   |
 
 ## 测试
 
@@ -147,6 +156,18 @@ bun test:e2e:browser
 Windows 下 Vitest Browser Mode 必须使用 `server: { host: '127.0.0.1' }`，避免 `localhost` 解析到 Chromium headless shell 不可达的 IPv6 `::1`。
 
 性能命令由 Bun 调度，但 benchmark runner 和每次真实 Miko 构建都使用 Node.js；详细采样规则、环境匹配和预算见 `packages/performance/README.md`。应用构建成功后会生成 `dist/.miko/routes.json` 与 `dist/.miko/assets.json`，用于部署路由和缓存策略参考。
+
+## 从旧版迁移
+
+```sh
+# dry-run，不修改文件
+bunx miko migrate
+
+# 安全计划才会写入，自动备份并完成 Doctor + Check
+bunx miko migrate --write --check
+```
+
+迁移器不会执行旧配置。动态函数、条件配置、自定义插件顺序和构建 input 会要求人工处理。完整字段映射、恢复步骤和破坏性变化见 [Miko v1 迁移指南](./docs/migration-v1.md)。
 
 ## 新建项目
 

@@ -35,6 +35,14 @@ bun run preview
 bunx miko doctor
 bunx miko doctor --json
 
+# 隔离构建、静态校验和浏览器检查
+bunx miko check
+bunx miko check --all-routes
+
+# v1 配置迁移（默认 dry-run）
+bunx miko migrate
+bunx miko migrate --write --check
+
 # 代码检查（oxlint + eslint，均带 --fix）
 bun lint
 
@@ -62,13 +70,13 @@ cd app && bun test:e2e:browser  # @vitest/browser-playwright, tests/components/
 
 Bun workspaces：`packages/*` + `app`。三个包加应用模板：
 
-| 包 | 用途 |
-|---------|---------|
-| `@minar-kotonoha/framework`（`packages/framework/`） | 核心框架：将 Vue 生态依赖聚合为 UMD 包，供 CDN 加载 |
-| `@minar-kotonoha/linter`（`packages/linter/`） | 共享的 ESLint/Oxlint/Oxfmt 配置 + Vite 代码检查插件 + 共享 tsconfig |
-| `@minar-kotonoha/cli`（`packages/cli/`） | miko CLI（dev、build、preview、doctor） |
-| `@minar-kotonoha/vite-plugin-*`（`packages/vite-plugin-*/`） | 四个 Vite 插件（bootstrap、external、indexHTML、miko 总控） |
-| `@minar-kotonoha/create-miko`（`app/`） | Starter 模板 |
+| 包                                                           | 用途                                                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `@minar-kotonoha/framework`（`packages/framework/`）         | 核心框架：将 Vue 生态依赖聚合为 UMD 包，供 CDN 加载                 |
+| `@minar-kotonoha/linter`（`packages/linter/`）               | 共享的 ESLint/Oxlint/Oxfmt 配置 + Vite 代码检查插件 + 共享 tsconfig |
+| `@minar-kotonoha/cli`（`packages/cli/`）                     | miko CLI（dev、build、preview、doctor）                             |
+| `@minar-kotonoha/vite-plugin-*`（`packages/vite-plugin-*/`） | 四个 Vite 插件（bootstrap、external、indexHTML、miko 总控）         |
+| `@minar-kotonoha/create-miko`（`app/`）                      | Starter 模板                                                        |
 
 ## 架构
 
@@ -140,34 +148,37 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - 骨架屏：`App.vue` 通过 `useHead({ style: [skeletonStyles] })` 注入骨架 CSS。`injectHead()` 补设 `head.ssr = true` 解决 unhead v3.x server createHead() 未设 SSR 标记导致条目丢失的问题
 - preview 代理：优先使用 `vite.preview.proxy`，否则浅克隆并复用 `vite.server.proxy`；使用 Vite 原生代理，不注入 `secure: false` / `rejectUnauthorized: false`
 - Doctor：`miko doctor [--json]` 复用同一项目解析和插件装配，只读输出能力来源、实际标量值、插件顺序和警告；能力错误退出码为 3
+- Check：`miko check [--all-routes]` 在系统临时目录运行类型检查、构建、静态产物校验、Vite Preview 和 375×812 Chromium 冒烟；不覆盖正式 `dist`，浏览器错误退出码为 6
+- Migrate：`miko migrate` 默认使用 `oxc-parser` 静态分析且不写文件；`--write` 只接受安全计划并创建 `.miko-migrate/<UTC timestamp>/` 备份，`--check` 在写入后运行 Doctor 和完整 Check；不安全写入退出码为 7
+- 白屏保护：默认启用独立启动监控，Vue 首次路由渲染后标记 ready；构建静态校验和 Check 覆盖入口失败、bootstrap 异常、hydration 警告、永久骨架和资源缺失
 - Dev 重启：package、Miko/Browserslist/Uno 配置或 schemas 内容变化时合并触发一次 server restart；页面和组件继续使用 HMR
 - 发包：使用 `bun publish --registry https://registry.npmjs.org/ --access public`（bun 会自动把 `workspace:^` / `catalog:` 改写为真实版本号；`prepublishOnly` 已配置为 `bun run build`）。认证沿用 `~/.npmrc` 的 token（`npm login` 或 `NPM_CONFIG_TOKEN` 均可）。**认证需要浏览器确认**：`bun publish` 会输出形如 `https://www.npmjs.com/auth/cli/<id>` 的确认链接并等待。Agent 发包时必须持续检测发布日志，提取该链接并**自动打开浏览器**让用户确认；发布流程会等待确认，未确认前不要误判为卡死或提前中断。若直接调用被沙箱策略拦截，可用 `explorer.exe <url>` 或 `rundll32 url.dll,FileProtocolHandler <url>` 打开
 - 包版本以各 `package.json` 和 npm registry 验证结果为准，不依赖文档中的历史发布号
 - 新建项目: 复制 `app/` 结构 → `bun install` → `bun dev`；`miko.config.ts` 仅在覆盖自动能力或 Vite 默认值时创建
-- Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
+- Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后由能力解析和插件装配自动发现，并通过 `createRequire` 同步加载 CJS 构建产物，无需手动配插件
 - Vue DevTools 仅在 `miko dev` 自动启用，Build / Preview / Doctor 不加载
 - `miko.config.ts`（可选）严格使用 `{ miko, vite }` 两个命名空间。`miko` 放框架能力（如 `rendering`、`uiLibrary`、`vuePluginOptions`、`legacyPluginOptions`、`externalOptions`），`vite` 接受 Vite 原生配置；入口 input 仍由 Miko 管理。完整类型见 `MikoUserConfig`
 - 应用构建：类型检查与配置/插件准备并行，但 Vite/SSG 构建必须等待两者完成；成功后生成 `dist/.miko/routes.json` 与 `assets.json`，提供部署路由和缓存建议
 - 性能基准：Bun 只负责 workspace 和命令调度，`node runner.mjs` 及 `process.execPath` worker 执行真实构建；3 次 cold、5 次 warm、5 次浏览器样本取中位数，结果目录 `packages/performance/results/` 不提交
 
-### 依赖版本 (2026-08-07)
+### 依赖版本 (2026-08-10)
 
-| 类别 | 包 | 版本 |
-|------|-----|------|
-| 构建 | vite | 8.1.5 |
-| | typescript | 7.0.2 (tsgo, through typescript-native-bridge) |
-| | vue-tsc | ~3.3.8 |
-| 测试 | vitest | 4.1.10 |
-| | @vitest/browser | 4.1.10 |
-| | @playwright/test | 1.62.1 |
-| 框架 | vue | 3.5.40 |
-| | vue-router | 5.2.0 |
-| | pinia | 4.0.2 |
-| | @unhead/* | 3.2.1 |
-| | @vitejs/plugin-vue | 6.0.8 |
-| | @vitejs/plugin-legacy | 8.2.2 |
-| Lint | oxlint / oxfmt | 1.74 / 0.59 |
-| | eslint | 10.7.0 |
+| 类别 | 包                    | 版本                                           |
+| ---- | --------------------- | ---------------------------------------------- |
+| 构建 | vite                  | 8.1.5                                          |
+|      | typescript            | 7.0.2 (tsgo, through typescript-native-bridge) |
+|      | vue-tsc               | ~3.3.8                                         |
+| 测试 | vitest                | 4.1.10                                         |
+|      | @vitest/browser       | 4.1.10                                         |
+|      | @playwright/test      | 1.62.1                                         |
+| 框架 | vue                   | 3.5.40                                         |
+|      | vue-router            | 5.2.0                                          |
+|      | pinia                 | 4.0.2                                          |
+|      | @unhead/*             | 3.2.1                                          |
+|      | @vitejs/plugin-vue    | 6.0.8                                          |
+|      | @vitejs/plugin-legacy | 8.2.2                                          |
+| Lint | oxlint / oxfmt        | 1.74 / 0.59                                    |
+|      | eslint                | 10.7.0                                         |
 
 ### ExternalOptions 扩展 (0.2.18+)
 
@@ -182,7 +193,7 @@ miko: {
 }
 ```
 
-`ExternalOptions` 类型定义在 `packages/vite-plugin-miko/types.ts`，逻辑在 `packages/vite-plugin-miko/index.ts` 的 `defineMikoConfig` 中读取并传给 Vite。
+`ExternalOptions` 类型定义在 `packages/vite-plugin-miko/types.ts`，由统一配置解析和能力图传给 Vite dep optimizer、SSR 和可选 CDN 插件。
 
 ### TypeScript 类型检查 (0.1.23+)
 

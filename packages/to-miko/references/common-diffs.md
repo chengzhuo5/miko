@@ -1,141 +1,115 @@
-# 常见差异及处理策略
+# 常见差异及处理
 
-迁移过程中最常见的差异点及推荐处理方式。
+## 1. Hash history 与 SSG
 
-## 1. Hash History → HTML5 History
+SSG 需要可预渲染的 HTML5 路由。优先将 `createWebHashHistory()` 迁为文件系统路由和 HTML5 history。
 
-**差异**：原始项目使用 `createWebHashHistory()`，miko SSG 要求 HTML5 history。
-
-**推荐**：改为 HTML5 history。SSG 是 miko 最大优势。
-
-**例外**：如果业务强依赖 hash（如银行 APP 内嵌、URL hash 传递参数），在 `miko.config.ts` 中设置 `ssg: false`：
+如果宿主协议必须使用 hash，明确切换为 SPA：
 
 ```ts
-export default { ssg: false } satisfies MikoUserConfig
+export default {
+  miko: {
+    rendering: 'spa',
+  },
+};
 ```
 
-## 2. htmlInjectPlugin → useHead
+切换渲染模式不能省略深路由、刷新、宿主跳转和回退验证。
 
-**差异**：原始项目使用自定义 `htmlInjectPlugin` 注入 `<meta>` 标签和 `window.__APP_CONFIG__`。
+## 2. HTML 注入
 
-**推荐**：使用 unhead 的 `useHead()` 替代：
+Meta、title、link 和结构化数据优先迁到 Unhead：
 
 ```ts
-// App.vue 或页面组件中
 useHead({
-  meta: [
-    { name: 'app-id', content: 'sec-market' },
-    { name: 'version', content: import.meta.env.VITE_APP_VERSION },
-  ],
-  script: [
-    { innerHTML: `window.__APP_CONFIG__ = ${JSON.stringify(config)}` }
-  ]
-})
+  title: '行情',
+  meta: [{ name: 'app-id', content: 'sec-market' }],
+});
 ```
 
-**例外**：如果 `htmlInjectPlugin` 注入了大量复杂逻辑且短期内无法迁移，保留原插件并通过 `defineMikoConfig()` 参数传入手动注册。
+需要在 HTML 解析前运行的脚本、CSP nonce 或非标准转换，应先确认 Miko 的 HTML hook 和 `vite` 配置能否表达。不能表达时标记为人工阻塞项，不保留第二个构建入口。
 
-## 3. wujie-vue3 微前端
+## 3. 自定义 Vite 插件
 
-**差异**：原始项目作为 wujie 子应用，通过 `main-mf.ts` 的 `mount()/unmount()` 生命周期被加载。
-
-**策略**：**保留原样**。miko 迁移不影响微前端架构。`src/main-mf.ts` 的 `mount()` 逻辑移到 `index.ts` bootstrap：
+先判断插件是否已被 Miko 内置能力替代。确实需要保留时，检查它与 Vue、Router、Runtime、HTML、Legacy 和 CDN 插件的顺序及 hook 冲突，再人工放入 `miko.config.ts`：
 
 ```ts
-// index.ts bootstrap
-export default (app, router, initialState) => {
-  // 原 main-mf.ts mount() 内容
-  const pinia = createPinia()
-  app.use(pinia)
-  app.use(UiCore)
-  app.use(UiBiz)
-  // ... 其他初始化
-
-  // SSR hydration
-  if (import.meta.env.SSR) {
-    if (initialState) initialState.pinia = pinia.state.value
-  } else if (initialState?.pinia) {
-    pinia.state.value = initialState.pinia as typeof pinia.state.value
-  }
-}
+export default {
+  vite: {
+    plugins: [customPlugin()],
+  },
+};
 ```
 
-## 4. `src/` 目录 → 根目录
+自动迁移器不会猜测插件顺序。包含自定义插件的旧配置应产生人工处理项。
 
-**差异**：原始项目代码在 `src/` 下，miko 项目代码在根目录。
+## 4. `src/` 目录
 
-**处理**：
+Miko 默认以项目根目录为 `@`：
+
 - `src/pages/` → `pages/`
 - `src/components/` → `components/`
 - `src/stores/` → `stores/`
 - `src/composables/` → `composables/`
 - `src/api/` → `api/`
 - `src/utils/` → `utils/`
-- `@/` import 路径从指向 `src/` 改为指向根目录
-- `src/typing/auto-import.d.ts` → `typing/auto-import.d.ts`
-- `src/typing/components.d.ts` → `typing/components.d.ts`
 
-## 5. vue-router v4 → v5
+移动后检查所有 alias、动态 import、CSS URL 和测试路径。业务项目也可以通过 `vite.resolve.alias` 保留其他必要 alias。
 
-**差异**：miko 强制 `vue-router@^5.2.0`。
+## 5. Pinia
 
-**兼容性**：v5 API 与 v4 基本兼容。常见差异：
-- `router.resolve()` 签名变化
-- 部分类型导出路径变化
+检测到 `pinia` 直接依赖后，Miko 自动安装唯一实例并处理 SSG 状态。删除入口中重复的 `createPinia()` 和手工 hydration，但保留 store 定义和业务调用。
 
-**处理**：更新 `package.json` 中 `vue-router` 版本，运行 `vue-tsc --noEmit` 检查类型错误。
+如果业务依赖自定义 Pinia 插件，确认能够取得 Miko 创建的实例；不能重复安装第二个实例。
 
-## 6. SCSS → Less
+## 6. Wujie 等微前端
 
-**差异**：原始项目用 SCSS（`sass` 依赖），miko 模板默认 Less。
+保留宿主约定的 mount、unmount、路由同步、通信和缓存行为。只迁移构建入口，不借迁移删除业务生命周期。
 
-**处理**：
-- 如果项目重度使用 SCSS 特性（`@mixin`、`@extend`、`$变量`），**保留 `sass` 依赖**。miko 不阻止使用其他 CSS 预处理器
-- 如果只是简单嵌套，考虑迁移到 Less（miko 模板默认）
-- Vant 4 本身使用 CSS 变量，对预处理器无特殊要求
+SPA/SSG 选择必须与宿主 URL 和加载方式一致，并在真实主应用中验证。
 
-## 7. `@sec/*` workspace 依赖
+## 7. Vue Router 版本和路由语义
 
-**差异**：原始项目依赖多个 `@sec/*` workspace 包。
+文件系统路由替代手工路由表，但以下语义必须逐项保留：
 
-**策略**：**全部保留**。这些是业务依赖，与构建系统无关。miko 迁移只改构建层。
+- path、name、meta、alias、redirect
+- 动态参数、可选参数、嵌套路由和 404
+- beforeEach/afterEach 等守卫
+- scrollBehavior、base 和宿主同步
 
-## 8. `vite.config.ts` 特殊逻辑
+仅“页面能打开”不足以证明路由迁移完成。
 
-**差异**：原始项目 `vite.config.ts` 中可能有自定义插件、特殊 alias、monolith 式多源合并等。
+## 8. CSS 预处理器
 
-**处理**：
-- 大部分逻辑已被 miko 内置覆盖（见 plugin-map.json）
-- 无法覆盖的自定义逻辑通过 `defineMikoConfig()` 参数传入额外 plugins：
+Miko 不强制把 SCSS 改成 Less。源码仍使用 Sass 特性时保留 `sass` 直接依赖；只删除已经没有 import 的构建依赖。
 
-```ts
-// vite.config.ts
-import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko'
+UnoCSS 根据根目录配置或直接依赖自动启用。保留项目 `uno.config.*`，必要时通过 `miko.unoCSSPluginOptions` 覆盖选项。
 
-export default await defineMikoConfig({
-  // miko 配置
-  uiLibrary: 'vant',
-  dev: { port: 5175 },
-  // 额外 Vite 插件
-}, {
-  // Vite UserConfig 覆盖
-  plugins: [customPlugin()],
-  resolve: { alias: { '@custom': '/path/to/custom' } }
-})
+## 9. Legacy 与 CDN
+
+默认现代构建、应用内打包：
+
+- 旧浏览器目标由 Browserslist 或 `miko.legacyPluginOptions` 决定。
+- 只有 `miko.externalOptions.frameworkCDN` 提供 URL 时才启用 CDN。
+- 不要为了兼容旧项目默认开启 Legacy 或 CDN。
+
+## 10. Proxy 和 TLS
+
+旧代理迁到 `vite.server.proxy`，Preview 特有规则放 `vite.preview.proxy`。函数、RegExp、Agent 和 configure 回调可以保留。
+
+不要自动注入 `secure: false` 或 `rejectUnauthorized: false`。TLS 行为必须来自项目明确配置。
+
+## 11. 环境变量
+
+保留 `.env`、`.env.local` 和 `.env.<mode>`。CLI 使用：
+
+```sh
+miko dev --env test
+miko build --env test
 ```
 
-## 9. 环境变量
+检查环境变量是否仅在客户端使用 `VITE_` 前缀，且 SSG 构建期和浏览器运行时取值一致。
 
-**差异**：原始项目有多个 `.env.*` 文件。
+## 12. Monolith 或多应用合并
 
-**处理**：**保留全部 `.env.*` 文件**。miko 兼容 Vite 的环境变量系统：
-- `.env` — 所有模式
-- `.env.development` — `miko dev`
-- `.env.production` — `miko build`
-- `.env.test` — `--mode test`
-
-## 10. monolith 项目
-
-**差异**：monolith 将多个子应用的源码合并到一个 SPA，使用自定义 `@/` 解析器区分不同应用。
-
-**策略**：**不在迁移范围内**。monolith 的跨应用合并结构过于特殊，迁移成本高于收益。建议保持原有构建方式。
+跨应用源码合并、自定义模块解析和多入口构建通常包含 Miko 所有权 input。不要自动降级为一个近似配置；先拆清应用边界，或将其标记为暂不支持的人工迁移。

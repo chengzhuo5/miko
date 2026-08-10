@@ -12,25 +12,26 @@ Miko 的配置解析、自动能力图与 Vite 插件装配引擎。日常项目
 显式配置 → 根目录约定文件 → package.json 直接依赖 → 当前命令 → 安全默认值
 ```
 
-| 能力 | 自动规则 |
-|------|----------|
-| Rendering | 默认 `ssg`，可显式设为 `spa` |
-| Layouts | 项目 `layouts/` 优先，否则使用内置布局 |
-| Components | 检测到 `components/` 或受支持 UI 库时启用 |
-| UnoCSS | 检测 `uno.config.*`、`unocss` 或 `@unocss/vite` 直接依赖 |
-| Linter | 默认启用；根目录 lint 配置会被识别 |
-| Pinia | 检测到 `pinia` 直接依赖后自动安装和 SSG 注水 |
-| Legacy | Browserslist 包含旧浏览器目标时启用 |
-| DevTools | 仅开发命令启用 |
-| CDN | 永不自动启用，必须显式提供 `frameworkCDN` |
-| Janus | 同时检测到 `@janus/unplugin` 和 `schemas/` 时启用 |
+| 能力         | 自动规则                                                 |
+| ------------ | -------------------------------------------------------- |
+| Rendering    | 默认 `ssg`，可显式设为 `spa`                             |
+| Layouts      | 项目 `layouts/` 优先，否则使用内置布局                   |
+| Components   | 检测到 `components/` 或受支持 UI 库时启用                |
+| UnoCSS       | 检测 `uno.config.*`、`unocss` 或 `@unocss/vite` 直接依赖 |
+| Linter       | 默认启用；根目录 lint 配置会被识别                       |
+| Pinia        | 检测到 `pinia` 直接依赖后自动安装和 SSG 注水             |
+| Legacy       | Browserslist 包含旧浏览器目标时启用                      |
+| DevTools     | 仅开发命令启用                                           |
+| CDN          | 永不自动启用，必须显式提供 `frameworkCDN`                |
+| Janus        | 同时检测到 `@janus/unplugin` 和 `schemas/` 时启用        |
+| White screen | 默认启用 8000ms 独立启动监控                             |
 
 `undefined` 表示自动检测，`false` 表示禁用，`true` 或对象表示显式启用；插件选项对象与 Miko 默认值合并，不会整块覆盖。
 
 ## 可选配置
 
 ```ts
-import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko'
+import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
 
 export default {
   miko: {
@@ -53,7 +54,7 @@ export default {
       },
     },
   },
-} satisfies MikoUserConfig
+} satisfies MikoUserConfig;
 ```
 
 - `miko`：框架能力和内置插件选项。
@@ -63,7 +64,7 @@ export default {
 配置也可以是函数：
 
 ```ts
-import type { MikoConfigFactory } from '@minar-kotonoha/vite-plugin-miko'
+import type { MikoConfigFactory } from '@minar-kotonoha/vite-plugin-miko';
 
 export default ((env) => ({
   miko: {
@@ -74,8 +75,25 @@ export default ((env) => ({
       __MODE__: JSON.stringify(env.mode),
     },
   },
-})) satisfies MikoConfigFactory
+})) satisfies MikoConfigFactory;
 ```
+
+## CLI
+
+项目只通过 Miko CLI 执行：
+
+```sh
+bunx miko dev
+bunx miko build
+bunx miko preview
+bunx miko check
+bunx miko doctor
+bunx miko migrate
+```
+
+- `miko check [--all-routes]` 在临时目录完成类型检查、构建、静态校验、Preview 和 Chromium 冒烟，不覆盖正式 `dist`。
+- `miko doctor [--json]` 只读输出能力来源、实际值和插件顺序。
+- `miko migrate [--write] [--check]` 静态分析旧配置；安全写入前创建可恢复备份。
 
 ## HTML 入口
 
@@ -97,6 +115,12 @@ Vite `root` 始终保持真实项目目录：
 
 项目 `index.ts` 不再需要手动创建或注水 Pinia。
 
+## 白屏保护
+
+白屏能力默认启用。构建时生成独立哈希监控脚本，开发时由独立中间件提供；Vue 首次成功渲染后通过统一启动协议标记 ready。入口资源失败、Vue 启动异常、hydration 警告和永久未完成渲染会被运行时协议或 `miko check` 发现。
+
+使用 `miko.whiteScreen: false` 禁用，或通过 `{ timeout }` 覆盖等待时间。
+
 ## Preview 代理
 
 `miko preview` 优先使用 `vite.preview.proxy`，否则浅克隆并复用 `vite.server.proxy`。函数、RegExp、Agent 等合法引用保持不变；Miko 不注入 `secure: false` 或 `rejectUnauthorized: false`。
@@ -115,19 +139,18 @@ export default {
       ssrNoExternal: ['custom-runtime'],
     },
   },
-}
+};
 ```
 
 启用时项目必须直接依赖 `@minar-kotonoha/framework`。只有依赖优化或 SSR 选项而没有 URL 时，配置仍合法但不会启用 CDN。
 
 ## Doctor
 
-```sh
-bunx miko doctor
-bunx miko doctor --json
-```
-
 Doctor 复用 Dev / Build / Preview 的同一份项目解析与插件装配结果，报告配置文件、渲染模式、能力来源、实际标量值、插件顺序和警告。它不启动 Vite，也不写项目文件。能力冲突和缺失依赖使用退出码 3。
+
+## v1 迁移
+
+先运行 `miko migrate` dry-run。安全计划可使用 `miko migrate --write --check`，自动备份旧配置、原子写入 `miko.config.ts`，再运行 Doctor 和完整 Check。动态配置、自定义插件顺序和 Miko 所有权 input 必须人工迁移。
 
 ## 主要导出
 
@@ -143,5 +166,5 @@ import {
   type MikoConfigFactory,
   type MikoUserConfig,
   type PluginAssembly,
-} from '@minar-kotonoha/vite-plugin-miko'
+} from '@minar-kotonoha/vite-plugin-miko';
 ```

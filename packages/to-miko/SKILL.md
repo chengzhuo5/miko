@@ -1,151 +1,136 @@
 ---
 name: to-miko
-description: 将任意 Vue 3 + Vite 项目迁移到 miko 架构
+description: 将 Vue 3 + Vite 项目安全迁移到 Miko v1 的 CLI、零配置和单一 miko.config.ts 架构
 ---
 
 # to-miko
 
-将任意 Vue 3 + Vite 项目迁移到 [miko](https://github.com/minar-kotonoha/miko) 架构。
+将 Vue 3 + Vite 项目迁移到 Miko v1。Miko 使用 Bun 管理依赖和脚本，分发 CLI 运行在 Node.js + jiti；项目只通过 `miko` CLI 执行，不支持项目级 `vite.config.ts`。
 
-**触发条件:** "迁移到 miko"、"接入 miko"、"miko 迁移" 等。
+## 不可变契约
 
----
+- 先分析、后修改；第一次只运行 `miko migrate` dry-run。
+- 修改前记录 Git 分支、HEAD 和工作区状态，现有业务改动不得被覆盖。
+- 零配置项目不生成配置文件。
+- 需要覆盖约定时只使用根目录 `miko.config.ts`，结构严格为 `{ miko, vite }`。
+- 原 Vite 字段迁入 `vite`；框架能力和内置插件选项迁入 `miko`。
+- 文件系统路由、SPA/SSG 语义和业务路由行为必须逐项验证。
+- 动态配置、自定义插件顺序、构建 input 和跨文件冲突不得猜测迁移。
+- Bun 是唯一包管理器；不要使用 npm、pnpm 或 yarn 改写 workspace/lockfile。
 
-## 架构
+## Phase 0：建立基线
 
-```
-to-miko/
-  SKILL.md
-  references/
-    plugin-map.json
-    migration-steps.md
-    route-migration.md
-    common-diffs.md
-```
+先读取并记录：
 
----
+1. `package.json`、Bun lockfile 和 scripts。
+2. 源项目的 `vite.config.ts` 或等效构建配置。
+3. `src/router/`、入口文件、根组件和 `index.html`。
+4. `tsconfig.json`、`.env.*`、UnoCSS、Browserslist 和 lint 配置。
+5. 页面、布局、组件、store、API、微前端和业务 workspace 依赖。
+6. 迁移前构建、关键路由、控制台错误、API 请求和截图基线。
 
-## Phase 0: 了解源项目
+读取 `references/plugin-map.json`，将每项标为：
 
-### P0.1 通读关键文件
+- `replace`：Miko 内置能力替代。
+- `adapt`：迁入 `miko.config.ts` 或调整源码。
+- `keep`：业务依赖和业务行为保持。
+- `manual`：自动迁移不安全，需要明确方案。
 
-在提出任何迁移建议前，先完整阅读源项目的以下文件：
+## Phase 1：生成安全计划
 
-1. `package.json` — 依赖和 scripts
-2. `vite.config.ts`（或等效构建配置）— 插件链、alias、代理
-3. `src/router/index.ts` — 路由表
-4. `src/main.ts` + `src/main-mf.ts`（如有）— 入口和应用初始化
-5. `src/app.vue` — 根组件
-6. `index.html` — HTML 入口
-7. `tsconfig.json` — TypeScript 配置
-8. `.env.*` 文件 — 环境变量
+安装目标依赖后运行：
 
-### P0.2 识别模式
-
-用 Glob 列出源文件结构：
-```
-src/pages/    → 页面组件
-src/components/ → 组件
-src/stores/   → 状态管理
-src/router/   → 路由配置
-src/composables/ → 组合式函数
-src/api/      → API 层
+```sh
+bun install
+bunx miko migrate
 ```
 
-### P0.3 对照 plugin-map
+检查 dry-run：
 
-读取 `references/plugin-map.json`，将源项目的每个插件/配置映射到 miko 等价物，标注状态：`replace` / `adapt` / `keep` / `remove`。
+- `Source` 是否覆盖全部旧配置。
+- `Target` 是否为根目录 `miko.config.ts`。
+- `Status` 是否为 `safe`。
+- 生成结果是否只包含 `miko` 和 `vite`。
+- 是否存在 `MIKO_MIGRATE_MANUAL` 或 `MIKO_MIGRATE_CONFLICT`。
 
----
+没有确认安全计划前，不运行 `--write`，也不手工删除旧配置。
 
-## Phase 1: 分流决策
+## Phase 2：执行配置迁移
 
-### 展示双路径对比
+安全计划使用：
 
-向用户展示两种迁移路径的优劣对比表（见 `references/migration-steps.md#step-0`），
-
-推荐：
-- **CLI 模式**为默认 — 零配置，全面享受 miko 内置优化
-- **Vite 配置模式**为备选 — 有大量自定义 Vite 配置时使用
-
-### 兼容性检查
-
-- [ ] Vue 3（非 Vue 2）
-- [ ] Vite 构建（非 Webpack）
-- [ ] 路由可转为文件系统路由
-- [ ] 接受 SSG 默认（或显式禁用）
-
-如有不满足 → 告知用户风险和建议。
-
-### 识别阻塞点
-
-特别关注：
-- **Hash history** → 推荐改 HTML5 history，否则需禁用 SSG
-- **自定义 html 注入插件** → 推荐用 `useHead` 替代
-- **monolith 式多源合并** → 不在迁移范围内
-
----
-
-## Phase 2: 执行迁移
-
-按 `references/migration-steps.md` 中的 6 步清单执行：
-
-| Step | 内容 | 参考文件 |
-|------|------|---------|
-| Step 1 | 创建 `miko.config.ts` + 更新 `package.json`/`vite.config.ts` | plugin-map.json |
-| Step 2 | 路由迁移：`src/pages/` → `pages/` + `<route>` SFC block | route-migration.md |
-| Step 3 | 入口改造：创建 `index.ts` bootstrap | self-stock 参考 |
-| Step 4 | 源码结构调整：`src/` → 根目录 | common-diffs.md §4 |
-| Step 5 | SSG 适配：浏览器 API、Suspense、hash history 处理 | common-diffs.md §1, §3 |
-| Step 6 | 验证：`miko build` + `vue-tsc` + Playwright 截图 | — |
-
-### 自动化优先原则
-
-每步中能自动化处理的优先自动化：
-- **配置生成**：从源 `vite.config.ts` + `package.json` 自动提取端口、代理、UI 库类型
-- **路由迁移**：解析 `src/router/index.ts` 路由表，自动生成 `pages/` 目录 + `<route>` 块
-- **路径更新**：自动更新移动后的 import 路径
-- **依赖清理**：自动识别和移除可被 miko 内置替换的依赖
-
-只把无法自动化的差异交给用户决策。
-
----
-
-## Phase 3: 验证
-
-### 构建验证
-
-```bash
-miko build   # 或 bun x miko build（Vite 配置模式）
+```sh
+bunx miko migrate --write --check
 ```
 
-0 errors = 迁移成功。
+该命令会备份旧配置、原子写入目标、删除已备份的旧 `vite.config.ts`，然后运行 Doctor 和隔离 Check。备份位于 `.miko-migrate/<UTC timestamp>/`。
 
-### 类型检查
+如果计划不安全，人工迁移到：
 
-```bash
-vue-tsc --noEmit
+```ts
+import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
+
+export default {
+  miko: {
+    rendering: 'ssg',
+    uiLibrary: 'vant',
+  },
+  vite: {
+    base: '/',
+    server: {
+      proxy: {},
+    },
+  },
+} satisfies MikoUserConfig;
 ```
 
-### 视觉验证（Playwright）
+规则：
 
-使用 Playwright 截图迁移前后的关键页面，对比确认渲染一致。
+- 旧 `ssg` 布尔值改为 `miko.rendering: 'ssg' | 'spa'`。
+- `server`、`preview`、`resolve`、`build`、`css`、`define`、`optimizeDeps` 和 `ssr` 放入 `vite`。
+- Vue、Router、Layouts、Components、UnoCSS、Legacy、CDN、Linter、DevTools、Janus 和白屏选项放入 `miko` 的对应字段。
+- 自定义 Vite 插件只能在确认与 Miko 插件顺序兼容后人工放入 `vite.plugins`。
+- `vite.build.rolldownOptions.input`、`vite.build.rollupOptions.input` 和应用 `build.lib` 由 Miko 管理，不能直接照搬。
 
----
+## Phase 3：迁移应用结构
 
-## 核心规则
+按 `references/migration-steps.md` 执行：
 
-| # | 规则 |
-|---|------|
-| 1 | 先读文件，后做决策 — 不知道源项目结构不给出迁移建议 |
-| 2 | 硬前提不可妥协：文件系统路由 + SSG |
-| 3 | 让用户决策阻塞点，skill 提供推荐 |
-| 4 | 自动化能做的不要让用户手动做 |
-| 5 | `@sec/*` 等业务依赖一律保留不动 |
-| 6 | `miko build` 0 errors 是唯一的客观验收标准 |
+1. 将手工路由表转换为 `pages/` 文件系统路由，保留 path、name、meta、alias、守卫和 404 语义。
+2. 创建或收敛根 `index.ts` bootstrap，只保留业务插件注册和路由守卫。
+3. Pinia 由 Miko 根据直接依赖自动安装和注水，不重复 `createPinia()`。
+4. 保留项目自己的 `index.html`；没有时让 Miko 提供内存 HTML。
+5. 检查 SSR 构建期执行中的浏览器 API、异步状态和 hydration 一致性。
+6. 保留 `@sec/*` 等业务依赖、微前端生命周期和 API 行为，除非用户明确要求改造。
 
----
+## Phase 4：验证
 
-## 参考实现
+按顺序运行：
 
-`D:\Code\CMS\trading-business-h5\apps\self-stock` — 已完成的 miko 迁移案例，可作为参考对照。
+```sh
+bun install
+bunx miko doctor
+bunx miko build
+bunx miko check --all-routes
+```
+
+再运行项目自己的：
+
+- `vue-tsc --noEmit`
+- 单元测试
+- Playwright E2E
+- 组件浏览器测试
+- 关键 API、控制台、页面错误和截图回归
+
+`miko build` 成功不是唯一验收标准。每个原业务路由必须有对应新路由证据；未映射或未访问的页面标为未验证。
+
+## 恢复
+
+发生问题时读取本次 `.miko-migrate/<timestamp>/RECOVER.md`，从项目根目录执行对应平台的复制命令。恢复旧配置后还原升级前的包版本并执行 `bun install`，再重跑旧构建和业务测试。
+
+## 参考资料
+
+- `references/migration-steps.md`
+- `references/route-migration.md`
+- `references/common-diffs.md`
+- `references/plugin-map.json`

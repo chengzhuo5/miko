@@ -22,4 +22,18 @@ describe('vite-plugin-miko package', () => {
 
     expect(source).toContain("export * from './capabilities'");
   });
+
+  it('documents the CLI-only zero-config contract', async () => {
+    const readme = await readFile(new URL('./README.md', import.meta.url), 'utf8');
+
+    expect(readme).toContain('不支持 `vite.config.ts`');
+    expect(readme).toContain('miko.config.ts');
+    expect(readme).toMatch(/\bmiko:\s*\{/u);
+    expect(readme).toMatch(/\bvite:\s*\{/u);
+    for (const command of ['dev', 'build', 'preview', 'check', 'doctor', 'migrate']) {
+      expect(readme).toContain(`miko ${command}`);
+    }
+    expect(readme).toContain('Bun');
+    expect(readme).toContain('Node.js + jiti');
+  });
 });
