@@ -2,10 +2,8 @@ import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import type { PluginOption } from 'vite';
-import legacy from '@vitejs/plugin-legacy';
 import linterPlugin from '@minar-kotonoha/linter/vite';
 import { externalPlugin } from '@minar-kotonoha/vite-plugin-external';
-import vueDevTools from 'vite-plugin-vue-devtools';
 import type { ResolvedMikoConfig } from '../config/types';
 import type { JanusOptions } from '../types';
 
@@ -13,24 +11,28 @@ export function linterPlugins(project: ResolvedMikoConfig): PluginOption {
   return project.miko.linterOptions === false ? [] : linterPlugin;
 }
 
-export function devtoolsPlugins(project: ResolvedMikoConfig): PluginOption {
+export async function devtoolsPlugins(project: ResolvedMikoConfig): Promise<PluginOption> {
   const options = project.miko.devToolsPluginOptions;
-  return options === false ? [] : vueDevTools(options);
+  if (options === false) return [];
+  const { default: vueDevTools } = await import('vite-plugin-vue-devtools');
+  return vueDevTools(options);
 }
 
-export function legacyPlugins(project: ResolvedMikoConfig): PluginOption {
+export async function legacyPlugins(project: ResolvedMikoConfig): Promise<PluginOption> {
   const options = project.miko.legacyPluginOptions;
-  return options === false ? [] : legacy(options);
+  if (options === false) return [];
+  const { default: legacy } = await import('@vitejs/plugin-legacy');
+  return legacy(options);
 }
 
-export function externalPlugins(project: ResolvedMikoConfig): {
+export async function externalPlugins(project: ResolvedMikoConfig): Promise<{
   resolver: PluginOption;
   cdn: PluginOption;
-} {
+}> {
   const options = project.miko.externalOptions;
   const cdnEnabled = options !== false && Boolean(options.frameworkCDN);
   const additionalExternals = options === false ? [] : (options.additionalExternals ?? []);
-  const [resolverPlugin = [], ...cdnPlugins] = externalPlugin(
+  const [resolverPlugin = [], ...cdnPlugins] = await externalPlugin(
     project.viteRoot,
     cdnEnabled,
     additionalExternals,
@@ -51,7 +53,7 @@ function loadJanus(options: JanusOptions, root: string): PluginOption {
   }
 }
 
-export function janusPlugins(project: ResolvedMikoConfig): PluginOption {
+export async function janusPlugins(project: ResolvedMikoConfig): Promise<PluginOption> {
   const options = project.miko.janusOptions;
   return options === false ? [] : loadJanus(options, project.viteRoot);
 }

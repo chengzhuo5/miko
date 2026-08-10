@@ -34,30 +34,34 @@ export async function assembleMikoPlugins(project: ResolvedMikoConfig): Promise<
     order.push(name);
     plugins.push(...flattened);
   };
+  const [components, unoCSS, devtools, legacy, external, htmlEntry, janus] = await Promise.all([
+    componentPlugins(project),
+    unoCssPlugins(project),
+    devtoolsPlugins(project),
+    legacyPlugins(project),
+    externalPlugins(project),
+    htmlEntryPlugins(project),
+    janusPlugins(project),
+  ]);
 
   add('miko:ssr-css', ssrCssPlugin());
   add('miko:vue', vueCorePlugins(project));
   add('miko:runtime', runtimePlugin(project));
   add('miko:layouts', layoutPlugins(project));
-  add('miko:components', componentPlugins(project));
-  add('miko:unocss', unoCssPlugins(project));
+  add('miko:components', components);
+  add('miko:unocss', unoCSS);
   add('miko:linter', linterPlugins(project));
-  add('miko:devtools', devtoolsPlugins(project));
-  add('miko:legacy', legacyPlugins(project));
+  add('miko:devtools', devtools);
+  add('miko:legacy', legacy);
   add('miko:bootstrap', bootstrapPlugins(project));
-
-  const external = externalPlugins(project);
   add('miko:external-resolve', external.resolver);
   add('miko:external-cdn', external.cdn);
-  add('miko:html-entry', await htmlEntryPlugins(project));
-  add('miko:janus', janusPlugins(project));
+  add('miko:html-entry', htmlEntry);
+  add('miko:janus', janus);
   if (project.env.command === 'dev') {
     add(
       'miko:restart-on-capability-change',
-      capabilityRestartPlugin(
-        project.signals.watchedFiles,
-        project.signals.watchedDirectories,
-      ),
+      capabilityRestartPlugin(project.signals.watchedFiles, project.signals.watchedDirectories),
     );
   }
 

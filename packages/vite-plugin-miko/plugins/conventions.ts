@@ -1,9 +1,5 @@
 import { resolve } from 'node:path';
 import type { PluginOption } from 'vite';
-import { VantResolver } from '@vant/auto-import-resolver';
-import UnoCSS from 'unocss/vite';
-import Components from 'unplugin-vue-components/vite';
-import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
 import Layouts from 'vite-plugin-vue-layouts-next';
 import type { ResolvedMikoConfig } from '../config/types';
 
@@ -37,16 +33,28 @@ export function layoutPlugins(project: ResolvedMikoConfig): PluginOption {
   };
 }
 
-export function componentPlugins(project: ResolvedMikoConfig): PluginOption {
+async function defaultComponentResolvers(
+  uiLibrary: ResolvedMikoConfig['miko']['uiLibrary'],
+): Promise<unknown[]> {
+  if (uiLibrary === 'vant') {
+    const { VantResolver } = await import('@vant/auto-import-resolver');
+    return [VantResolver()];
+  }
+  if (uiLibrary === 'element-plus') {
+    const { ElementPlusResolver } = await import('unplugin-vue-components/resolvers');
+    return [ElementPlusResolver()];
+  }
+  return [];
+}
+
+export async function componentPlugins(project: ResolvedMikoConfig): Promise<PluginOption> {
   const { miko } = project;
   if (miko.componentsPluginOptions === false) return [];
 
-  const defaultResolvers =
-    miko.uiLibrary === 'vant'
-      ? [VantResolver()]
-      : miko.uiLibrary === 'element-plus'
-        ? [ElementPlusResolver()]
-        : [];
+  const [{ default: Components }, defaultResolvers] = await Promise.all([
+    import('unplugin-vue-components/vite'),
+    defaultComponentResolvers(miko.uiLibrary),
+  ]);
   const componentDirs = miko.componentsPluginOptions.dirs;
 
   return Components({
@@ -63,9 +71,10 @@ export function componentPlugins(project: ResolvedMikoConfig): PluginOption {
   });
 }
 
-export function unoCssPlugins(project: ResolvedMikoConfig): PluginOption {
+export async function unoCssPlugins(project: ResolvedMikoConfig): Promise<PluginOption> {
   const options = project.miko.unoCSSPluginOptions;
   if (options !== false) {
+    const { default: UnoCSS } = await import('unocss/vite');
     return UnoCSS({
       configFile: false,
       ...options,

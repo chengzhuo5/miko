@@ -1,9 +1,20 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Plugin } from 'vite';
 import { externalPlugin } from './index';
+
+const mocks = vi.hoisted(() => ({
+  scanFrameworkModules: vi.fn<() => Promise<string[]>>(async () => ['./modules/vue.ts']),
+}));
+
+vi.mock('fast-glob', () => ({
+  default: mocks.scanFrameworkModules,
+}));
+vi.mock('vite-plugin-external', () => ({
+  default: () => ({ name: 'vite-plugin-external' }),
+}));
 
 const roots: string[] = [];
 
@@ -12,10 +23,18 @@ afterEach(async () => {
 });
 
 describe('externalPlugin', () => {
-  it('keeps the legacy boolean signature for CDN externalization', () => {
-    expect(externalPlugin(false)).toHaveLength(1);
-    expect(externalPlugin(true)).toHaveLength(2);
-    expect(externalPlugin(process.cwd(), true, ['custom-runtime'])).toHaveLength(2);
+  it('does not scan framework modules when CDN is disabled', async () => {
+    await expect(externalPlugin(process.cwd(), false, [])).resolves.toHaveLength(1);
+    expect(mocks.scanFrameworkModules).not.toHaveBeenCalled();
+
+    await expect(externalPlugin(process.cwd(), true, [])).resolves.toHaveLength(2);
+    expect(mocks.scanFrameworkModules).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the legacy boolean signature for CDN externalization', async () => {
+    await expect(externalPlugin(false)).resolves.toHaveLength(1);
+    await expect(externalPlugin(true)).resolves.toHaveLength(2);
+    await expect(externalPlugin(process.cwd(), true, ['custom-runtime'])).resolves.toHaveLength(2);
   });
 
   it('resolves dependencies from the explicit target root', async () => {
@@ -35,7 +54,7 @@ describe('externalPlugin', () => {
     );
     await writeFile(entry, 'export const marker = true');
 
-    const plugin = externalPlugin(root)[0] as Plugin;
+    const plugin = (await externalPlugin(root))[0] as Plugin;
     const resolveId = plugin.resolveId as (
       source: string,
       importer: string | undefined,
