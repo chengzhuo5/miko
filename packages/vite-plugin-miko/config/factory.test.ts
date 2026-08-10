@@ -48,6 +48,7 @@ function project(): ResolvedMikoConfig {
       pinia: false,
       unhead: true,
       janusOptions: false,
+      whiteScreenOptions: { timeout: 8000 },
     },
     signals: {
       root: 'D:/project',
@@ -77,6 +78,12 @@ function project(): ResolvedMikoConfig {
       pinia: { enabled: false, value: false, source: 'default', reason: '' },
       unhead: { enabled: true, value: true, source: 'builtin', reason: '' },
       janus: { enabled: false, value: {}, source: 'explicit', reason: '' },
+      whiteScreen: {
+        enabled: true,
+        value: { timeout: 8000 },
+        source: 'builtin',
+        reason: '',
+      },
     },
   };
 }

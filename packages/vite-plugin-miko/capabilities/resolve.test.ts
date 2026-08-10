@@ -44,6 +44,32 @@ describe('resolveCapabilities', () => {
     expect(result.cdn).toMatchObject({ enabled: false, source: 'default' });
     expect(result.devtools).toMatchObject({ enabled: false, source: 'command' });
     expect(result.unhead).toMatchObject({ enabled: true, source: 'builtin' });
+    expect(result.whiteScreen).toMatchObject({
+      enabled: true,
+      source: 'builtin',
+      value: { timeout: 8000 },
+    });
+  });
+
+  it('allows white-screen protection to be disabled or override its timeout', () => {
+    expect(
+      resolveCapabilities(raw({ whiteScreen: false }), signals(), env()).whiteScreen,
+    ).toMatchObject({
+      enabled: false,
+      source: 'explicit',
+      value: { timeout: 8000 },
+    });
+    expect(
+      resolveCapabilities(
+        raw({ whiteScreen: { timeout: 3500 } }),
+        signals(),
+        env(),
+      ).whiteScreen,
+    ).toMatchObject({
+      enabled: true,
+      source: 'explicit',
+      value: { timeout: 3500 },
+    });
   });
 
   it('enables devtools only for dev unless explicitly overridden', () => {

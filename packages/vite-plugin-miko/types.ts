@@ -155,3 +155,11 @@ export interface JanusOptions {
   /** Janus schema 目录 */
   schemasDir?: string;
 }
+
+export interface WhiteScreenOptions {
+  /**
+   * 首次成功渲染前的最长等待时间，单位毫秒。
+   * @default 8000
+   */
+  timeout?: number;
+}

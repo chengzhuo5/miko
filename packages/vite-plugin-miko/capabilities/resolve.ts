@@ -3,6 +3,7 @@ import type { MikoConfigEnv, MikoOptions, ResolvedCapabilities } from '../config
 import type { CapabilitySource, ProjectSignals, ResolvedCapability } from './types';
 
 const UI_LIBRARIES = ['vant', 'element-plus'] as const;
+const DEFAULT_WHITE_SCREEN_OPTIONS = { timeout: 8000 } as const;
 
 function capability<T>(
   enabled: boolean,
@@ -189,6 +190,31 @@ function resolveCdn(raw: MikoOptions): ResolvedCapabilities['cdn'] {
       );
 }
 
+function resolveWhiteScreen(raw: MikoOptions): ResolvedCapabilities['whiteScreen'] {
+  if (raw.whiteScreen === false) {
+    return capability(
+      false,
+      { ...DEFAULT_WHITE_SCREEN_OPTIONS },
+      'explicit',
+      'miko.whiteScreen 显式关闭',
+    );
+  }
+  if (raw.whiteScreen === undefined || raw.whiteScreen === true) {
+    return capability(
+      true,
+      { ...DEFAULT_WHITE_SCREEN_OPTIONS },
+      raw.whiteScreen === true ? 'explicit' : 'builtin',
+      raw.whiteScreen === true ? 'miko.whiteScreen 显式启用' : '默认启用首次渲染白屏保护',
+    );
+  }
+  return capability(
+    true,
+    { ...DEFAULT_WHITE_SCREEN_OPTIONS, ...raw.whiteScreen },
+    'explicit',
+    'miko.whiteScreen 使用显式选项',
+  );
+}
+
 export function resolveCapabilities(
   raw: MikoOptions,
   signals: ProjectSignals,
@@ -295,5 +321,6 @@ export function resolveCapabilities(
       '由 Miko 的 ViteSSG 运行时安装唯一 Head 实例',
     ),
     janus: resolveJanus(raw, signals),
+    whiteScreen: resolveWhiteScreen(raw),
   };
 }

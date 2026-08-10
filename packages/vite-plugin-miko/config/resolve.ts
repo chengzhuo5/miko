@@ -63,6 +63,14 @@ export function resolveMikoConfig(
   const pagesDir = resolve(viteRoot, raw.pagesDir ?? 'pages');
   const outDir = resolve(viteRoot, vite.build?.outDir ?? 'dist');
   const rendering = raw.rendering ?? 'ssg';
+  const whiteScreenTimeout = capabilities.whiteScreen.value.timeout ?? 8000;
+  if (!Number.isFinite(whiteScreenTimeout) || whiteScreenTimeout < 1000) {
+    throw new MikoConfigError({
+      code: 'MIKO_CONFIG_INVALID',
+      field: 'miko.whiteScreen.timeout',
+      message: 'miko.whiteScreen.timeout 必须是大于等于 1000 的有限毫秒数',
+    });
+  }
   const defaultSsgOptions = {
     beastiesOptions: { external: false },
     dirStyle: 'flat' as const,
@@ -138,6 +146,9 @@ export function resolveMikoConfig(
       pinia: capabilities.pinia.enabled,
       unhead: capabilities.unhead.enabled,
       janusOptions: capabilities.janus.enabled ? mergeOptions({}, capabilities.janus.value) : false,
+      whiteScreenOptions: capabilities.whiteScreen.enabled
+        ? { timeout: whiteScreenTimeout }
+        : false,
     },
   };
 }

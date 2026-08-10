@@ -16,6 +16,7 @@ import type {
   VueJsxOptions,
   VueOptions,
   VueRouterOptions,
+  WhiteScreenOptions,
 } from '../types';
 
 export type MikoCommand = 'dev' | 'build' | 'preview' | 'check' | 'doctor';
@@ -53,6 +54,7 @@ export interface MikoOptions {
   pinia?: boolean;
   unhead?: boolean;
   janusOptions?: AutoOption<JanusOptions>;
+  whiteScreen?: AutoOption<WhiteScreenOptions>;
 }
 
 export interface ResolvedCapabilities {
@@ -67,6 +69,7 @@ export interface ResolvedCapabilities {
   pinia: ResolvedCapability<boolean>;
   unhead: ResolvedCapability<boolean>;
   janus: ResolvedCapability<JanusOptions>;
+  whiteScreen: ResolvedCapability<WhiteScreenOptions>;
 }
 
 export interface MikoConfig {
@@ -102,6 +105,7 @@ export interface ResolvedMikoOptions extends Required<
   pinia: boolean;
   unhead: boolean;
   janusOptions: JanusOptions | false;
+  whiteScreenOptions: WhiteScreenOptions | false;
 }
 
 export interface ResolvedMikoConfig {

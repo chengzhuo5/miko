@@ -15,6 +15,12 @@ function project(): ResolvedMikoConfig {
         source: 'default',
         reason: '默认使用现代构建',
       },
+      whiteScreen: {
+        enabled: true,
+        value: { timeout: 8000 },
+        source: 'builtin',
+        reason: '默认启用首次渲染白屏保护',
+      },
     },
   } as ResolvedMikoConfig;
 }
@@ -41,6 +47,12 @@ describe('Miko Doctor', () => {
           source: 'default',
           reason: '默认使用现代构建',
         },
+        whiteScreen: {
+          enabled: true,
+          source: 'builtin',
+          reason: '默认启用首次渲染白屏保护',
+          value: 8000,
+        },
       },
       plugins: ['miko:vue', 'miko:runtime'],
       warnings: [],
@@ -56,6 +68,7 @@ describe('Miko Doctor', () => {
     expect(output).toContain('Rendering: ssg');
     expect(output).toContain('Capabilities:');
     expect(output).toContain('legacy: disabled [default]');
+    expect(output).toContain('whiteScreen: enabled [builtin] = 8000');
     expect(output).toContain('Plugin order:');
     expect(output).toContain('Warnings:');
   });

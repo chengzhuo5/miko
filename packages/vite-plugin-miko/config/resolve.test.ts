@@ -80,6 +80,29 @@ describe('resolveMikoConfig', () => {
     expect(result.outDir).toBe(resolve(env.root, 'dist'));
     expect(result.miko.legacyPluginOptions).toBe(false);
     expect(result.miko.externalOptions).toBe(false);
+    expect(result.miko.whiteScreenOptions).toEqual({ timeout: 8000 });
+  });
+
+  it('rejects invalid white-screen timeouts before Vite runs', () => {
+    expect(() =>
+      resolveMikoConfig(
+        {
+          config: {
+            miko: {
+              whiteScreen: { timeout: 0 },
+            },
+          },
+          configFile: null,
+        },
+        env,
+        'D:/packages/miko/template',
+      ),
+    ).toThrowError(
+      expect.objectContaining({
+        code: 'MIKO_CONFIG_INVALID',
+        field: 'miko.whiteScreen.timeout',
+      }),
+    );
   });
 
   it('uses vite.root for Vite-relative conventions without changing config lookup root', () => {

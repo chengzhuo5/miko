@@ -30,11 +30,21 @@ export function createDoctorReport(
     Object.entries(project.capabilities)
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([name, capability]) => {
-        const value =
+        let value =
           capability.value === null ||
           ['boolean', 'number', 'string'].includes(typeof capability.value)
             ? (capability.value as boolean | number | string | null)
             : undefined;
+        if (
+          value === undefined &&
+          name === 'whiteScreen' &&
+          typeof capability.value === 'object' &&
+          capability.value !== null &&
+          'timeout' in capability.value &&
+          typeof capability.value.timeout === 'number'
+        ) {
+          value = capability.value.timeout;
+        }
         return [
           name,
           {
