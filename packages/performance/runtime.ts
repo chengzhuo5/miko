@@ -13,6 +13,7 @@ export interface RuntimeSample {
   routeNavigationMs: number;
   transferBytes: number;
   requestCount: number;
+  whiteScreenMonitorRequestCount: number;
   requestedScripts: string[];
 }
 
@@ -61,6 +62,14 @@ export function isUnvisitedRouteScript(url: string, unvisitedRoute: string): boo
   return isRouteScript(url, unvisitedRoute);
 }
 
+export function isWhiteScreenMonitorScript(url: string): boolean {
+  try {
+    return /^miko-white-screen-[^.]+\.js$/u.test(new URL(url).pathname.split('/').at(-1) ?? '');
+  } catch {
+    return /^miko-white-screen-[^.]+\.js(?:[?#].*)?$/u.test(url.split('/').at(-1) ?? '');
+  }
+}
+
 export function assertRouteRequestTopology(
   initialScripts: string[],
   navigatedScripts: string[],
@@ -87,6 +96,9 @@ export function summarizeRuntimeSamples(
     routeNavigationMs: createMetricSamples(samples.map((sample) => sample.routeNavigationMs)),
     transferBytes: createMetricSamples(samples.map((sample) => sample.transferBytes)),
     requestCount: createMetricSamples(samples.map((sample) => sample.requestCount)),
+    whiteScreenMonitorRequestCount: createMetricSamples(
+      samples.map((sample) => sample.whiteScreenMonitorRequestCount),
+    ),
     unvisitedRouteRequested: samples.some((sample) =>
       sample.requestedScripts.some((url) => isUnvisitedRouteScript(url, unvisitedRoute)),
     ),
@@ -224,11 +236,15 @@ async function measureRuntimeSample(fixture: RuntimeFixture): Promise<RuntimeSam
     const pageErrors: string[] = [];
     let requestCount = 0;
     let transferBytes = 0;
+    let whiteScreenMonitorRequestCount = 0;
 
     page.on('request', (request) => {
       if (!request.url().startsWith('http')) return;
       requestCount++;
-      if (request.resourceType() === 'script') requestedScripts.push(request.url());
+      if (request.resourceType() === 'script') {
+        requestedScripts.push(request.url());
+        if (isWhiteScreenMonitorScript(request.url())) whiteScreenMonitorRequestCount++;
+      }
     });
     page.on('pageerror', (error) => {
       pageErrors.push(error.message);
@@ -265,6 +281,7 @@ async function measureRuntimeSample(fixture: RuntimeFixture): Promise<RuntimeSam
       routeNavigationMs,
       transferBytes: requirePositiveMetric('transferBytes', transferBytes),
       requestCount: requirePositiveMetric('requestCount', requestCount),
+      whiteScreenMonitorRequestCount,
       requestedScripts,
     };
   } finally {

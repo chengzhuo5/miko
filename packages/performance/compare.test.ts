@@ -129,6 +129,60 @@ describe('compareReports', () => {
     );
   });
 
+  it('accounts for exactly one required white-screen monitor without allowing duplicates', () => {
+    const before = report({
+      small: {
+        assetCount: 10,
+        htmlBytes: 100,
+      },
+      runtime: {
+        requestCount: samples(7),
+      },
+    });
+    const after = report({
+      small: {
+        assetCount: 11,
+        htmlBytes: 228,
+      },
+      runtime: {
+        requestCount: samples(8),
+      },
+    });
+    Object.assign(after.build.small, {
+      htmlPageCount: 1,
+      whiteScreenMonitorAssetCount: 1,
+    });
+    Object.assign(after.runtime, {
+      whiteScreenMonitorRequestCount: samples(1),
+    });
+
+    expect(compareReports(before, after).failures).toEqual([]);
+
+    const duplicate = structuredClone(after);
+    Object.assign(duplicate.build.small, {
+      assetCount: 12,
+      htmlBytes: 356,
+      whiteScreenMonitorAssetCount: 2,
+    });
+    Object.assign(duplicate.runtime, {
+      requestCount: samples(9),
+      whiteScreenMonitorRequestCount: samples(2),
+    });
+
+    expect(compareReports(before, duplicate).failures).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metric: 'build.small.whiteScreenMonitorAssetCount',
+          current: 2,
+        }),
+        expect.objectContaining({
+          metric: 'runtime.whiteScreenMonitorRequestCount',
+          current: 2,
+        }),
+      ]),
+    );
+  });
+
   it('compares timing only for matching platform and major-minor tool versions', () => {
     expect(
       compareReports(report(), report({ environment: { node: '24.5.9', vite: '8.1.9' } }))

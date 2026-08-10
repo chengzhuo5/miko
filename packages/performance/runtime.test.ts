@@ -4,6 +4,7 @@ import {
   extractScriptDurationMs,
   isChunkScript,
   isUnvisitedRouteScript,
+  isWhiteScreenMonitorScript,
   summarizeRuntimeSamples,
   type RuntimeSample,
 } from './runtime';
@@ -17,6 +18,7 @@ function sample(overrides: Partial<RuntimeSample> = {}): RuntimeSample {
     routeNavigationMs: 50,
     transferBytes: 1000,
     requestCount: 10,
+    whiteScreenMonitorRequestCount: 1,
     requestedScripts: ['http://127.0.0.1:4173/assets/index-AAAA.js'],
     ...overrides,
   };
@@ -39,6 +41,17 @@ describe('runtime metric extraction', () => {
     ).toBe(true);
     expect(
       isUnvisitedRouteScript('http://127.0.0.1:4173/assets/deep-nested-A1B2C3.js', '/unvisited'),
+    ).toBe(false);
+  });
+
+  it('recognizes only the independent white-screen monitor asset', () => {
+    expect(
+      isWhiteScreenMonitorScript(
+        'http://127.0.0.1:4173/assets/miko-white-screen-A1B2C3D4.js',
+      ),
+    ).toBe(true);
+    expect(
+      isWhiteScreenMonitorScript('http://127.0.0.1:4173/assets/app-A1B2C3D4.js'),
     ).toBe(false);
   });
 
@@ -82,6 +95,7 @@ describe('runtime metric extraction', () => {
     expect(summarizeRuntimeSamples(samples, '/unvisited')).toMatchObject({
       fcpMs: { samples: [50, 10, 30, 20, 40], median: 30 },
       requestCount: { samples: [15, 11, 13, 12, 14], median: 13 },
+      whiteScreenMonitorRequestCount: { samples: [1, 1, 1, 1, 1], median: 1 },
       unvisitedRouteRequested: true,
     });
   });

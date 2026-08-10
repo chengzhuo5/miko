@@ -5,6 +5,7 @@ export interface MetricComparison {
   baseline: number | boolean | string;
   current: number | boolean | string;
   budgetRatio: number;
+  fixedAllowance?: number;
   regressionRatio: number;
   passed: boolean;
   skipped: boolean;
@@ -19,6 +20,7 @@ export interface ComparisonResult {
 const BUILD_TIMING_BUDGET = 0.1;
 const RUNTIME_BUDGET = 0.05;
 const BUILD_FIXTURES: BuildFixtureName[] = ['small', 'medium', 'large', 'runtime'];
+const WHITE_SCREEN_MONITOR_TAG_BYTES = 128;
 
 function majorMinor(version: string): string {
   return version.match(/^\d+\.\d+/u)?.[0] ?? version;
@@ -50,6 +52,7 @@ function compareNumber(
   current: number,
   budgetRatio: number,
   skipped = false,
+  fixedAllowance = 0,
 ): void {
   const regression = regressionRatio(baseline, current);
   comparisons.push({
@@ -57,10 +60,35 @@ function compareNumber(
     baseline,
     current,
     budgetRatio,
+    fixedAllowance,
     regressionRatio: regression,
-    passed: skipped || current <= baseline * (1 + budgetRatio) + Number.EPSILON * baseline,
+    passed:
+      skipped ||
+      current <=
+        baseline * (1 + budgetRatio) + fixedAllowance + Number.EPSILON * baseline,
     skipped,
   });
+}
+
+function compareExactNumber(
+  comparisons: MetricComparison[],
+  metric: string,
+  current: number,
+  expected: number,
+): void {
+  comparisons.push({
+    metric,
+    baseline: expected,
+    current,
+    budgetRatio: 0,
+    regressionRatio: current === expected ? 0 : Number.POSITIVE_INFINITY,
+    passed: current === expected,
+    skipped: false,
+  });
+}
+
+function addedMonitorCount(before: number | undefined, after: number | undefined): number {
+  return Math.max(0, (after ?? 0) - (before ?? 0));
 }
 
 export function compareReports(
@@ -96,6 +124,12 @@ export function compareReports(
         !environmentCompatible,
       );
     }
+    const monitorCount = addedMonitorCount(
+      before.whiteScreenMonitorAssetCount,
+      after.whiteScreenMonitorAssetCount,
+    );
+    const monitorHtmlAllowance =
+      monitorCount * (after.htmlPageCount ?? 0) * WHITE_SCREEN_MONITOR_TAG_BYTES;
     for (const key of ['htmlBytes', 'jsBytes', 'cssBytes', 'assetCount'] as const) {
       compareNumber(
         comparisons,
@@ -103,6 +137,16 @@ export function compareReports(
         before[key],
         after[key],
         RUNTIME_BUDGET,
+        false,
+        key === 'htmlBytes' ? monitorHtmlAllowance : key === 'assetCount' ? monitorCount : 0,
+      );
+    }
+    if (after.whiteScreenMonitorAssetCount !== undefined) {
+      compareExactNumber(
+        comparisons,
+        `build.${fixture}.whiteScreenMonitorAssetCount`,
+        after.whiteScreenMonitorAssetCount,
+        1,
       );
     }
   }
@@ -130,6 +174,21 @@ export function compareReports(
       baseline.runtime[key].median,
       current.runtime[key].median,
       RUNTIME_BUDGET,
+      false,
+      key === 'requestCount'
+        ? addedMonitorCount(
+            baseline.runtime.whiteScreenMonitorRequestCount?.median,
+            current.runtime.whiteScreenMonitorRequestCount?.median,
+          )
+        : 0,
+    );
+  }
+  if (current.runtime.whiteScreenMonitorRequestCount !== undefined) {
+    compareExactNumber(
+      comparisons,
+      'runtime.whiteScreenMonitorRequestCount',
+      current.runtime.whiteScreenMonitorRequestCount.median,
+      1,
     );
   }
 

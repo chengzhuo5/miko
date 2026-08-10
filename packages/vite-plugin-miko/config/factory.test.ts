@@ -118,6 +118,25 @@ describe('createMikoViteConfig', () => {
     });
   });
 
+  it('binds the dev server to IPv4 by default', async () => {
+    const devProject = project();
+    devProject.env.command = 'dev';
+
+    const config = await createMikoViteConfig(devProject);
+
+    expect(config.server?.host).toBe('127.0.0.1');
+  });
+
+  it('allows user Vite server host to override the dev default', async () => {
+    const devProject = project();
+    devProject.env.command = 'dev';
+    devProject.vite.server = { host: '0.0.0.0' };
+
+    const config = await createMikoViteConfig(devProject);
+
+    expect(config.server?.host).toBe('0.0.0.0');
+  });
+
   it('wires every external option into the generated Vite config', async () => {
     const configured = project();
     configured.miko.externalOptions = {

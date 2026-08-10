@@ -24,14 +24,16 @@ afterEach(async () => {
 });
 
 describe('loadMikoConfig', () => {
-  it('loads the starter config with the namespaced contract', async () => {
+  it('loads the starter through the zero-config contract', async () => {
     const loaded = await loadMikoConfig({
       ...env,
       root: fileURLToPath(new URL('../../../app/', import.meta.url)),
     });
 
-    expect(loaded.config.miko?.uiLibrary).toBeUndefined();
-    expect(loaded.config.vite?.base).toBe('/cms/');
+    expect(loaded).toEqual({
+      config: {},
+      configFile: null,
+    });
   });
 
   it('returns an empty config when the file is absent', async () => {

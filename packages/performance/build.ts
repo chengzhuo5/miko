@@ -27,10 +27,10 @@ export interface NodeBuildInvocation {
   env: NodeJS.ProcessEnv;
 }
 
-export type ArtifactMetrics = Pick<
-  BuildMetrics,
-  'htmlBytes' | 'jsBytes' | 'cssBytes' | 'assetCount'
->;
+export type ArtifactMetrics = Pick<BuildMetrics, 'htmlBytes' | 'jsBytes' | 'cssBytes' | 'assetCount'> & {
+  htmlPageCount: number;
+  whiteScreenMonitorAssetCount: number;
+};
 
 export interface BuildMeasurementDependencies {
   clearOutputs: typeof clearFixtureOutputs;
@@ -128,9 +128,11 @@ export async function runNodeBuild(root: string): Promise<NodeBuildResult> {
 export async function analyzeBuildArtifacts(outDir: string): Promise<ArtifactMetrics> {
   const metrics: ArtifactMetrics = {
     htmlBytes: 0,
+    htmlPageCount: 0,
     jsBytes: 0,
     cssBytes: 0,
     assetCount: 0,
+    whiteScreenMonitorAssetCount: 0,
   };
 
   async function visit(directory: string): Promise<void> {
@@ -145,9 +147,15 @@ export async function analyzeBuildArtifacts(outDir: string): Promise<ArtifactMet
       const bytes = (await stat(path)).size;
       metrics.assetCount++;
       const extension = entry.name.slice(entry.name.lastIndexOf('.')).toLowerCase();
-      if (extension === '.html') metrics.htmlBytes += bytes;
+      if (extension === '.html') {
+        metrics.htmlBytes += bytes;
+        metrics.htmlPageCount++;
+      }
       else if (extension === '.js') metrics.jsBytes += bytes;
       else if (extension === '.css') metrics.cssBytes += bytes;
+      if (/^miko-white-screen-[^.]+\.js$/u.test(entry.name)) {
+        metrics.whiteScreenMonitorAssetCount++;
+      }
     }
   }
 

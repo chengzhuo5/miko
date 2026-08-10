@@ -67,6 +67,7 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
     experimental: {
       bundledDev: miko.devOptions.bundledDev ?? false,
     },
+    server: project.env.command === 'dev' ? { host: '127.0.0.1' } : undefined,
     optimizeDeps: externalOptions?.optimizeDepsExclude?.length
       ? { exclude: externalOptions.optimizeDepsExclude }
       : undefined,

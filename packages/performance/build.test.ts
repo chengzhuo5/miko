@@ -81,9 +81,11 @@ describe('build artifact analysis', () => {
 
     await expect(analyzeBuildArtifacts(dist)).resolves.toEqual({
       htmlBytes: 4,
+      htmlPageCount: 1,
       jsBytes: 10,
       cssBytes: 3,
       assetCount: 3,
+      whiteScreenMonitorAssetCount: 0,
     });
   });
 
@@ -139,9 +141,11 @@ describe('measureBuildFixture', () => {
         }),
         analyzeArtifacts: async () => ({
           htmlBytes: 10,
+          htmlPageCount: 1,
           jsBytes: 20,
           cssBytes: 30,
           assetCount: 4,
+          whiteScreenMonitorAssetCount: 1,
         }),
       },
     );
@@ -152,9 +156,11 @@ describe('measureBuildFixture', () => {
       warmMs: { samples: [200], median: 200 },
       peakRssBytes: { samples: [3000, 1000, 2000], median: 2000 },
       htmlBytes: 10,
+      htmlPageCount: 1,
       jsBytes: 20,
       cssBytes: 30,
       assetCount: 4,
+      whiteScreenMonitorAssetCount: 1,
     });
   });
 

@@ -118,8 +118,12 @@ function formatDelta(comparison: MetricComparison): string {
 
 function formatComparison(comparison: MetricComparison): string {
   const status = comparison.skipped ? 'SKIP' : comparison.passed ? 'PASS' : 'FAIL';
+  const allowance =
+    comparison.fixedAllowance && comparison.fixedAllowance > 0
+      ? `, fixed allowance +${comparison.fixedAllowance}`
+      : '';
   if (typeof comparison.baseline === 'number' && typeof comparison.current === 'number') {
-    return `${comparison.metric}: ${comparison.baseline} -> ${comparison.current} (${formatDelta(comparison)}) ${status}`;
+    return `${comparison.metric}: ${comparison.baseline} -> ${comparison.current} (${formatDelta(comparison)}${allowance}) ${status}`;
   }
   return `${comparison.metric}: ${String(comparison.current)} ${status}`;
 }

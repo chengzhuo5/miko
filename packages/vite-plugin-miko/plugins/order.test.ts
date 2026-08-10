@@ -86,7 +86,14 @@ function project(): ResolvedMikoConfig {
       watchedDirectories: [],
       watchedFiles: [],
     },
-    capabilities: {} as ResolvedMikoConfig['capabilities'],
+    capabilities: {
+      whiteScreen: {
+        enabled: true,
+        value: { timeout: 8000 },
+        source: 'builtin',
+        reason: 'test fixture',
+      },
+    } as ResolvedMikoConfig['capabilities'],
   };
 }
 

@@ -19,9 +19,11 @@ export interface BuildMetrics {
   warmMs: MetricSamples;
   peakRssBytes: MetricSamples;
   htmlBytes: number;
+  htmlPageCount?: number;
   jsBytes: number;
   cssBytes: number;
   assetCount: number;
+  whiteScreenMonitorAssetCount?: number;
 }
 
 export interface RuntimeMetrics {
@@ -32,6 +34,7 @@ export interface RuntimeMetrics {
   routeNavigationMs: MetricSamples;
   transferBytes: MetricSamples;
   requestCount: MetricSamples;
+  whiteScreenMonitorRequestCount?: MetricSamples;
   unvisitedRouteRequested: boolean;
 }
 
