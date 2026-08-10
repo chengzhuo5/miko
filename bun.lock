@@ -66,6 +66,7 @@
         "@minar-kotonoha/framework": "workspace:^",
         "@minar-kotonoha/vite-plugin-miko": "workspace:^",
         "@minar-kotonoha/vite-ssg": "^28.3.4",
+        "@playwright/test": "^1.62.1",
         "dotenv": "^17.4.0",
         "jiti": "^2.7.0",
         "parse5": "^8.0.1",

@@ -32,6 +32,7 @@ describe('runCheck', () => {
     await mkdir(formalOutDir);
     await writeFile(join(formalOutDir, 'sentinel.txt'), 'formal output');
     const output: string[] = [];
+    const browserCheck = vi.fn<CheckDependencies['browserCheck']>().mockResolvedValue(undefined);
     const build = vi.fn<CheckDependencies['build']>(async (_context, options) => {
       options.onProjectResolved?.({
         outDir: formalOutDir,
@@ -46,6 +47,7 @@ describe('runCheck', () => {
     });
 
     await runCheck(context(root), {
+      browserCheck,
       build,
       createTemporaryDirectory: async () => temporaryRoot,
       output: (message) => output.push(message),
@@ -61,6 +63,10 @@ describe('runCheck', () => {
       `[miko] Check 隔离输出目录：${temporaryRoot}`,
       '[miko] Check 完成',
     ]);
+    expect(browserCheck).toHaveBeenCalledWith(
+      expect.objectContaining({ outDir: temporaryRoot }),
+      false,
+    );
   });
 
   it('cleans isolated output when the build fails', async () => {
@@ -71,6 +77,7 @@ describe('runCheck', () => {
 
     await expect(
       runCheck(context(root), {
+        browserCheck: vi.fn<CheckDependencies['browserCheck']>(),
         build: async () => {
           throw failure;
         },

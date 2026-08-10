@@ -18,6 +18,7 @@ describe('cli package', () => {
     expect(packageJson.files).toEqual(
       expect.arrayContaining([
         'args.ts',
+        'browser-check.ts',
         'check.ts',
         'context.ts',
         'doctor.ts',
@@ -37,9 +38,12 @@ describe('cli package', () => {
 
   it('keeps starter runtime sources free of demo delays and debug output', async () => {
     const sources = await Promise.all(
-      ['../../app/index.ts', '../../app/pages/index.vue', '../../app/pages/page1.vue', '../../app/pages/page2.vue'].map(
-        (file) => readFile(new URL(file, import.meta.url), 'utf8'),
-      ),
+      [
+        '../../app/index.ts',
+        '../../app/pages/index.vue',
+        '../../app/pages/page1.vue',
+        '../../app/pages/page2.vue',
+      ].map((file) => readFile(new URL(file, import.meta.url), 'utf8')),
     );
 
     expect(sources.join('\n')).not.toMatch(
