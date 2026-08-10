@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createMikoEntryTags } from './html';
+import { createMikoEntryTags, createMikoMonitorTags } from './html';
 
 const shell = '<!doctype html><html><body><div id="app"></div></body></html>';
 
@@ -132,5 +132,29 @@ describe('createMikoEntryTags', () => {
         '<html><body><div id="app"></div><script>console.log("virtual:index")</script><script src="docs/virtual:index-example.js"></script><script src="/virtual:index"></script></body></html>',
       ),
     ).toHaveLength(1);
+  });
+});
+
+describe('createMikoMonitorTags', () => {
+  it('injects one monitor before the application entry', () => {
+    expect(createMikoMonitorTags(shell)).toEqual([
+      {
+        tag: 'script',
+        attrs: {
+          defer: '',
+          'data-miko-monitor': '',
+          src: '/@miko/white-screen.js',
+        },
+        injectTo: 'head-prepend',
+      },
+    ]);
+  });
+
+  it('does not inject a second user-owned monitor', () => {
+    expect(
+      createMikoMonitorTags(
+        '<html><head><script type="module" data-miko-monitor src="/custom-monitor.js"></script></head><body><div id="app"></div></body></html>',
+      ),
+    ).toEqual([]);
   });
 });

@@ -4,7 +4,8 @@
   "description": "零配置 index.html 合成 + virtual:index 入口管理插件",
   "files": [
     "html.ts",
-    "index.ts"
+    "index.ts",
+    "white-screen.ts"
   ],
   "type": "module",
   "exports": {

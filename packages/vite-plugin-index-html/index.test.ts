@@ -10,7 +10,10 @@ import { indexHTMLPlugin } from './index';
 const roots: string[] = [];
 const servers: ViteDevServer[] = [];
 
-async function createFixture(userHtml?: string) {
+async function createFixture(
+  userHtml?: string,
+  whiteScreen?: { enabled: boolean; timeout: number; development: boolean },
+) {
   const root = await mkdtemp(join(tmpdir(), 'miko-html-'));
   const template = resolve(root, 'template');
   const entry = resolve(root, 'entry.ts');
@@ -27,7 +30,7 @@ async function createFixture(userHtml?: string) {
   );
   if (userHtml) await writeFile(resolve(root, 'index.html'), userHtml);
 
-  return { root, template, entry };
+  return { root, template, entry, whiteScreen };
 }
 
 async function compile(fixture: Awaited<ReturnType<typeof createFixture>>) {
@@ -62,6 +65,7 @@ async function compile(fixture: Awaited<ReturnType<typeof createFixture>>) {
   const source = htmlAsset?.source;
 
   return {
+    assets: output.filter((item) => item.type === 'asset'),
     chunks: output.filter((item) => item.type === 'chunk'),
     code: output
       .filter((item) => item.type === 'chunk')
@@ -138,6 +142,29 @@ describe('indexHTMLPlugin', () => {
     expect(result.html).not.toContain('fallback-shell');
     expect(result.chunks).toHaveLength(1);
     expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
+  });
+
+  it('builds an independent white-screen monitor before the application entry', async () => {
+    const fixture = await createFixture(undefined, {
+      enabled: true,
+      timeout: 8000,
+      development: false,
+    });
+    const result = await compile(fixture);
+    const monitor = result.assets.find((asset) => asset.fileName.includes('miko-white-screen'));
+
+    expect(result.chunks).toHaveLength(1);
+    expect(monitor).toBeDefined();
+    expect(String(monitor && 'source' in monitor ? monitor.source : '')).toContain(
+      'MIKO_BOOT_TIMEOUT',
+    );
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
+    expect(result.html).toContain('data-miko-monitor');
+    expect(result.html).toContain(monitor!.fileName);
+    expect(result.html.indexOf(monitor!.fileName)).toBeLessThan(
+      result.html.indexOf(result.chunks[0]!.fileName),
+    );
+    expect(result.html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>[^<]+<\/script>/u);
   });
 
   it('injects the Miko module entry when a classic script uses the virtual id', async () => {

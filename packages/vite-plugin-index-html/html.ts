@@ -66,7 +66,11 @@ function replaceAttributeValue(html: string, range: SourceRange, replacement: st
 }
 
 export function rewriteMikoEntrySource(html: string, entrySource: string): string {
-  if (entrySource === 'virtual:index' || !html.includes('virtual:index')) return html;
+  return rewriteModuleSource(html, 'virtual:index', entrySource);
+}
+
+function rewriteModuleSource(html: string, currentSource: string, nextSource: string): string {
+  if (nextSource === currentSource || !html.includes(currentSource)) return html;
 
   const elements: HtmlElement[] = [];
   collectElements(parseHtml(html, { sourceCodeLocationInfo: true }), elements);
@@ -75,7 +79,7 @@ export function rewriteMikoEntrySource(html: string, entrySource: string): strin
       (element) =>
         element.tagName === 'script' &&
         getAttribute(element, 'type') === 'module' &&
-        getAttribute(element, 'src') === 'virtual:index',
+        getAttribute(element, 'src') === currentSource,
     )
     .flatMap((element) => {
       const range = element.sourceCodeLocation?.attrs?.src;
@@ -84,9 +88,37 @@ export function rewriteMikoEntrySource(html: string, entrySource: string): strin
     .sort((left, right) => right.startOffset - left.startOffset);
 
   return ranges.reduce(
-    (transformed, range) => replaceAttributeValue(transformed, range, entrySource),
+    (transformed, range) => replaceAttributeValue(transformed, range, nextSource),
     html,
   );
+}
+
+export function createMikoMonitorTags(
+  html: string,
+  monitorSource = '/@miko/white-screen.js',
+): HtmlTagDescriptor[] {
+  const elements: HtmlElement[] = [];
+  collectElements(parseHtml(html), elements);
+
+  const hasMonitor = elements.some(
+    (element) =>
+      element.tagName === 'script' &&
+      (hasAttribute(element, 'data-miko-monitor') ||
+        getAttribute(element, 'src') === monitorSource),
+  );
+  if (hasMonitor) return [];
+
+  return [
+    {
+      tag: 'script',
+      attrs: {
+        defer: '',
+        'data-miko-monitor': '',
+        src: monitorSource,
+      },
+      injectTo: 'head-prepend',
+    },
+  ];
 }
 
 export function createMikoEntryTags(
