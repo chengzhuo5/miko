@@ -29,6 +29,7 @@ describe('runCli', () => {
         check: vi.fn<CommandRunners['check']>(),
         dev: vi.fn<CommandRunners['dev']>(),
         doctor: vi.fn<CommandRunners['doctor']>(),
+        migrate: vi.fn<CommandRunners['migrate']>(),
         preview: vi.fn<CommandRunners['preview']>(),
       },
     });
@@ -49,6 +50,7 @@ describe('runCli', () => {
       check: vi.fn<CommandRunners['check']>(),
       dev: vi.fn<CommandRunners['dev']>(),
       doctor: vi.fn<CommandRunners['doctor']>(),
+      migrate: vi.fn<CommandRunners['migrate']>(),
       preview: vi.fn<CommandRunners['preview']>(),
     };
 
@@ -63,6 +65,7 @@ describe('runCli', () => {
     expect(runners.check).not.toHaveBeenCalled();
     expect(runners.dev).not.toHaveBeenCalled();
     expect(runners.doctor).not.toHaveBeenCalled();
+    expect(runners.migrate).not.toHaveBeenCalled();
     expect(runners.preview).not.toHaveBeenCalled();
   });
 
@@ -76,6 +79,7 @@ describe('runCli', () => {
         check: vi.fn<CommandRunners['check']>(),
         dev: vi.fn<CommandRunners['dev']>(),
         doctor,
+        migrate: vi.fn<CommandRunners['migrate']>(),
         preview: vi.fn<CommandRunners['preview']>(),
       },
     });
@@ -100,6 +104,7 @@ describe('runCli', () => {
         check,
         dev: vi.fn<CommandRunners['dev']>(),
         doctor: vi.fn<CommandRunners['doctor']>(),
+        migrate: vi.fn<CommandRunners['migrate']>(),
         preview: vi.fn<CommandRunners['preview']>(),
       },
     });
@@ -110,6 +115,32 @@ describe('runCli', () => {
         command: 'check',
         mode: 'production',
         root: resolve('D:/repo', 'app'),
+      }),
+    );
+  });
+
+  it('dispatches migrate as a dry-run by default', async () => {
+    const migrate = vi.fn<CommandRunners['migrate']>().mockResolvedValue(undefined);
+
+    await runCli(['migrate', '--root', 'app'], {
+      cwd: () => 'D:/repo',
+      runners: {
+        build: vi.fn<CommandRunners['build']>(),
+        check: vi.fn<CommandRunners['check']>(),
+        dev: vi.fn<CommandRunners['dev']>(),
+        doctor: vi.fn<CommandRunners['doctor']>(),
+        migrate,
+        preview: vi.fn<CommandRunners['preview']>(),
+      },
+    });
+
+    expect(migrate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        checkAfterWrite: false,
+        command: 'migrate',
+        mode: 'production',
+        root: resolve('D:/repo', 'app'),
+        write: false,
       }),
     );
   });

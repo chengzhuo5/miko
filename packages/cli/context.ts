@@ -7,6 +7,8 @@ export interface CommandContext extends Omit<MikoConfigEnv, 'command'> {
   allRoutes: boolean;
   lib: boolean;
   json: boolean;
+  write?: boolean;
+  checkAfterWrite?: boolean;
   modeArg?: string;
 }
 
@@ -21,5 +23,7 @@ export function createCommandContext(options: CliOptions, cwd: string): CommandC
     modeArg: options.modeArg,
     lib: options.lib,
     json: options.json,
+    write: options.write ?? false,
+    checkAfterWrite: options.checkAfterWrite ?? false,
   };
 }

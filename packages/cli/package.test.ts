@@ -23,12 +23,17 @@ describe('cli package', () => {
         'context.ts',
         'doctor.ts',
         'errors.ts',
+        'migrate/analyze.ts',
+        'migrate/index.ts',
+        'migrate/render.ts',
+        'migrate/types.ts',
         'preview-config.ts',
         'run.ts',
         'static-check.ts',
         'static-manifest.ts',
       ]),
     );
+    expect(packageJson.files).not.toContain('migrate');
   });
 
   it('ships a CLI-only zero-config starter', async () => {

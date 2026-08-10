@@ -2,7 +2,7 @@ import parser from 'yargs-parser';
 import { MikoCliError } from './errors';
 import { normalizeEnvArg } from './env';
 
-export type ImplementedCommand = 'dev' | 'build' | 'check' | 'preview' | 'doctor';
+export type ImplementedCommand = 'dev' | 'build' | 'check' | 'preview' | 'doctor' | 'migrate';
 
 export interface CliOptions {
   command?: ImplementedCommand;
@@ -11,13 +11,23 @@ export interface CliOptions {
   allRoutes: boolean;
   lib: boolean;
   json: boolean;
+  write?: boolean;
+  checkAfterWrite?: boolean;
   help?: boolean;
 }
 
-const COMMANDS = new Set<ImplementedCommand>(['dev', 'build', 'check', 'preview', 'doctor']);
+const COMMANDS = new Set<ImplementedCommand>([
+  'dev',
+  'build',
+  'check',
+  'preview',
+  'doctor',
+  'migrate',
+]);
 const PARSED_KEYS = new Set([
   '_',
   'all-routes',
+  'check',
   'env',
   'h',
   'help',
@@ -25,6 +35,7 @@ const PARSED_KEYS = new Set([
   'lib',
   'mode',
   'root',
+  'write',
 ]);
 
 function invalidArgs(message: string): never {
@@ -38,9 +49,13 @@ function readRootArg(value: unknown): string | undefined {
   return value;
 }
 
+function countFlag(argv: string[], name: string): number {
+  return argv.filter((value) => value === name || value.startsWith(`${name}=`)).length;
+}
+
 export function parseCliArgs(argv: string[]): CliOptions {
   const parsed = parser(argv, {
-    boolean: ['all-routes', 'help', 'json', 'lib'],
+    boolean: ['all-routes', 'check', 'help', 'json', 'lib', 'write'],
     string: ['root', 'env', 'mode'],
     alias: { h: 'help' },
     configuration: {
@@ -67,6 +82,17 @@ export function parseCliArgs(argv: string[]): CliOptions {
     invalidArgs('--all-routes 仅适用于 check 命令');
   }
   if (parsed.lib === true && command !== 'build') invalidArgs('--lib 仅适用于 build 命令');
+  if (countFlag(argv, '--write') > 1) invalidArgs('--write 只能指定一次');
+  if (countFlag(argv, '--check') > 1) invalidArgs('--check 只能指定一次');
+  if (parsed.write === true && command !== 'migrate') {
+    invalidArgs('--write 仅适用于 migrate 命令');
+  }
+  if (parsed.check === true && command !== 'migrate') {
+    invalidArgs('--check 仅适用于 migrate 命令');
+  }
+  if (parsed.check === true && parsed.write !== true) {
+    invalidArgs('--check 必须与 --write 一起使用');
+  }
 
   let modeArg: string | undefined;
   try {
@@ -82,6 +108,8 @@ export function parseCliArgs(argv: string[]): CliOptions {
     allRoutes: parsed['all-routes'] === true,
     lib: parsed.lib === true,
     json: parsed.json === true,
+    write: parsed.write === true,
+    checkAfterWrite: parsed.check === true,
     help,
   };
 }

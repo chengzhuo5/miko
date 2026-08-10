@@ -27,6 +27,19 @@ describe('parseCliArgs', () => {
     });
   });
 
+  it('parses migration dry-run and write verification flags', () => {
+    expect(parseCliArgs(['migrate'])).toMatchObject({
+      checkAfterWrite: false,
+      command: 'migrate',
+      write: false,
+    });
+    expect(parseCliArgs(['migrate', '--write', '--check'])).toMatchObject({
+      checkAfterWrite: true,
+      command: 'migrate',
+      write: true,
+    });
+  });
+
   it('rejects --json outside doctor', () => {
     expect(() => parseCliArgs(['build', '--json'])).toThrowError(
       expect.objectContaining({
@@ -40,7 +53,24 @@ describe('parseCliArgs', () => {
     for (const argv of [
       ['build', '--all-routes'],
       ['check', '--lib'],
+      ['migrate', '--check'],
       ['preview', '--lib'],
+    ]) {
+      expect(() => parseCliArgs(argv)).toThrowError(
+        expect.objectContaining({
+          code: 'MIKO_CLI_ARGS',
+          exitCode: 2,
+        }),
+      );
+    }
+  });
+
+  it('rejects migration flags outside migrate and repeated boolean flags', () => {
+    for (const argv of [
+      ['build', '--write'],
+      ['doctor', '--check'],
+      ['migrate', '--write', '--write'],
+      ['migrate', '--check', '--check', '--write'],
     ]) {
       expect(() => parseCliArgs(argv)).toThrowError(
         expect.objectContaining({

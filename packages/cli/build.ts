@@ -94,6 +94,9 @@ export async function buildApplication(
   context: CommandContext,
   options: ApplicationBuildOptions = {},
 ): Promise<ApplicationBuildResult> {
+  if (context.command === 'migrate') {
+    throw new TypeError('migrate does not build an application');
+  }
   const { mode, root } = context;
   const resolvedProject = await resolveMikoProject({ command: context.command, mode, root });
   options.onProjectResolved?.(resolvedProject);

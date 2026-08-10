@@ -7,6 +7,7 @@ export interface CommandRunners {
   build(context: CommandContext): Promise<void>;
   check(context: CommandContext): Promise<void>;
   doctor(context: CommandContext): Promise<void>;
+  migrate(context: CommandContext): Promise<void>;
   preview(context: CommandContext): Promise<void>;
 }
 
@@ -24,6 +25,7 @@ const commandLoaders = {
   check: async () => (await import('./check.ts')).runCheck,
   dev: async () => (await import('./dev.ts')).runDev,
   doctor: async () => (await import('./doctor.ts')).runDoctor,
+  migrate: async () => (await import('./migrate/index.ts')).runMigrate,
   preview: async () => (await import('./preview.ts')).runPreview,
 } satisfies Record<ImplementedCommand, CommandLoader>;
 
@@ -79,18 +81,24 @@ async function runLegacyCommand(context: CommandContext): Promise<void> {
   await runWithLegacyEnvironment(context, () => runner(context));
 }
 
+async function runMigrationCommand(context: CommandContext): Promise<void> {
+  const runner = await commandLoaders.migrate();
+  await runner(context);
+}
+
 export const legacyCommandRunners: CommandRunners = {
   build: runLegacyCommand,
   check: runLegacyCommand,
   dev: runLegacyCommand,
   doctor: runLegacyCommand,
+  migrate: runMigrationCommand,
   preview: runLegacyCommand,
 };
 
 export function createCliHelp(command?: ImplementedCommand): string {
   const usage = command
     ? `miko ${command} [options]`
-    : 'miko <dev|build|check|preview|doctor> [options]';
+    : 'miko <dev|build|check|preview|doctor|migrate> [options]';
   return [
     `Usage: ${usage}`,
     '',
@@ -101,6 +109,8 @@ export function createCliHelp(command?: ImplementedCommand): string {
     '  --lib            构建库（仅 build）',
     '  --all-routes     检查全部预渲染路由（仅 check）',
     '  --json           输出 JSON（仅 doctor）',
+    '  --write          写入迁移结果（仅 migrate）',
+    '  --check          写入后运行 Doctor/Check（仅 migrate --write）',
     '  -h, --help       显示帮助',
   ].join('\n');
 }

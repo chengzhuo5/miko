@@ -4,7 +4,12 @@ import { createCommandContext } from './context';
 
 describe('createCommandContext', () => {
   it('defaults dev to development and resolves an absolute root', () => {
-    expect(createCommandContext({ command: 'dev', lib: false, json: false, allRoutes: false }, 'D:/repo')).toMatchObject({
+    expect(
+      createCommandContext(
+        { command: 'dev', lib: false, json: false, allRoutes: false },
+        'D:/repo',
+      ),
+    ).toMatchObject({
       mode: 'development',
       modeArg: undefined,
       root: resolve('D:/repo'),
@@ -12,14 +17,18 @@ describe('createCommandContext', () => {
   });
 
   it('defaults build and preview to production', () => {
-    expect(createCommandContext({ command: 'build', lib: false, json: false, allRoutes: false }, 'D:/repo').mode).toBe(
-      'production',
-    );
     expect(
-      createCommandContext({ command: 'preview', lib: false, json: false, allRoutes: false }, 'D:/repo').mode,
-    ).toBe(
-      'production',
-    );
+      createCommandContext(
+        { command: 'build', lib: false, json: false, allRoutes: false },
+        'D:/repo',
+      ).mode,
+    ).toBe('production');
+    expect(
+      createCommandContext(
+        { command: 'preview', lib: false, json: false, allRoutes: false },
+        'D:/repo',
+      ).mode,
+    ).toBe('production');
   });
 
   it('retains whether the mode was explicitly selected for dotenv loading', () => {
@@ -44,6 +53,27 @@ describe('createCommandContext', () => {
       allRoutes: true,
       command: 'check',
       mode: 'production',
+    });
+  });
+
+  it('defaults migrate to production and preserves write verification flags', () => {
+    expect(
+      createCommandContext(
+        {
+          command: 'migrate',
+          lib: false,
+          json: false,
+          allRoutes: false,
+          write: true,
+          checkAfterWrite: true,
+        },
+        'D:/repo',
+      ),
+    ).toMatchObject({
+      checkAfterWrite: true,
+      command: 'migrate',
+      mode: 'production',
+      write: true,
     });
   });
 });
