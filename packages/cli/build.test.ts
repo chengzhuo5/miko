@@ -6,6 +6,7 @@ import type { CommandContext } from './context';
 
 const mocks = vi.hoisted(() => ({
   createMikoViteConfig: vi.fn<(project: ResolvedMikoConfig) => Promise<UserConfig>>(),
+  assertStaticOutput: vi.fn<(outDir: string, base: string) => Promise<void>>(),
   resolveMikoProject: vi.fn<() => Promise<ResolvedMikoConfig>>(),
   spawn: vi.fn<() => unknown>(),
   viteBuild: vi.fn<() => Promise<void>>(),
@@ -29,6 +30,9 @@ vi.mock('vite', () => ({
 }));
 vi.mock('./static-manifest', () => ({
   writeStaticDeploymentManifest: mocks.writeStaticDeploymentManifest,
+}));
+vi.mock('./static-check', () => ({
+  assertStaticOutput: mocks.assertStaticOutput,
 }));
 
 import { prepareApplicationBuild, runBuild } from './build';
@@ -104,6 +108,7 @@ describe('prepareApplicationBuild', () => {
     });
     mocks.spawn.mockReturnValueOnce(typecheckProcess);
     mocks.viteBuild.mockResolvedValueOnce();
+    mocks.assertStaticOutput.mockResolvedValueOnce();
     mocks.writeStaticDeploymentManifest.mockResolvedValueOnce({});
 
     const execution = runBuild(context);
@@ -120,7 +125,11 @@ describe('prepareApplicationBuild', () => {
 
     expect(mocks.viteBuild).toHaveBeenCalledOnce();
     expect(mocks.viteSsgBuild).not.toHaveBeenCalled();
+    expect(mocks.assertStaticOutput).toHaveBeenCalledWith('D:/project/dist', '/cms/');
     expect(mocks.writeStaticDeploymentManifest).toHaveBeenCalledWith('D:/project/dist', '/cms/');
+    expect(mocks.assertStaticOutput.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.writeStaticDeploymentManifest.mock.invocationCallOrder[0]!,
+    );
     expect(mocks.viteBuild.mock.invocationCallOrder[0]).toBeGreaterThan(
       mocks.createMikoViteConfig.mock.invocationCallOrder[0]!,
     );

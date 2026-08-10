@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { build as viteBuild } from 'vite';
 import type { UserConfig } from 'vite';
 import type { CommandContext } from './context';
+import { assertStaticOutput } from './static-check';
 import { writeStaticDeploymentManifest } from './static-manifest';
 
 let cssLoaderRegistration: Promise<void> | undefined;
@@ -76,6 +77,8 @@ export async function runBuild(context: CommandContext): Promise<void> {
       await viteBuild(inlineConfig);
     }
 
-    await writeStaticDeploymentManifest(project.outDir, String(config.base ?? '/'));
+    const base = String(config.base ?? '/');
+    await assertStaticOutput(project.outDir, base);
+    await writeStaticDeploymentManifest(project.outDir, base);
   }
 }

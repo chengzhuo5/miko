@@ -18,6 +18,7 @@
     "doctor.ts",
     "preview.ts",
     "preview-config.ts",
+    "static-check.ts",
     "static-manifest.ts",
     "tsc.ts",
     "css-loader.mjs"
@@ -37,6 +38,7 @@
     "@minar-kotonoha/vite-ssg": "^28.3.4",
     "dotenv": "^17.4.0",
     "jiti": "^2.7.0",
+    "parse5": "^8.0.1",
     "vite": "catalog:",
     "vue-tsc": "~3.3.8",
     "yargs-parser": "^22.0.0"
