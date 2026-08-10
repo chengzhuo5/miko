@@ -18,6 +18,7 @@
     "doctor.ts",
     "preview.ts",
     "preview-config.ts",
+    "static-manifest.ts",
     "tsc.ts",
     "css-loader.mjs"
   ],

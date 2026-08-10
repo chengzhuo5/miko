@@ -23,6 +23,7 @@ describe('cli package', () => {
         'errors.ts',
         'preview-config.ts',
         'run.ts',
+        'static-manifest.ts',
       ]),
     );
   });
