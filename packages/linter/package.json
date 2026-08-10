@@ -1,8 +1,7 @@
 {
   "name": "@minar-kotonoha/linter",
-  "version": "0.1.3",
-  "description": "miko 共享 Lint 配置 — Oxlint + ESLint + Oxfmt + tsconfig",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "Miko 共享代码质量配置 — Oxlint、ESLint、Oxfmt 与 tsconfig",
   "files": [
     ".oxlintrc.json",
     ".oxlintrc.d.ts",
@@ -10,6 +9,7 @@
     "tsconfig.json",
     "vite.ts"
   ],
+  "type": "module",
   "exports": {
     "./vite": "./vite.ts",
     "./.oxlintrc.json": {

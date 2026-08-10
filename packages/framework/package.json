@@ -1,21 +1,22 @@
 {
   "name": "@minar-kotonoha/framework",
-  "version": "0.1.8",
-  "description": "miko 框架 CDN 包 — 聚合 Vue 生态依赖为单个 UMD 包",
-  "type": "module",
-  "exports": {
-    ".": "./index.ts",
-    "./package.json": "./package.json",
-    "./*": "./*"
-  },
+  "version": "1.0.0",
+  "description": "Miko 可选 CDN 兼容运行时 — 聚合 Vue 生态依赖为 UMD 包",
   "files": [
     "dist/",
     "modules/",
     "index.ts",
     "vite.config.ts"
   ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+  "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./package.json": "./package.json",
+    "./*": "./*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
     "prepublishOnly": "bun run build",
@@ -24,19 +25,18 @@
   },
   "dependencies": {
     "@minar-kotonoha/linter": "workspace:^",
+    "@minar-kotonoha/vite-ssg": "^28.3.4",
     "@unhead/dom": "^2",
     "@unhead/vue": "^2",
     "@vue/server-renderer": "^3.5.40",
     "axios": "^1.18.1",
     "unhead": "^2",
     "vite": "catalog:",
-    "@minar-kotonoha/vite-ssg": "^28.3.4",
     "vue": "^3.5.40",
     "vue-demi": "^0.14.10",
     "vue-router": "^5.2.0"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

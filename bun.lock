@@ -43,22 +43,20 @@
     },
     "app": {
       "name": "@minar-kotonoha/create-miko",
-      "version": "0.0.0",
+      "version": "1.0.0",
       "dependencies": {
         "@playwright/test": "^1.62.1",
         "@vueuse/core": "^14.4.0",
         "pinia": "^4.0.2",
       },
       "devDependencies": {
-        "@minar-kotonoha/framework": "^0.1.5",
-        "@minar-kotonoha/linter": "^0.1.3",
-        "@minar-kotonoha/miko-cli": "^0.1.25",
-        "@minar-kotonoha/vite-plugin-miko": "^0.2.25",
+        "@minar-kotonoha/linter": "^1.0.0",
+        "@minar-kotonoha/miko-cli": "^1.0.0",
       },
     },
     "packages/cli": {
       "name": "@minar-kotonoha/miko-cli",
-      "version": "0.1.30",
+      "version": "1.0.0",
       "bin": {
         "miko": "./miko",
       },
@@ -78,7 +76,7 @@
     },
     "packages/framework": {
       "name": "@minar-kotonoha/framework",
-      "version": "0.1.8",
+      "version": "1.0.0",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@minar-kotonoha/vite-ssg": "^28.3.4",
@@ -95,7 +93,7 @@
     },
     "packages/linter": {
       "name": "@minar-kotonoha/linter",
-      "version": "0.1.3",
+      "version": "1.0.0",
       "dependencies": {
         "@intlify/unplugin-vue-i18n": "^11.2.0",
         "@vitest/eslint-plugin": "^1.6.23",
@@ -128,11 +126,11 @@
     },
     "packages/to-miko": {
       "name": "@minar-kotonoha/to-miko",
-      "version": "0.1.3",
+      "version": "1.0.0",
     },
     "packages/vite-plugin-bootstrap": {
       "name": "@minar-kotonoha/vite-plugin-bootstrap",
-      "version": "0.1.3",
+      "version": "1.0.0",
       "dependencies": {
         "fs-extra": "^11.3.6",
       },
@@ -142,7 +140,7 @@
     },
     "packages/vite-plugin-external": {
       "name": "@minar-kotonoha/vite-plugin-external",
-      "version": "0.1.9",
+      "version": "1.0.0",
       "dependencies": {
         "@dual-bundle/import-meta-resolve": "^4.2.1",
         "fast-glob": "^3.3.3",
@@ -154,7 +152,7 @@
     },
     "packages/vite-plugin-index-html": {
       "name": "@minar-kotonoha/vite-plugin-index-html",
-      "version": "0.1.5",
+      "version": "1.0.0",
       "dependencies": {
         "es-module-lexer": "^2.3.1",
         "parse5": "^8.0.1",
@@ -165,7 +163,7 @@
     },
     "packages/vite-plugin-miko": {
       "name": "@minar-kotonoha/vite-plugin-miko",
-      "version": "0.2.32",
+      "version": "1.0.0",
       "dependencies": {
         "@minar-kotonoha/linter": "workspace:^",
         "@minar-kotonoha/vite-plugin-bootstrap": "workspace:^",

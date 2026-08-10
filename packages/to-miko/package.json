@@ -1,22 +1,36 @@
 {
   "name": "@minar-kotonoha/to-miko",
-  "version": "0.1.3",
-  "description": "将 Vue 3 + Vite 项目迁移到 miko 架构 — Claude Code skill",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "将 Vue 3 + Vite 项目安全迁移到 Miko v1 的 Agent Skill",
+  "keywords": [
+    "claude-code",
+    "migration",
+    "miko",
+    "skill",
+    "ssg",
+    "vite",
+    "vue3"
+  ],
+  "license": "MIT",
   "files": [
     "SKILL.md",
     "README.md",
     "references/"
   ],
-  "agents": {
-    "skills": [
-      { "name": "to-miko", "path": "." }
-    ]
-  },
-  "keywords": ["claude-code", "skill", "miko", "migration", "vue3", "vite", "ssg"],
-  "license": "MIT",
+  "type": "module",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "agents": {
+    "skills": [
+      {
+        "name": "to-miko",
+        "path": "."
+      }
+    ]
   }
 }

@@ -1,26 +1,26 @@
 {
   "name": "@minar-kotonoha/vite-plugin-bootstrap",
-  "version": "0.1.3",
-  "description": "virtual:bootstrap — 自动发现项目入口，零配置启动 Vue 应用",
+  "version": "1.0.0",
+  "description": "Miko virtual:bootstrap — 零配置发现并启动 Vue 应用入口",
+  "files": [
+    "index.ts"
+  ],
   "type": "module",
   "exports": {
     ".": "./index.ts",
     "./package.json": "./package.json"
   },
-  "files": [
-    "index.ts"
-  ],
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "peerDependencies": {
-    "vite": "catalog:"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "fs-extra": "^11.3.6"
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+  "peerDependencies": {
+    "vite": "catalog:"
+  },
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
   }
 }
