@@ -1,20 +1,15 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue';
-if (import.meta.env.SSR)
-  useHead({
-    title: 'Index',
-  });
-const { resolve, promise } = Promise.withResolvers();
-setTimeout(resolve, 1000);
-await promise;
+
+useHead({
+  title: 'Miko',
+});
 </script>
 
 <template>
-  <h1>You did it!</h1>
+  <h1>Miko is ready</h1>
   <p>
     Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
     documentation
   </p>
 </template>
-
-<style scoped></style>

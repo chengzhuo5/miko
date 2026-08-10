@@ -103,7 +103,6 @@ miko/
 │   ├── pages/                   # 文件系统路由
 │   ├── stores/                  # Pinia store（运行时由 Miko 自动安装）
 │   ├── tests/                   # 单元、组件浏览器与 E2E 测试
-│   ├── miko.config.ts           # 可选配置
 │   └── index.ts                 # 应用 bootstrap
 └── packages/
     ├── cli/                     # miko dev/build/preview/doctor
