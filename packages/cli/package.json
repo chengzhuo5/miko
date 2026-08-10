@@ -21,6 +21,7 @@
     "migrate/index.ts",
     "migrate/render.ts",
     "migrate/types.ts",
+    "migrate/write.ts",
     "doctor.ts",
     "preview.ts",
     "preview-config.ts",

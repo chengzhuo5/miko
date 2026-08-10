@@ -81,17 +81,12 @@ async function runLegacyCommand(context: CommandContext): Promise<void> {
   await runWithLegacyEnvironment(context, () => runner(context));
 }
 
-async function runMigrationCommand(context: CommandContext): Promise<void> {
-  const runner = await commandLoaders.migrate();
-  await runner(context);
-}
-
 export const legacyCommandRunners: CommandRunners = {
   build: runLegacyCommand,
   check: runLegacyCommand,
   dev: runLegacyCommand,
   doctor: runLegacyCommand,
-  migrate: runMigrationCommand,
+  migrate: runLegacyCommand,
   preview: runLegacyCommand,
 };
 

@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,7 @@ import type { MikoUserConfig } from '@minar-kotonoha/vite-plugin-miko';
 const roots: string[] = [];
 const cliPath = fileURLToPath(new URL('./miko', import.meta.url));
 const workspaceNodeModules = fileURLToPath(new URL('../../node_modules', import.meta.url));
+const workspaceMikoPackage = fileURLToPath(new URL('../vite-plugin-miko', import.meta.url));
 
 interface DoctorResult {
   exitCode: number;
@@ -34,10 +35,16 @@ interface ProjectOptions {
   dependencies?: string[];
   browserslist?: string[];
   config?: MikoUserConfig;
+  legacyConfigSource?: string;
+  application?: boolean;
+}
+
+function withoutTypeScriptBridgeStatus(stderr: string): string {
+  return stderr.replace(/(?:^|\n)┌─+┐\n│\s+✅\s+TNB ACTIVE[^\n]*│\n└─+┘(?:\n|$)/u, '').trim();
 }
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })));
+  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
 async function createProject(options: ProjectOptions = {}): Promise<string> {
@@ -54,18 +61,81 @@ async function createProject(options: ProjectOptions = {}): Promise<string> {
       name: 'miko-doctor-fixture',
       private: true,
       dependencies: Object.fromEntries(
-        (options.dependencies ?? []).map(dependency => [dependency, '1.0.0']),
+        (options.dependencies ?? []).map((dependency) => [dependency, '1.0.0']),
       ),
       ...(options.browserslist ? { browserslist: options.browserslist } : {}),
     }),
   );
-  if (options.config) {
+  if (options.legacyConfigSource) {
+    await writeFile(resolve(root, 'miko.config.ts'), options.legacyConfigSource);
+  } else if (options.config) {
     await writeFile(
       resolve(root, 'miko.config.ts'),
       `export default ${JSON.stringify(options.config, null, 2)}`,
     );
   }
+  if (options.application) {
+    await mkdir(resolve(root, 'pages'));
+    await Promise.all([
+      writeFile(
+        resolve(root, 'tsconfig.json'),
+        `${JSON.stringify(
+          {
+            include: ['**/*.ts', '**/*.vue'],
+            compilerOptions: {
+              baseUrl: '.',
+              lib: ['ESNext', 'DOM', 'DOM.Iterable'],
+              module: 'ESNext',
+              moduleResolution: 'Bundler',
+              noEmit: true,
+              skipLibCheck: true,
+              strict: true,
+              target: 'ESNext',
+              types: ['vite/client'],
+              paths: {
+                '@minar-kotonoha/vite-plugin-miko': [workspaceMikoPackage],
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      ),
+      writeFile(
+        resolve(root, 'pages/index.vue'),
+        '<template><main id="migration-check-page">Ready</main></template>\n',
+      ),
+    ]);
+  }
   return root;
+}
+
+async function runMigrate(root: string, check = false): Promise<DoctorResult> {
+  return await new Promise<DoctorResult>((resolveResult, reject) => {
+    const child = spawn(
+      process.execPath,
+      [cliPath, 'migrate', '--root', root, '--write', ...(check ? ['--check'] : [])],
+      {
+        cwd: fileURLToPath(new URL('../../', import.meta.url)),
+        env: { ...process.env, NO_COLOR: '1' },
+        windowsHide: true,
+      },
+    );
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.once('error', reject);
+    child.once('close', (code) => {
+      resolveResult({ exitCode: code ?? 1, stdout: stdout.trim(), stderr: stderr.trim() });
+    });
+  });
 }
 
 async function runDoctor(root: string): Promise<DoctorResult> {
@@ -79,14 +149,14 @@ async function runDoctor(root: string): Promise<DoctorResult> {
     let stderr = '';
     child.stdout.setEncoding('utf8');
     child.stderr.setEncoding('utf8');
-    child.stdout.on('data', chunk => {
+    child.stdout.on('data', (chunk) => {
       stdout += chunk;
     });
-    child.stderr.on('data', chunk => {
+    child.stderr.on('data', (chunk) => {
       stderr += chunk;
     });
     child.once('error', reject);
-    child.once('close', code => {
+    child.once('close', (code) => {
       resolveResult({ exitCode: code ?? 1, stdout: stdout.trim(), stderr: stderr.trim() });
     });
   });
@@ -101,6 +171,25 @@ async function readDoctor(root: string): Promise<DoctorJson> {
 }
 
 describe('miko doctor automatic capability matrix under Node.js', () => {
+  it('validates a written legacy migration through the real Node CLI', async () => {
+    const root = await createProject({
+      application: true,
+      legacyConfigSource: `export default { ssg: false, linter: false }\n`,
+    });
+
+    const result = await runMigrate(root, true);
+
+    expect(result.exitCode).toBe(0);
+    expect(withoutTypeScriptBridgeStatus(result.stderr)).toBe('');
+    expect(result.stdout).toContain('Miko Doctor');
+    expect(result.stdout).toContain('Migration written');
+    expect(result.stdout).toContain('[miko] Check 完成');
+    const source = await readFile(join(root, 'miko.config.ts'), 'utf8');
+    expect(source).toContain('miko:');
+    expect(source).toContain(`rendering: 'spa'`);
+    expect(await readdir(join(root, '.miko-migrate'))).toHaveLength(1);
+  }, 120_000);
+
   it('keeps zero-config projects on SSG, modern output, and bundled dependencies', async () => {
     const report = await readDoctor(await createProject());
 
@@ -112,9 +201,7 @@ describe('miko doctor automatic capability matrix under Node.js', () => {
   });
 
   it('detects Pinia and one supported UI library from direct dependencies', async () => {
-    const report = await readDoctor(
-      await createProject({ dependencies: ['pinia', 'vant'] }),
-    );
+    const report = await readDoctor(await createProject({ dependencies: ['pinia', 'vant'] }));
 
     expect(report.capabilities.pinia).toMatchObject({ enabled: true, source: 'dependency' });
     expect(report.capabilities.uiLibrary).toMatchObject({
@@ -127,18 +214,14 @@ describe('miko doctor automatic capability matrix under Node.js', () => {
   });
 
   it('rejects ambiguous UI libraries before Vite starts', async () => {
-    const result = await runDoctor(
-      await createProject({ dependencies: ['vant', 'element-plus'] }),
-    );
+    const result = await runDoctor(await createProject({ dependencies: ['vant', 'element-plus'] }));
 
     expect(result.exitCode).toBe(3);
     expect(result.stderr).toContain('[miko:MIKO_CAPABILITY_CONFLICT]');
   });
 
   it('enables Legacy for old targets and honors an explicit false override', async () => {
-    const automatic = await readDoctor(
-      await createProject({ browserslist: ['chrome 79'] }),
-    );
+    const automatic = await readDoctor(await createProject({ browserslist: ['chrome 79'] }));
     const disabled = await readDoctor(
       await createProject({
         browserslist: ['ie 11'],

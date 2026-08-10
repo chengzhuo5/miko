@@ -1,9 +1,10 @@
 import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CommandContext } from '../context';
 import { runMigrate } from './index';
+import type { MigrationPlan } from './types';
 
 const roots: string[] = [];
 
@@ -53,5 +54,141 @@ describe('runMigrate', () => {
 
       No files were changed. Run "miko migrate --write" to apply this plan."
     `);
+  });
+
+  it('refuses an unsafe write with exit code seven', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miko-migrate-unsafe-'));
+    roots.push(root);
+    const write = vi.fn();
+    const unsafePlan: MigrationPlan = {
+      root,
+      sourceFiles: [join(root, 'vite.config.ts')],
+      targetFile: join(root, 'miko.config.ts'),
+      generatedSource: null,
+      findings: [
+        {
+          code: 'MIKO_MIGRATE_MANUAL',
+          file: 'vite.config.ts',
+          level: 'warning',
+          message: 'manual',
+        },
+      ],
+      safeToWrite: false,
+    };
+
+    await expect(
+      runMigrate(
+        {
+          allRoutes: false,
+          checkAfterWrite: false,
+          command: 'migrate',
+          json: false,
+          lib: false,
+          mode: 'production',
+          root,
+          write: true,
+        },
+        {
+          analyze: async () => unsafePlan,
+          output: () => {},
+          write,
+        },
+      ),
+    ).rejects.toMatchObject({
+      code: 'MIKO_MIGRATE_UNSAFE',
+      exitCode: 7,
+    });
+    expect(write).not.toHaveBeenCalled();
+  });
+
+  it('runs Doctor and optional Check after a successful write with the same root and mode', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miko-migrate-verify-'));
+    roots.push(root);
+    const calls: string[] = [];
+    const migrationPlan: MigrationPlan = {
+      root,
+      sourceFiles: [join(root, 'vite.config.ts')],
+      targetFile: join(root, 'miko.config.ts'),
+      generatedSource: 'export default {}\n',
+      findings: [],
+      safeToWrite: true,
+    };
+
+    await runMigrate(
+      {
+        allRoutes: false,
+        checkAfterWrite: true,
+        command: 'migrate',
+        json: false,
+        lib: false,
+        mode: 'test',
+        root,
+        write: true,
+      },
+      {
+        analyze: async () => migrationPlan,
+        check: async (context) => {
+          calls.push(`check:${context.command}:${context.root}:${context.mode}`);
+        },
+        doctor: async (context) => {
+          calls.push(`doctor:${context.command}:${context.root}:${context.mode}`);
+        },
+        output: () => {},
+        write: async () => {
+          calls.push('write');
+          return {
+            backupDir: join(root, '.miko-migrate/backup'),
+            removedFiles: [],
+            targetFile: migrationPlan.targetFile,
+          };
+        },
+      },
+    );
+
+    expect(calls).toEqual(['write', `doctor:doctor:${root}:test`, `check:check:${root}:test`]);
+  });
+
+  it('treats an already-current project as a successful no-op', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'miko-migrate-current-'));
+    roots.push(root);
+    const write = vi.fn();
+    const output: string[] = [];
+
+    await expect(
+      runMigrate(
+        {
+          allRoutes: false,
+          checkAfterWrite: false,
+          command: 'migrate',
+          json: false,
+          lib: false,
+          mode: 'production',
+          root,
+          write: true,
+        },
+        {
+          analyze: async () => ({
+            root,
+            sourceFiles: [join(root, 'miko.config.ts')],
+            targetFile: join(root, 'miko.config.ts'),
+            generatedSource: null,
+            findings: [
+              {
+                code: 'MIKO_MIGRATE_CURRENT',
+                file: 'miko.config.ts',
+                level: 'info',
+                message: 'current',
+              },
+            ],
+            safeToWrite: false,
+          }),
+          output: (message) => output.push(message),
+          write,
+        },
+      ),
+    ).resolves.toBeUndefined();
+    expect(write).not.toHaveBeenCalled();
+    expect(output.join('\n')).toContain('Status: current');
+    expect(output.at(-1)).toBe('No migration changes are required.');
   });
 });

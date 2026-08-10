@@ -27,6 +27,7 @@ describe('cli package', () => {
         'migrate/index.ts',
         'migrate/render.ts',
         'migrate/types.ts',
+        'migrate/write.ts',
         'preview-config.ts',
         'run.ts',
         'static-check.ts',
