@@ -144,6 +144,7 @@ describe('createMikoMonitorTags', () => {
           defer: '',
           'data-miko-monitor': '',
           src: '/@miko/white-screen.js',
+          'vite-ignore': '',
         },
         injectTo: 'head-prepend',
       },

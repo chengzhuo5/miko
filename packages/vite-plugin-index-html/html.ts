@@ -115,6 +115,7 @@ export function createMikoMonitorTags(
         defer: '',
         'data-miko-monitor': '',
         src: monitorSource,
+        'vite-ignore': '',
       },
       injectTo: 'head-prepend',
     },
