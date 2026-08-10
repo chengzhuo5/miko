@@ -18,4 +18,12 @@ describe('Miko App template', () => {
     expect(source).not.toContain('cdn.jsdelivr.net/npm/@minar-kotonoha/framework');
     expect(source).not.toContain('VITE_LIB_VERSION');
   });
+
+  it('signals readiness through the shared runtime protocol', async () => {
+    const source = await readFile(new URL('./App.vue', import.meta.url), 'utf8');
+
+    expect(source).toContain("import { markMikoReady } from 'virtual:miko-runtime'");
+    expect(source).toContain('markMikoReady()');
+    expect(source).not.toContain("document.getElementById('app')!.removeAttribute('v-cloak')");
+  });
 });

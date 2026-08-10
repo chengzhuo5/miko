@@ -24,6 +24,8 @@ interface BrowserPage {
   goto(url: string, options: { waitUntil: 'domcontentloaded'; timeout: number }): Promise<unknown>;
   waitForSelector(selector: string): Promise<unknown>;
   locator(selector: string): {
+    count(): Promise<number>;
+    getAttribute(name: string): Promise<string | null>;
     textContent(): Promise<string | null>;
   };
   evaluate<T>(callback: () => T): Promise<T>;
@@ -371,8 +373,11 @@ describe('createMikoViteConfig SPA build', () => {
       });
     }
     await page.waitForSelector('#browser-page-marker');
+    await page.waitForSelector('#app[data-miko-ready="true"]');
 
     expect(await page.locator('#browser-page-marker').textContent()).toBe('BROWSER_PAGE_MARKER');
+    expect(await page.locator('#app').getAttribute('v-cloak')).toBeNull();
+    expect(await page.locator('[data-miko-failure]').count()).toBe(0);
     expect(
       await page.evaluate(
         () =>

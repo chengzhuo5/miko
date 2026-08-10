@@ -9,14 +9,42 @@ export interface RuntimeModuleOptions {
 }
 
 export function createRuntimeModule(options: RuntimeModuleOptions): string {
-  if (!options.pinia) {
-    return 'export function setupMikoRuntime() {}';
-  }
-
-  return [
-    "import { createPinia } from 'pinia'",
+  const lines = [
+    ...(options.pinia ? ["import { createPinia } from 'pinia'", ''] : []),
+    'function getMikoBoot() {',
+    "  return typeof window === 'undefined' ? undefined : window.__MIKO_BOOT__",
+    '}',
+    '',
+    'function getPendingMikoBoot() {',
+    '  const boot = getMikoBoot()',
+    "  return boot?.status === 'pending' ? boot : undefined",
+    '}',
+    '',
+    'function errorMessage(error) {',
+    "  return error instanceof Error ? error.message : String(error)",
+    '}',
+    '',
+    'function attachMikoBootHandlers(app) {',
+    '  const previousErrorHandler = app.config.errorHandler',
+    '  const previousWarnHandler = app.config.warnHandler',
+    '  app.config.errorHandler = (error, instance, info) => {',
+    "    getPendingMikoBoot()?.fail('MIKO_BOOT_VUE', errorMessage(error))",
+    '    previousErrorHandler?.(error, instance, info)',
+    '  }',
+    '  app.config.warnHandler = (message, instance, trace) => {',
+    "    if (/hydration|mismatch/i.test(message)) getPendingMikoBoot()?.warnings.push(message)",
+    '    previousWarnHandler?.(message, instance, trace)',
+    '  }',
+    '}',
+    '',
+    'export function markMikoReady() {',
+    '  getMikoBoot()?.ready()',
+    '}',
     '',
     'export function setupMikoRuntime(app, initialState, onSSRAppRendered) {',
+    '  attachMikoBootHandlers(app)',
+    ...(options.pinia
+      ? [
     '  const pinia = createPinia()',
     '  app.use(pinia)',
     '  if (import.meta.env.SSR) {',
@@ -29,8 +57,12 @@ export function createRuntimeModule(options: RuntimeModuleOptions): string {
     '  } else if (initialState?.pinia) {',
     '    pinia.state.value = initialState.pinia',
     '  }',
+        ]
+      : []),
     '}',
-  ].join('\n');
+  ];
+
+  return lines.join('\n');
 }
 
 export function runtimePlugin(project: ResolvedMikoConfig): Plugin {

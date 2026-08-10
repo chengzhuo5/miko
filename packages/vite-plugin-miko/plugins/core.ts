@@ -51,5 +51,10 @@ export async function htmlEntryPlugins(project: ResolvedMikoConfig): Promise<Plu
     entry: project.miko.entry,
     root: project.viteRoot,
     template: project.miko.template,
+    whiteScreen: {
+      development: project.env.command === 'dev',
+      enabled: project.capabilities.whiteScreen.enabled,
+      timeout: project.capabilities.whiteScreen.value.timeout ?? 8000,
+    },
   });
 }

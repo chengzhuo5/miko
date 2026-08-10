@@ -6,10 +6,11 @@ const mocks = vi.hoisted(() => ({
   externalPlugin: vi.fn<(root: string, enableCDN?: boolean, additionalExternals?: string[]) => []>(
     () => [],
   ),
+  indexHTMLPlugin: vi.fn(async () => []),
 }));
 
 vi.mock('@minar-kotonoha/vite-plugin-index-html', () => ({
-  indexHTMLPlugin: async () => [],
+  indexHTMLPlugin: mocks.indexHTMLPlugin,
 }));
 vi.mock('@minar-kotonoha/vite-plugin-external', () => ({
   externalPlugin: mocks.externalPlugin,
@@ -93,6 +94,16 @@ describe('createMikoViteConfig', () => {
     const config = await createMikoViteConfig(project());
 
     expect(mocks.externalPlugin).toHaveBeenCalledWith('D:/project', false, []);
+    expect(mocks.indexHTMLPlugin).toHaveBeenCalledWith({
+      entry: 'D:/template/main.ts',
+      root: 'D:/project',
+      template: 'D:/template',
+      whiteScreen: {
+        development: false,
+        enabled: true,
+        timeout: 8000,
+      },
+    });
     expect(config.root).toBe('D:/project');
     expect(config.input).toBe('D:/project/index.html');
     expect(config.cacheDir).toBe('D:/project/node_modules/.vite');

@@ -1,6 +1,28 @@
 import { readFile } from 'node:fs/promises';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createRuntimeModule } from './runtime';
+
+interface BootState {
+  status: 'pending' | 'ready' | 'failed';
+  errors: Array<{ code: string; detail?: string }>;
+  warnings: string[];
+  ready: ReturnType<typeof vi.fn>;
+  fail: ReturnType<typeof vi.fn>;
+}
+
+function executeRuntime(code: string) {
+  const executable = code.replaceAll('export function ', 'function ');
+  return new Function(
+    `${executable}; return { setupMikoRuntime, markMikoReady }`,
+  )() as {
+    setupMikoRuntime(app: { config: Record<string, unknown> }): void;
+    markMikoReady(): void;
+  };
+}
+
+afterEach(() => {
+  Reflect.deleteProperty(globalThis, 'window');
+});
 
 describe('createRuntimeModule', () => {
   it('generates one Pinia install, client restore, and non-empty SSR serialization path', () => {
@@ -23,7 +45,69 @@ describe('createRuntimeModule', () => {
     const code = createRuntimeModule({ pinia: false });
 
     expect(code).not.toContain("from 'pinia'");
-    expect(code).toBe('export function setupMikoRuntime() {}');
+    expect(code).toContain('export function setupMikoRuntime(app,');
+    expect(code).toContain('attachMikoBootHandlers(app)');
+    expect(code).toContain('export function markMikoReady()');
+  });
+
+  it('reports only pre-ready Vue failures and preserves existing handlers', () => {
+    const boot: BootState = {
+      status: 'pending',
+      errors: [],
+      warnings: [],
+      ready: vi.fn(),
+      fail: vi.fn(),
+    };
+    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    const previousErrorHandler = vi.fn();
+    const previousWarnHandler = vi.fn();
+    const app = {
+      config: {
+        errorHandler: previousErrorHandler,
+        warnHandler: previousWarnHandler,
+      },
+    };
+    const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
+
+    runtime.setupMikoRuntime(app);
+    (app.config.errorHandler as (...args: unknown[]) => void)(
+      new Error('startup failed'),
+      null,
+      'setup',
+    );
+    (app.config.warnHandler as (...args: unknown[]) => void)(
+      'Hydration node mismatch',
+      null,
+      '',
+    );
+
+    expect(boot.fail).toHaveBeenCalledWith('MIKO_BOOT_VUE', 'startup failed');
+    expect(boot.warnings).toEqual(['Hydration node mismatch']);
+    expect(previousErrorHandler).toHaveBeenCalledOnce();
+    expect(previousWarnHandler).toHaveBeenCalledOnce();
+
+    boot.status = 'ready';
+    (app.config.errorHandler as (...args: unknown[]) => void)(new Error('business error'));
+    (app.config.warnHandler as (...args: unknown[]) => void)('Hydration mismatch after ready');
+
+    expect(boot.fail).toHaveBeenCalledOnce();
+    expect(boot.warnings).toEqual(['Hydration node mismatch']);
+  });
+
+  it('delegates the successful first render to the monitor', () => {
+    const boot: BootState = {
+      status: 'pending',
+      errors: [],
+      warnings: [],
+      ready: vi.fn(),
+      fail: vi.fn(),
+    };
+    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
+
+    runtime.markMikoReady();
+
+    expect(boot.ready).toHaveBeenCalledOnce();
   });
 
   it('registers the SSR-rendered lifecycle before project bootstrap', async () => {

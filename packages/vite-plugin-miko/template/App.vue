@@ -4,13 +4,12 @@ import { useHead, injectHead } from '@minar-kotonoha/framework/modules/@unhead/v
 import skeletonStyles from './styles/skeleton.less?inline';
 import hiddenVCloakStyles from './styles/hiddenVCloak.less?inline';
 import Fallback from './components/Fallback.vue';
+import { markMikoReady } from 'virtual:miko-runtime';
 
 const appRoute = useRoute();
 
 const onResolve = () => {
-  if (!import.meta.env.SSR) {
-    document.getElementById('app')!.removeAttribute('v-cloak');
-  }
+  if (!import.meta.env.SSR) markMikoReady();
 };
 const useSkeleton = appRoute.meta.useSkeleton ?? true;
 const isDev = import.meta.env.DEV;
