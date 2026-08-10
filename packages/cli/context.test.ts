@@ -4,7 +4,7 @@ import { createCommandContext } from './context';
 
 describe('createCommandContext', () => {
   it('defaults dev to development and resolves an absolute root', () => {
-    expect(createCommandContext({ command: 'dev', lib: false, json: false }, 'D:/repo')).toMatchObject({
+    expect(createCommandContext({ command: 'dev', lib: false, json: false, allRoutes: false }, 'D:/repo')).toMatchObject({
       mode: 'development',
       modeArg: undefined,
       root: resolve('D:/repo'),
@@ -12,11 +12,11 @@ describe('createCommandContext', () => {
   });
 
   it('defaults build and preview to production', () => {
-    expect(createCommandContext({ command: 'build', lib: false, json: false }, 'D:/repo').mode).toBe(
+    expect(createCommandContext({ command: 'build', lib: false, json: false, allRoutes: false }, 'D:/repo').mode).toBe(
       'production',
     );
     expect(
-      createCommandContext({ command: 'preview', lib: false, json: false }, 'D:/repo').mode,
+      createCommandContext({ command: 'preview', lib: false, json: false, allRoutes: false }, 'D:/repo').mode,
     ).toBe(
       'production',
     );
@@ -25,12 +25,25 @@ describe('createCommandContext', () => {
   it('retains whether the mode was explicitly selected for dotenv loading', () => {
     expect(
       createCommandContext(
-        { command: 'build', modeArg: 'test', lib: false, json: false },
+        { command: 'build', modeArg: 'test', lib: false, json: false, allRoutes: false },
         'D:/repo',
       ),
     ).toMatchObject({
       mode: 'test',
       modeArg: 'test',
+    });
+  });
+
+  it('defaults check to production and preserves all-route coverage', () => {
+    expect(
+      createCommandContext(
+        { command: 'check', lib: false, json: false, allRoutes: true },
+        'D:/repo',
+      ),
+    ).toMatchObject({
+      allRoutes: true,
+      command: 'check',
+      mode: 'production',
     });
   });
 });

@@ -2,19 +2,30 @@ import parser from 'yargs-parser';
 import { MikoCliError } from './errors';
 import { normalizeEnvArg } from './env';
 
-export type ImplementedCommand = 'dev' | 'build' | 'preview' | 'doctor';
+export type ImplementedCommand = 'dev' | 'build' | 'check' | 'preview' | 'doctor';
 
 export interface CliOptions {
   command?: ImplementedCommand;
   rootArg?: string;
   modeArg?: string;
+  allRoutes: boolean;
   lib: boolean;
   json: boolean;
   help?: boolean;
 }
 
-const COMMANDS = new Set<ImplementedCommand>(['dev', 'build', 'preview', 'doctor']);
-const PARSED_KEYS = new Set(['_', 'env', 'h', 'help', 'json', 'lib', 'mode', 'root']);
+const COMMANDS = new Set<ImplementedCommand>(['dev', 'build', 'check', 'preview', 'doctor']);
+const PARSED_KEYS = new Set([
+  '_',
+  'all-routes',
+  'env',
+  'h',
+  'help',
+  'json',
+  'lib',
+  'mode',
+  'root',
+]);
 
 function invalidArgs(message: string): never {
   throw new MikoCliError('MIKO_CLI_ARGS', message, 2);
@@ -29,7 +40,7 @@ function readRootArg(value: unknown): string | undefined {
 
 export function parseCliArgs(argv: string[]): CliOptions {
   const parsed = parser(argv, {
-    boolean: ['help', 'json', 'lib'],
+    boolean: ['all-routes', 'help', 'json', 'lib'],
     string: ['root', 'env', 'mode'],
     alias: { h: 'help' },
     configuration: {
@@ -52,6 +63,10 @@ export function parseCliArgs(argv: string[]): CliOptions {
     throw new MikoCliError('MIKO_CLI_COMMAND', '未知命令: (空)', 2);
   }
   if (parsed.json === true && command !== 'doctor') invalidArgs('--json 仅适用于 doctor 命令');
+  if (parsed['all-routes'] === true && command !== 'check') {
+    invalidArgs('--all-routes 仅适用于 check 命令');
+  }
+  if (parsed.lib === true && command !== 'build') invalidArgs('--lib 仅适用于 build 命令');
 
   let modeArg: string | undefined;
   try {
@@ -64,6 +79,7 @@ export function parseCliArgs(argv: string[]): CliOptions {
     command: command as ImplementedCommand | undefined,
     rootArg: readRootArg(parsed.root),
     modeArg,
+    allRoutes: parsed['all-routes'] === true,
     lib: parsed.lib === true,
     json: parsed.json === true,
     help,

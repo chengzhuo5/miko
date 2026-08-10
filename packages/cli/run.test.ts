@@ -26,6 +26,7 @@ describe('runCli', () => {
       cwd: () => 'D:/repo',
       runners: {
         build,
+        check: vi.fn<CommandRunners['check']>(),
         dev: vi.fn<CommandRunners['dev']>(),
         doctor: vi.fn<CommandRunners['doctor']>(),
         preview: vi.fn<CommandRunners['preview']>(),
@@ -45,6 +46,7 @@ describe('runCli', () => {
     const output = vi.fn<(message: string) => void>();
     const runners = {
       build: vi.fn<CommandRunners['build']>(),
+      check: vi.fn<CommandRunners['check']>(),
       dev: vi.fn<CommandRunners['dev']>(),
       doctor: vi.fn<CommandRunners['doctor']>(),
       preview: vi.fn<CommandRunners['preview']>(),
@@ -58,6 +60,7 @@ describe('runCli', () => {
 
     expect(output).toHaveBeenCalledWith(expect.stringContaining('miko build'));
     expect(runners.build).not.toHaveBeenCalled();
+    expect(runners.check).not.toHaveBeenCalled();
     expect(runners.dev).not.toHaveBeenCalled();
     expect(runners.doctor).not.toHaveBeenCalled();
     expect(runners.preview).not.toHaveBeenCalled();
@@ -70,6 +73,7 @@ describe('runCli', () => {
       cwd: () => 'D:/repo',
       runners: {
         build: vi.fn<CommandRunners['build']>(),
+        check: vi.fn<CommandRunners['check']>(),
         dev: vi.fn<CommandRunners['dev']>(),
         doctor,
         preview: vi.fn<CommandRunners['preview']>(),
@@ -82,6 +86,30 @@ describe('runCli', () => {
         root: resolve('D:/repo', 'app'),
         mode: 'production',
         json: true,
+      }),
+    );
+  });
+
+  it('dispatches check with all-route coverage enabled', async () => {
+    const check = vi.fn<CommandRunners['check']>().mockResolvedValue(undefined);
+
+    await runCli(['check', '--root', 'app', '--all-routes'], {
+      cwd: () => 'D:/repo',
+      runners: {
+        build: vi.fn<CommandRunners['build']>(),
+        check,
+        dev: vi.fn<CommandRunners['dev']>(),
+        doctor: vi.fn<CommandRunners['doctor']>(),
+        preview: vi.fn<CommandRunners['preview']>(),
+      },
+    });
+
+    expect(check).toHaveBeenCalledWith(
+      expect.objectContaining({
+        allRoutes: true,
+        command: 'check',
+        mode: 'production',
+        root: resolve('D:/repo', 'app'),
       }),
     );
   });
@@ -104,6 +132,7 @@ describe('runCli', () => {
           mode: 'test',
           lib: true,
           json: false,
+          allRoutes: false,
         },
         async () => {
           expect(process.cwd()).toBe(root);
@@ -145,6 +174,7 @@ describe('runCli', () => {
             mode: 'production',
             lib: false,
             json: false,
+            allRoutes: false,
           },
           async () => {
             expect(process.cwd()).toBe(root);
@@ -186,6 +216,7 @@ describe('runCli', () => {
           modeArg: 'test',
           lib: false,
           json: false,
+          allRoutes: false,
         },
         async () => {
           expect(process.env[envName]).toBe('from-dotenv');
@@ -218,6 +249,7 @@ describe('runCli', () => {
           modeArg: 'first',
           lib: false,
           json: false,
+          allRoutes: false,
         },
         async () => {
           markFirstEntered();
@@ -236,6 +268,7 @@ describe('runCli', () => {
           modeArg: 'second',
           lib: false,
           json: false,
+          allRoutes: false,
         },
         async () => {
           secondEntered = true;

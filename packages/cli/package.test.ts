@@ -18,6 +18,7 @@ describe('cli package', () => {
     expect(packageJson.files).toEqual(
       expect.arrayContaining([
         'args.ts',
+        'check.ts',
         'context.ts',
         'doctor.ts',
         'errors.ts',

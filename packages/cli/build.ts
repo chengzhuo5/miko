@@ -7,6 +7,7 @@ import {
 } from '@minar-kotonoha/vite-plugin-miko';
 import type { ResolvedMikoConfig } from '@minar-kotonoha/vite-plugin-miko';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolve } from 'node:path';
 import { build as viteBuild } from 'vite';
 import type { UserConfig } from 'vite';
 import type { CommandContext } from './context';
@@ -59,26 +60,67 @@ export async function prepareApplicationBuild(
   return config;
 }
 
+export interface ApplicationBuildOptions {
+  outputOverride?: string;
+  onProjectResolved?: (project: ResolvedMikoConfig) => void;
+}
+
+export interface ApplicationBuildResult {
+  project: ResolvedMikoConfig;
+  config: UserConfig;
+  outDir: string;
+}
+
+function withOutputOverride(
+  project: ResolvedMikoConfig,
+  outputOverride: string | undefined,
+): ResolvedMikoConfig {
+  if (!outputOverride) return project;
+  const outDir = resolve(outputOverride);
+  return {
+    ...project,
+    outDir,
+    vite: {
+      ...project.vite,
+      build: {
+        ...project.vite.build,
+        outDir,
+      },
+    },
+  };
+}
+
+export async function buildApplication(
+  context: CommandContext,
+  options: ApplicationBuildOptions = {},
+): Promise<ApplicationBuildResult> {
+  const { mode, root } = context;
+  const resolvedProject = await resolveMikoProject({ command: context.command, mode, root });
+  options.onProjectResolved?.(resolvedProject);
+  const project = withOutputOverride(resolvedProject, options.outputOverride);
+  const config = await prepareApplicationBuild(project, () => runTypecheck(root));
+  const inlineConfig = { ...config, configFile: false as const, mode };
+
+  if (project.miko.rendering === 'ssg') {
+    await registerCssLoader();
+    await viteSsgBuild(undefined, inlineConfig);
+  } else {
+    await viteBuild(inlineConfig);
+  }
+
+  const base = String(config.base ?? '/');
+  await assertStaticOutput(project.outDir, base);
+  await writeStaticDeploymentManifest(project.outDir, base);
+  return { project, config, outDir: project.outDir };
+}
+
 export async function runBuild(context: CommandContext): Promise<void> {
   const { lib: isLib, mode, root } = context;
-  const project = await resolveMikoProject({ command: 'build', mode, root });
-
   if (isLib) {
+    const project = await resolveMikoProject({ command: 'build', mode, root });
     await viteBuild(createLibConfig({ config: project }));
     console.log('[miko] 库构建完成');
   } else {
-    const config = await prepareApplicationBuild(project, () => runTypecheck(root));
-    const inlineConfig = { ...config, configFile: false as const, mode };
-
-    if (project.miko.rendering === 'ssg') {
-      await registerCssLoader();
-      await viteSsgBuild(undefined, inlineConfig);
-    } else {
-      await viteBuild(inlineConfig);
-    }
-
-    const base = String(config.base ?? '/');
-    await assertStaticOutput(project.outDir, base);
-    await writeStaticDeploymentManifest(project.outDir, base);
+    await buildApplication(context);
   }
 }

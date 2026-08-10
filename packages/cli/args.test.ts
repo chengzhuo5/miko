@@ -19,6 +19,14 @@ describe('parseCliArgs', () => {
     });
   });
 
+  it('parses check route coverage', () => {
+    expect(parseCliArgs(['check', '--root', 'app', '--all-routes'])).toMatchObject({
+      allRoutes: true,
+      command: 'check',
+      rootArg: 'app',
+    });
+  });
+
   it('rejects --json outside doctor', () => {
     expect(() => parseCliArgs(['build', '--json'])).toThrowError(
       expect.objectContaining({
@@ -26,6 +34,21 @@ describe('parseCliArgs', () => {
         exitCode: 2,
       }),
     );
+  });
+
+  it('rejects command-specific flags outside their owning command', () => {
+    for (const argv of [
+      ['build', '--all-routes'],
+      ['check', '--lib'],
+      ['preview', '--lib'],
+    ]) {
+      expect(() => parseCliArgs(argv)).toThrowError(
+        expect.objectContaining({
+          code: 'MIKO_CLI_ARGS',
+          exitCode: 2,
+        }),
+      );
+    }
   });
 
   it('rejects unknown commands instead of dynamically importing a filename', () => {

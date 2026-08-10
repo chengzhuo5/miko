@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserConfig } from 'vite';
 import type { ResolvedMikoConfig } from '@minar-kotonoha/vite-plugin-miko';
@@ -9,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   assertStaticOutput: vi.fn<(outDir: string, base: string) => Promise<void>>(),
   resolveMikoProject: vi.fn<() => Promise<ResolvedMikoConfig>>(),
   spawn: vi.fn<() => unknown>(),
-  viteBuild: vi.fn<() => Promise<void>>(),
+  viteBuild: vi.fn<(config?: UserConfig) => Promise<void>>(),
   viteSsgBuild: vi.fn<() => Promise<void>>(),
   writeStaticDeploymentManifest: vi.fn<(outDir: string, base: string) => Promise<unknown>>(),
 }));
@@ -35,7 +36,7 @@ vi.mock('./static-check', () => ({
   assertStaticOutput: mocks.assertStaticOutput,
 }));
 
-import { prepareApplicationBuild, runBuild } from './build';
+import { buildApplication, prepareApplicationBuild, runBuild } from './build';
 
 describe('prepareApplicationBuild', () => {
   beforeEach(() => {
@@ -99,6 +100,7 @@ describe('prepareApplicationBuild', () => {
       mode: 'production',
       lib: false,
       json: false,
+      allRoutes: false,
     };
 
     mocks.resolveMikoProject.mockResolvedValueOnce(project);
@@ -136,5 +138,58 @@ describe('prepareApplicationBuild', () => {
     expect(mocks.viteBuild.mock.invocationCallOrder[0]).toBeGreaterThan(
       mocks.spawn.mock.invocationCallOrder[0]!,
     );
+  });
+
+  it('applies a command-level output override without mutating the resolved project', async () => {
+    const typecheckProcess = new EventEmitter();
+    const project = {
+      env: { command: 'check', mode: 'production', root: 'D:/project' },
+      outDir: 'D:/project/formal-dist',
+      vite: { build: { outDir: 'D:/project/formal-dist' } },
+      miko: { rendering: 'spa' },
+    } as ResolvedMikoConfig;
+    const context: CommandContext = {
+      command: 'check',
+      root: 'D:/project',
+      mode: 'production',
+      lib: false,
+      json: false,
+      allRoutes: false,
+    };
+
+    mocks.resolveMikoProject.mockResolvedValueOnce(project);
+    mocks.createMikoViteConfig.mockImplementationOnce(async (resolvedProject) => ({
+      base: '/',
+      build: { outDir: resolvedProject.outDir },
+    }));
+    mocks.spawn.mockReturnValueOnce(typecheckProcess);
+    mocks.viteBuild.mockResolvedValueOnce();
+    mocks.assertStaticOutput.mockResolvedValueOnce();
+    mocks.writeStaticDeploymentManifest.mockResolvedValueOnce({});
+
+    const execution = buildApplication(context, {
+      outputOverride: 'D:/temporary/miko-check',
+    });
+    await Promise.resolve();
+    typecheckProcess.emit('exit', 0);
+    const result = await execution;
+
+    expect(project.outDir).toBe('D:/project/formal-dist');
+    expect(project.vite.build?.outDir).toBe('D:/project/formal-dist');
+    expect(mocks.createMikoViteConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        outDir: resolve('D:/temporary/miko-check'),
+        vite: expect.objectContaining({
+          build: expect.objectContaining({ outDir: resolve('D:/temporary/miko-check') }),
+        }),
+      }),
+    );
+    expect(mocks.viteBuild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        build: expect.objectContaining({ outDir: resolve('D:/temporary/miko-check') }),
+        configFile: false,
+      }),
+    );
+    expect(result.outDir).toBe(resolve('D:/temporary/miko-check'));
   });
 });

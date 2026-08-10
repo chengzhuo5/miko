@@ -4,6 +4,7 @@ import type { CliOptions } from './args';
 
 export interface CommandContext extends Omit<MikoConfigEnv, 'command'> {
   command: Exclude<CliOptions['command'], undefined>;
+  allRoutes: boolean;
   lib: boolean;
   json: boolean;
   modeArg?: string;
@@ -14,6 +15,7 @@ export function createCommandContext(options: CliOptions, cwd: string): CommandC
 
   return {
     command: options.command,
+    allRoutes: options.allRoutes,
     root: resolve(cwd, options.rootArg ?? '.'),
     mode: options.modeArg ?? (options.command === 'dev' ? 'development' : 'production'),
     modeArg: options.modeArg,
