@@ -20,6 +20,7 @@ import { mergeViteConfig } from './config/merge';
 import type { MikoConfigEnv, ResolvedMikoConfig } from './config/types';
 import { validateFinalConfig, validateResolvedProject } from './config/validate';
 import { assembleMikoPlugins } from './plugins';
+import { composeSsgPageRendered } from './ssg/state';
 
 export { defineMikoConfig } from './config/define';
 export { MikoConfigError } from './config/errors';
@@ -76,6 +77,7 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
       ? {
           ...miko.ssgOptions,
           entry: miko.entry,
+          onPageRendered: composeSsgPageRendered(miko.ssgOptions.onPageRendered),
         }
       : undefined,
     define: {

@@ -12,7 +12,7 @@ describe('vite-plugin-miko package', () => {
 
     expect(packageJson.dependencies?.browserslist).toBeDefined();
     expect(packageJson.files).toEqual(
-      expect.arrayContaining(['capabilities/', 'config/', 'plugins/']),
+      expect.arrayContaining(['capabilities/', 'config/', 'plugins/', 'ssg/']),
     );
     expect(packageJson.files).toContain('!**/*.test.ts');
   });

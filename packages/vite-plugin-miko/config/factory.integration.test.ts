@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
+import { build as viteSsgBuild } from '@minar-kotonoha/vite-ssg/node';
 import { build, preview } from 'vite';
 import type { PreviewServer } from 'vite';
 import { resolveCapabilities } from '../capabilities';
@@ -52,11 +53,16 @@ async function linkWorkspaceNodeModules(root: string): Promise<void> {
   );
 }
 
-function resolveMikoConfig(loaded: LoadedMikoConfig, env: MikoConfigEnv, template: string) {
+function resolveMikoConfig(
+  loaded: LoadedMikoConfig,
+  env: MikoConfigEnv,
+  template: string,
+  dependencies: string[] = [],
+) {
   const signals: ProjectSignals = {
     root: env.root,
     packageJsonPath: null,
-    dependencies: [],
+    dependencies,
     browserslist: [],
     browserslistConfigFile: null,
     conventions: {
@@ -92,6 +98,7 @@ async function buildSpa(
   roots.push(root);
 
   await linkWorkspaceNodeModules(root);
+  await writeFile(resolve(root, 'package.json'), '{"type":"module"}');
   await mkdir(pagesDir, { recursive: true });
   await writeFile(
     resolve(pagesDir, 'index.vue'),
@@ -139,6 +146,80 @@ async function buildSpa(
     .join('\n');
 }
 
+async function buildSsgFixture() {
+  const root = await mkdtemp(join(tmpdir(), 'miko-ssg-state-'));
+  const pagesDir = resolve(root, 'pages');
+  roots.push(root);
+
+  await linkWorkspaceNodeModules(root);
+  await writeFile(resolve(root, 'package.json'), '{"type":"module"}');
+  await mkdir(pagesDir, { recursive: true });
+  await writeFile(
+    resolve(pagesDir, 'index.vue'),
+    `<script setup>
+import { useHead } from '@unhead/vue'
+useHead({ title: 'Empty State', meta: [{ name: 'description', content: 'empty-state' }] })
+</script>
+<template><main id="empty-state-page">EMPTY_STATE_PAGE</main></template>`,
+  );
+  await writeFile(
+    resolve(pagesDir, 'state.vue'),
+    `<script setup>
+import { defineStore } from 'pinia'
+import { useHead } from '@unhead/vue'
+const useCart = defineStore('cart', { state: () => ({ count: 0 }) })
+const cart = useCart()
+if (import.meta.env.SSR) cart.count = 7
+useHead({ title: 'Pinia State', meta: [{ name: 'description', content: 'pinia-state' }] })
+</script>
+<template><main id="pinia-count">{{ cart.count }}</main></template>`,
+  );
+
+  const env = { command: 'build' as const, mode: 'production', root };
+  const project = resolveMikoConfig(
+    {
+      configFile: null,
+      config: {
+        miko: {
+          rendering: 'ssg',
+          pinia: true,
+          layoutsPluginOptions: false,
+          componentsPluginOptions: false,
+          unoCSSPluginOptions: false,
+          legacyPluginOptions: false,
+          linterOptions: false,
+          externalOptions: false,
+          janusOptions: false,
+          ssgOptions: {
+            onPageRendered(_route, html) {
+              return html.replace('<body', '<body data-user-page-hook="true"');
+            },
+          },
+        },
+        vite: {
+          publicDir: false,
+        },
+      },
+    },
+    env,
+    getBundledTemplate(),
+    ['pinia'],
+  );
+  const config = await createMikoViteConfig(project);
+  await viteSsgBuild(undefined, {
+    ...config,
+    configFile: false,
+    logLevel: 'silent',
+  });
+
+  return {
+    root,
+    outDir: project.outDir,
+    emptyHtml: await readFile(resolve(project.outDir, 'index.html'), 'utf8'),
+    stateHtml: await readFile(resolve(project.outDir, 'state.html'), 'utf8'),
+  };
+}
+
 describe('createMikoViteConfig SPA build', () => {
   it('keeps the SPA application in the runtime chunks', async () => {
     const code = await buildSpa({
@@ -158,37 +239,33 @@ describe('createMikoViteConfig SPA build', () => {
     expect(code).toContain('SPA_RUNTIME_MARKER');
   });
 
-  it('runs project bootstrap exactly once in a real browser', async () => {
+  it('runs project bootstrap exactly once without mounting ClientOnly for a normal SPA route', async () => {
     const root = await mkdtemp(join(tmpdir(), 'miko-spa-browser-'));
-    const template = resolve(root, 'template');
     const pagesDir = resolve(root, 'pages');
     roots.push(root);
 
     await linkWorkspaceNodeModules(root);
-    await mkdir(resolve(template, 'layouts'), { recursive: true });
     await mkdir(pagesDir, { recursive: true });
-    await writeFile(
-      resolve(template, 'main.ts'),
-      await readFile(resolve(getBundledTemplate(), 'main.ts'), 'utf8'),
-    );
-    await writeFile(
-      resolve(template, 'index.html'),
-      '<!doctype html><html><body><div id="app"></div></body></html>',
-    );
-    await writeFile(resolve(template, 'App.vue'), '<template><RouterView /></template>');
-    await writeFile(
-      resolve(template, 'layouts/default.vue'),
-      '<template><RouterView /></template>',
-    );
     await writeFile(
       resolve(pagesDir, 'home.vue'),
       '<template><main id="browser-page-marker">BROWSER_PAGE_MARKER</main></template>',
     );
     await writeFile(
       resolve(root, 'index.ts'),
-      `export default () => {
-        const state = globalThis as typeof globalThis & { __mikoBootstrapCount?: number }
+      `export default (app) => {
+        const state = globalThis as typeof globalThis & {
+          __mikoBootstrapCount?: number
+          __mikoClientOnlySetupCount?: number
+        }
         state.__mikoBootstrapCount = (state.__mikoBootstrapCount ?? 0) + 1
+        const clientOnly = app.component('ClientOnly')
+        if (clientOnly && typeof clientOnly.setup === 'function') {
+          const setup = clientOnly.setup
+          clientOnly.setup = (...args) => {
+            state.__mikoClientOnlySetupCount = (state.__mikoClientOnlySetupCount ?? 0) + 1
+            return setup(...args)
+          }
+        }
       }`,
     );
 
@@ -199,7 +276,6 @@ describe('createMikoViteConfig SPA build', () => {
         config: {
           miko: {
             rendering: 'spa',
-            template,
             layoutsPluginOptions: false,
             componentsPluginOptions: false,
             unoCSSPluginOptions: false,
@@ -291,5 +367,64 @@ describe('createMikoViteConfig SPA build', () => {
           ).__mikoBootstrapCount,
       ),
     ).toBe(1);
+    expect(
+      await page.evaluate(
+        () =>
+          (
+            globalThis as typeof globalThis & {
+              __mikoClientOnlySetupCount?: number;
+            }
+          ).__mikoClientOnlySetupCount ?? 0,
+      ),
+    ).toBe(0);
   });
+});
+
+describe('createMikoViteConfig SSG state output', () => {
+  it('removes empty state while preserving Pinia hydration and head output', async () => {
+    const { root, outDir, emptyHtml, stateHtml } = await buildSsgFixture();
+
+    expect(emptyHtml).not.toContain('window.__INITIAL_STATE__');
+    expect(emptyHtml).toContain('data-user-page-hook="true"');
+    expect(emptyHtml.match(/<title>Empty State<\/title>/g)).toHaveLength(1);
+    expect(emptyHtml.match(/content="empty-state"/g)).toHaveLength(1);
+
+    expect(stateHtml).toContain('window.__INITIAL_STATE__');
+    expect(stateHtml).toContain('\\"cart\\":{\\"count\\":7}');
+    expect(stateHtml).toContain('data-user-page-hook="true"');
+    expect(stateHtml.match(/<title>Pinia State<\/title>/g)).toHaveLength(1);
+    expect(stateHtml.match(/content="pinia-state"/g)).toHaveLength(1);
+
+    const server = await preview({
+      root,
+      configFile: false,
+      logLevel: 'silent',
+      build: { outDir },
+      preview: {
+        host: '127.0.0.1',
+        port: 0,
+        strictPort: true,
+      },
+    });
+    previewServers.push(server);
+    const address = server.httpServer.address();
+    if (!address || typeof address === 'string') {
+      throw new Error('Vite preview did not expose a TCP address');
+    }
+
+    const chromium = await loadChromium();
+    const browser = await chromium.launch({ headless: true });
+    browsers.push(browser);
+    const page = await browser.newPage();
+    const pageErrors: string[] = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.goto(`http://127.0.0.1:${address.port}/state.html`, {
+      waitUntil: 'domcontentloaded',
+      timeout: 15_000,
+    });
+    await page.waitForSelector('#pinia-count');
+
+    expect(await page.locator('#pinia-count').textContent()).toBe('7');
+    expect(pageErrors).toEqual([]);
+  }, 60_000);
 });

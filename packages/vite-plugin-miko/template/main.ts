@@ -20,7 +20,7 @@ export const createApp = ViteSSG(
   // vue-router options
   { routes: setupLayouts(routes), base: import.meta.env.BASE_URL },
   // function to have custom setups
-  async ({ app, router, initialState }) => {
+  async ({ app, router, initialState, onSSRAppRendered }) => {
     // const i18n = createI18n({
     //   locale: 'zh-CN',
     //   messages,
@@ -31,9 +31,8 @@ export const createApp = ViteSSG(
       handleHotUpdate(router);
     }
 
-    const runtime = setupMikoRuntime(app, initialState);
+    setupMikoRuntime(app, initialState, onSSRAppRendered);
     await bootstrap(app, router, initialState);
-    await runtime.afterBootstrap();
   },
   {
     hydration: import.meta.env.PROD,

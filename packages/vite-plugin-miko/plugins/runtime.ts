@@ -10,26 +10,24 @@ export interface RuntimeModuleOptions {
 
 export function createRuntimeModule(options: RuntimeModuleOptions): string {
   if (!options.pinia) {
-    return ['export function setupMikoRuntime() {', '  return { afterBootstrap() {} }', '}'].join(
-      '\n',
-    );
+    return 'export function setupMikoRuntime() {}';
   }
 
   return [
     "import { createPinia } from 'pinia'",
     '',
-    'export function setupMikoRuntime(app, initialState) {',
+    'export function setupMikoRuntime(app, initialState, onSSRAppRendered) {',
     '  const pinia = createPinia()',
     '  app.use(pinia)',
-    '  if (!import.meta.env.SSR && initialState?.pinia) {',
+    '  if (import.meta.env.SSR) {',
+    '    onSSRAppRendered(() => {',
+    '      if (!initialState) return',
+    '      const piniaState = pinia.state.value',
+    '      if (Object.keys(piniaState).length > 0) initialState.pinia = piniaState',
+    '      else delete initialState.pinia',
+    '    })',
+    '  } else if (initialState?.pinia) {',
     '    pinia.state.value = initialState.pinia',
-    '  }',
-    '  return {',
-    '    afterBootstrap() {',
-    '      if (import.meta.env.SSR && initialState) {',
-    '        initialState.pinia = pinia.state.value',
-    '      }',
-    '    },',
     '  }',
     '}',
   ].join('\n');

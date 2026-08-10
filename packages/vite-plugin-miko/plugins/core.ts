@@ -34,7 +34,7 @@ export function vueCorePlugins(project: ResolvedMikoConfig): PluginOption {
         dts: miko.routerPluginOptions.dts,
         extendRoute(route: { path?: string; addAlias: (aliases: string[]) => void }) {
           if (route.path) {
-            route.addAlias([route.path === '/' ? 'index.html' : `${route.path}.html`]);
+            route.addAlias([route.path === '/' ? '/index.html' : `${route.path}.html`]);
           }
         },
       }),

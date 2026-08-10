@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead, injectHead } from '@minar-kotonoha/framework/modules/@unhead/vue.ts';
 import skeletonStyles from './styles/skeleton.less?inline';
@@ -14,10 +13,7 @@ const onResolve = () => {
   }
 };
 const useSkeleton = appRoute.meta.useSkeleton ?? true;
-const isSpaMode = import.meta.env.VITE_MIKO_SPA === 'true';
 const isDev = import.meta.env.DEV;
-// 仅对标记 clientOnly 的路由，或 SPA 模式下，整体走 <ClientOnly>
-const useClientOnly = computed(() => isSpaMode || appRoute.meta.clientOnly === true);
 
 // 此处在预渲染时完成，故加个判断，客户端代码会剔除这块，减小包体积
 if (import.meta.env.SSR) {
@@ -58,7 +54,7 @@ if (import.meta.env.SSR) {
 <template>
   <RouterView v-slot="{ Component, route }">
     <Suspense @resolve="onResolve">
-      <ClientOnly v-if="useClientOnly || route.meta.clientOnly === true">
+      <ClientOnly v-if="route.meta.clientOnly === true">
         <component :is="Component" />
       </ClientOnly>
       <component :is="Component" v-else />
