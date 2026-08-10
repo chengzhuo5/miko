@@ -35,6 +35,9 @@ coverage
 # Vitest
 __screenshots__/
 
+# Performance
+packages/performance/results/
+
 .vite-ssg-tempnul
 types/routes.d.ts
 .omc/sessions

@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -212,11 +212,27 @@ useHead({ title: 'Pinia State', meta: [{ name: 'description', content: 'pinia-st
     logLevel: 'silent',
   });
 
+  const emptyHtml = await readFile(resolve(project.outDir, 'index.html'), 'utf8');
+  const stateHtml = await readFile(resolve(project.outDir, 'state.html'), 'utf8');
+  const assetFiles = (await readdir(resolve(project.outDir, 'assets'))).sort();
+  const productionSource = [
+    emptyHtml,
+    stateHtml,
+    ...(await Promise.all(
+      assetFiles
+        .filter((file) => file.endsWith('.js'))
+        .map((file) => readFile(resolve(project.outDir, 'assets', file), 'utf8')),
+    )),
+  ].join('\n');
+
   return {
     root,
     outDir: project.outDir,
-    emptyHtml: await readFile(resolve(project.outDir, 'index.html'), 'utf8'),
-    stateHtml: await readFile(resolve(project.outDir, 'state.html'), 'utf8'),
+    config,
+    emptyHtml,
+    stateHtml,
+    assetFiles,
+    productionSource,
   };
 }
 
@@ -382,7 +398,8 @@ describe('createMikoViteConfig SPA build', () => {
 
 describe('createMikoViteConfig SSG state output', () => {
   it('removes empty state while preserving Pinia hydration and head output', async () => {
-    const { root, outDir, emptyHtml, stateHtml } = await buildSsgFixture();
+    const { root, outDir, config, emptyHtml, stateHtml, assetFiles, productionSource } =
+      await buildSsgFixture();
 
     expect(emptyHtml).not.toContain('window.__INITIAL_STATE__');
     expect(emptyHtml).toContain('data-user-page-hook="true"');
@@ -394,6 +411,15 @@ describe('createMikoViteConfig SSG state output', () => {
     expect(stateHtml).toContain('data-user-page-hook="true"');
     expect(stateHtml.match(/<title>Pinia State<\/title>/g)).toHaveLength(1);
     expect(stateHtml.match(/content="pinia-state"/g)).toHaveLength(1);
+    expect(assetFiles.filter((file) => /\.(?:css|js)$/u.test(file))).toSatisfy(
+      (files: string[]) =>
+        files.length > 0 && files.every((file) => /-[\dA-Z_a-z-]{8}\.(?:css|js)$/u.test(file)),
+    );
+    expect(productionSource).not.toMatch(
+      /framework\.umd\.js|legacy-polyfills|MIKO_PERF_RESULT|polyfills-legacy|vite-plugin-vue-devtools/u,
+    );
+    expect(config.build?.rolldownOptions?.output).toBeUndefined();
+    expect(config.build?.rollupOptions?.output).toBeUndefined();
 
     const server = await preview({
       root,

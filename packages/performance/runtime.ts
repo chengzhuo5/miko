@@ -26,34 +26,53 @@ export interface RuntimeMeasurementOptions {
   onSampleStart?: (sample: number, total: number) => void;
 }
 
-type RuntimeFixture = Pick<GeneratedFixture, 'root' | 'unvisitedRoute'>;
+type RuntimeFixture = Pick<GeneratedFixture, 'root' | 'unvisitedRoute'> & {
+  deepRouteChunkName: string;
+};
 
 export function extractScriptDurationMs(metrics: CdpMetric[]): number {
-  const value = metrics.find(metric => metric.name === 'ScriptDuration')?.value;
+  const value = metrics.find((metric) => metric.name === 'ScriptDuration')?.value;
   if (!Number.isFinite(value) || value === undefined || value < 0) {
     throw new Error('CDP Performance metrics did not include a finite ScriptDuration');
   }
   return value * 1000;
 }
 
-export function isUnvisitedRouteScript(url: string, unvisitedRoute: string): boolean {
-  const routeName = unvisitedRoute
-    .split('/')
-    .filter(Boolean)
-    .join('-')
-    .toLowerCase();
-  if (!routeName) return false;
-
+export function isChunkScript(url: string, chunkName: string): boolean {
+  const normalizedChunkName = chunkName.toLowerCase();
+  if (!normalizedChunkName) return false;
   let fileName: string;
   try {
     fileName = decodeURIComponent(new URL(url).pathname.split('/').at(-1) ?? '').toLowerCase();
   } catch {
     fileName = decodeURIComponent(url.split(/[/?#]/u).at(-1) ?? '').toLowerCase();
   }
-  return fileName.endsWith('.js') && (
-    fileName === `${routeName}.js` ||
-    fileName.startsWith(`${routeName}-`)
+  return (
+    fileName.endsWith('.js') &&
+    (fileName === `${normalizedChunkName}.js` || fileName.startsWith(`${normalizedChunkName}-`))
   );
+}
+
+export function isRouteScript(url: string, route: string): boolean {
+  return isChunkScript(url, route.split('/').filter(Boolean).join('-'));
+}
+
+export function isUnvisitedRouteScript(url: string, unvisitedRoute: string): boolean {
+  return isRouteScript(url, unvisitedRoute);
+}
+
+export function assertRouteRequestTopology(
+  initialScripts: string[],
+  navigatedScripts: string[],
+  deepRouteChunkName: string,
+  unvisitedRoute: string,
+): void {
+  if (initialScripts.some((url) => isRouteScript(url, unvisitedRoute))) {
+    throw new Error(`Initial route eagerly requested unvisited route chunk: ${unvisitedRoute}`);
+  }
+  if (!navigatedScripts.some((url) => isChunkScript(url, deepRouteChunkName))) {
+    throw new Error(`Navigation did not request the deep route chunk: ${deepRouteChunkName}`);
+  }
 }
 
 export function summarizeRuntimeSamples(
@@ -61,15 +80,15 @@ export function summarizeRuntimeSamples(
   unvisitedRoute: string,
 ): RuntimeMetrics {
   return {
-    fcpMs: createMetricSamples(samples.map(sample => sample.fcpMs)),
-    lcpMs: createMetricSamples(samples.map(sample => sample.lcpMs)),
-    hydrationMs: createMetricSamples(samples.map(sample => sample.hydrationMs)),
-    scriptDurationMs: createMetricSamples(samples.map(sample => sample.scriptDurationMs)),
-    routeNavigationMs: createMetricSamples(samples.map(sample => sample.routeNavigationMs)),
-    transferBytes: createMetricSamples(samples.map(sample => sample.transferBytes)),
-    requestCount: createMetricSamples(samples.map(sample => sample.requestCount)),
-    unvisitedRouteRequested: samples.some(sample =>
-      sample.requestedScripts.some(url => isUnvisitedRouteScript(url, unvisitedRoute)),
+    fcpMs: createMetricSamples(samples.map((sample) => sample.fcpMs)),
+    lcpMs: createMetricSamples(samples.map((sample) => sample.lcpMs)),
+    hydrationMs: createMetricSamples(samples.map((sample) => sample.hydrationMs)),
+    scriptDurationMs: createMetricSamples(samples.map((sample) => sample.scriptDurationMs)),
+    routeNavigationMs: createMetricSamples(samples.map((sample) => sample.routeNavigationMs)),
+    transferBytes: createMetricSamples(samples.map((sample) => sample.transferBytes)),
+    requestCount: createMetricSamples(samples.map((sample) => sample.requestCount)),
+    unvisitedRouteRequested: samples.some((sample) =>
+      sample.requestedScripts.some((url) => isUnvisitedRouteScript(url, unvisitedRoute)),
     ),
   };
 }
@@ -86,7 +105,7 @@ async function reservePort(): Promise<number> {
     throw new Error('Unable to reserve a local preview port');
   }
   await new Promise<void>((resolve, reject) => {
-    server.close(error => {
+    server.close((error) => {
       if (error) reject(error);
       else resolve();
     });
@@ -206,18 +225,18 @@ async function measureRuntimeSample(fixture: RuntimeFixture): Promise<RuntimeSam
     let requestCount = 0;
     let transferBytes = 0;
 
-    page.on('request', request => {
+    page.on('request', (request) => {
       if (!request.url().startsWith('http')) return;
       requestCount++;
       if (request.resourceType() === 'script') requestedScripts.push(request.url());
     });
-    page.on('pageerror', error => {
+    page.on('pageerror', (error) => {
       pageErrors.push(error.message);
     });
     await installBrowserObservers(page);
 
     cdp = await page.context().newCDPSession(page);
-    cdp.on('Network.loadingFinished', event => {
+    cdp.on('Network.loadingFinished', (event) => {
       transferBytes += event.encodedDataLength;
     });
     await Promise.all([cdp.send('Network.enable'), cdp.send('Performance.enable')]);
@@ -225,7 +244,14 @@ async function measureRuntimeSample(fixture: RuntimeFixture): Promise<RuntimeSam
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
     await page.waitForSelector('#runtime-home');
     const initialMetrics = await readInitialBrowserMetrics(page);
+    const initialScripts = [...requestedScripts];
     const routeNavigationMs = await measureRouteNavigation(page);
+    assertRouteRequestTopology(
+      initialScripts,
+      requestedScripts,
+      fixture.deepRouteChunkName,
+      fixture.unvisitedRoute,
+    );
     const performanceMetrics = await cdp.send('Performance.getMetrics');
     const scriptDurationMs = extractScriptDurationMs(performanceMetrics.metrics);
 

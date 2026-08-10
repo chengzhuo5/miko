@@ -134,6 +134,10 @@ miko/
 bun run test:packages
 bun run typecheck:packages
 
+# 性能测量与相对基线门禁
+bun run perf:measure
+bun run perf:check
+
 # Starter 测试
 cd app
 bun test:unit
@@ -142,6 +146,8 @@ bun test:e2e:browser
 ```
 
 Windows 下 Vitest Browser Mode 必须使用 `server: { host: '127.0.0.1' }`，避免 `localhost` 解析到 Chromium headless shell 不可达的 IPv6 `::1`。
+
+性能命令由 Bun 调度，但 benchmark runner 和每次真实 Miko 构建都使用 Node.js；详细采样规则、环境匹配和预算见 `packages/performance/README.md`。应用构建成功后会生成 `dist/.miko/routes.json` 与 `dist/.miko/assets.json`，用于部署路由和缓存策略参考。
 
 ## 新建项目
 

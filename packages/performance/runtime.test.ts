@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  assertRouteRequestTopology,
   extractScriptDurationMs,
+  isChunkScript,
   isUnvisitedRouteScript,
   summarizeRuntimeSamples,
   type RuntimeSample,
@@ -33,17 +35,35 @@ describe('runtime metric extraction', () => {
 
   it('classifies only the emitted chunk for the unvisited route', () => {
     expect(
-      isUnvisitedRouteScript(
-        'http://127.0.0.1:4173/assets/unvisited-D4E5F6.js',
-        '/unvisited',
-      ),
+      isUnvisitedRouteScript('http://127.0.0.1:4173/assets/unvisited-D4E5F6.js', '/unvisited'),
     ).toBe(true);
     expect(
-      isUnvisitedRouteScript(
-        'http://127.0.0.1:4173/assets/deep-nested-A1B2C3.js',
+      isUnvisitedRouteScript('http://127.0.0.1:4173/assets/deep-nested-A1B2C3.js', '/unvisited'),
+    ).toBe(false);
+  });
+
+  it('requires deep-route loading after navigation and rejects eager unvisited chunks', () => {
+    const initialScripts = ['http://127.0.0.1:4173/assets/index-AAAA.js'];
+    const navigatedScripts = [
+      ...initialScripts,
+      'http://127.0.0.1:4173/assets/deep-nested-D4E5F6.js',
+    ];
+
+    expect(isChunkScript(navigatedScripts.at(-1)!, 'deep-nested')).toBe(true);
+    expect(() =>
+      assertRouteRequestTopology(initialScripts, navigatedScripts, 'deep-nested', '/unvisited'),
+    ).not.toThrow();
+    expect(() =>
+      assertRouteRequestTopology(
+        [...initialScripts, 'http://127.0.0.1:4173/assets/unvisited-EAGER.js'],
+        navigatedScripts,
+        'deep-nested',
         '/unvisited',
       ),
-    ).toBe(false);
+    ).toThrow(/unvisited/u);
+    expect(() =>
+      assertRouteRequestTopology(initialScripts, initialScripts, 'deep-nested', '/unvisited'),
+    ).toThrow(/deep route/u);
   });
 
   it('keeps five raw browser samples before calculating medians', () => {

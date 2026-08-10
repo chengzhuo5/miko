@@ -41,6 +41,10 @@ bun lint
 # 格式化
 bun format      # 使用 oxfmt
 
+# 性能测量与相对基线门禁
+bun run perf:measure
+bun run perf:check
+
 # 单元测试（在 app/ 目录执行）
 cd app && bun test:unit
 
@@ -132,7 +136,7 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - `template/` 已内置于 `@minar-kotonoha/vite-plugin-miko` 包中（App.vue, main.ts, layouts），`app/` 为项目模板（stores, e2e）
 - 插件架构：`resolveMikoProject()` 先生成唯一能力图，再按固定顺序装配 Vue/Router/Runtime/Layouts/Components/UnoCSS/Linter/DevTools/Legacy/Bootstrap/External/HTML/Janus；各插件不得自行重复探测项目
 - 能力优先级：显式配置 → 根目录约定文件 → `package.json` 直接依赖 → 当前命令 → 安全默认值；`undefined` 自动、`false` 禁用、对象合并覆盖默认项
-- Pinia SSR：检测到 `pinia` 直接依赖后，`virtual:miko-runtime` 在 bootstrap 前安装唯一实例，客户端恢复 `initialState.pinia`，SSG 后写回 state；项目 `index.ts` 不再手动创建或注水
+- Pinia SSR：检测到 `pinia` 直接依赖后，`virtual:miko-runtime` 在 bootstrap 前安装唯一实例，客户端恢复 `initialState.pinia`，服务端在 ViteSSG `onSSRAppRendered` 后写回非空 state；项目 `index.ts` 不再手动创建或注水
 - 骨架屏：`App.vue` 通过 `useHead({ style: [skeletonStyles] })` 注入骨架 CSS。`injectHead()` 补设 `head.ssr = true` 解决 unhead v3.x server createHead() 未设 SSR 标记导致条目丢失的问题
 - preview 代理：优先使用 `vite.preview.proxy`，否则浅克隆并复用 `vite.server.proxy`；使用 Vite 原生代理，不注入 `secure: false` / `rejectUnauthorized: false`
 - Doctor：`miko doctor [--json]` 复用同一项目解析和插件装配，只读输出能力来源、实际标量值、插件顺序和警告；能力错误退出码为 3
@@ -143,6 +147,8 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后自动发现（`defineMikoConfig` 通过 `createRequire` 同步加载 CJS 构建产物），无需手动配插件
 - Vue DevTools 仅在 `miko dev` 自动启用，Build / Preview / Doctor 不加载
 - `miko.config.ts`（可选）严格使用 `{ miko, vite }` 两个命名空间。`miko` 放框架能力（如 `rendering`、`uiLibrary`、`vuePluginOptions`、`legacyPluginOptions`、`externalOptions`），`vite` 接受 Vite 原生配置；入口 input 仍由 Miko 管理。完整类型见 `MikoUserConfig`
+- 应用构建：类型检查与配置/插件准备并行，但 Vite/SSG 构建必须等待两者完成；成功后生成 `dist/.miko/routes.json` 与 `assets.json`，提供部署路由和缓存建议
+- 性能基准：Bun 只负责 workspace 和命令调度，`node runner.mjs` 及 `process.execPath` worker 执行真实构建；3 次 cold、5 次 warm、5 次浏览器样本取中位数，结果目录 `packages/performance/results/` 不提交
 
 ### 依赖版本 (2026-08-07)
 
@@ -175,6 +181,7 @@ miko: {
   },
 }
 ```
+
 `ExternalOptions` 类型定义在 `packages/vite-plugin-miko/types.ts`，逻辑在 `packages/vite-plugin-miko/index.ts` 的 `defineMikoConfig` 中读取并传给 Vite。
 
 ### TypeScript 类型检查 (0.1.23+)

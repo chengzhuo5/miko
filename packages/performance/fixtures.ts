@@ -5,6 +5,12 @@ import type { BuildFixtureName } from './types';
 
 export type FixtureName = BuildFixtureName;
 
+export const runtimeRouteInfo = {
+  deepRoute: '/deep/nested',
+  deepRouteChunkName: 'nested',
+  unvisitedRoute: '/unvisited',
+} as const;
+
 export interface GeneratedFixture {
   name: FixtureName;
   root: string;
@@ -39,15 +45,12 @@ async function writeBatches(
     await Promise.all(
       entries
         .slice(index, index + batchSize)
-        .map(entry => writeFile(entry.path, entry.content, 'utf8')),
+        .map((entry) => writeFile(entry.path, entry.content, 'utf8')),
     );
   }
 }
 
-async function writeCommonFiles(
-  root: string,
-  dependencies: Record<string, string>,
-): Promise<void> {
+async function writeCommonFiles(root: string, dependencies: Record<string, string>): Promise<void> {
   await writeBatches([
     {
       path: join(root, 'package.json'),
@@ -312,8 +315,8 @@ async function generateRuntimeFixture(root: string): Promise<GeneratedFixture> {
     root,
     routeCount: 4,
     componentCount: 1,
-    deepRoute: '/deep/nested',
-    unvisitedRoute: '/unvisited',
+    deepRoute: runtimeRouteInfo.deepRoute,
+    unvisitedRoute: runtimeRouteInfo.unvisitedRoute,
   };
 }
 
@@ -329,7 +332,5 @@ export async function generateFixture(
     process.platform === 'win32' ? 'junction' : 'dir',
   );
 
-  return name === 'runtime'
-    ? generateRuntimeFixture(root)
-    : generateSizedFixture(root, name);
+  return name === 'runtime' ? generateRuntimeFixture(root) : generateSizedFixture(root, name);
 }
