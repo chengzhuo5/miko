@@ -113,6 +113,7 @@ describe('createMikoViteConfig', () => {
       sourcemap: true,
     });
     expect(config.resolve?.alias).toEqual([{ find: '@', replacement: 'D:/project' }]);
+    expect(config.resolve?.dedupe).toEqual(['vue', 'vue-router', 'pinia']);
     expect(config.define).toMatchObject({
       'import.meta.env.VITE_MIKO_SPA': JSON.stringify('true'),
     });

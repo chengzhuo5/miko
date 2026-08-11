@@ -83,6 +83,15 @@ describe('mergeViteConfig', () => {
     ])
   })
 
+  it('extends the default resolve.dedupe with user entries', () => {
+    const result = mergeViteConfig(
+      { resolve: { dedupe: ['vue', 'vue-router', 'pinia'] } },
+      { resolve: { dedupe: ['axios'] } },
+    )
+
+    expect(result.resolve?.dedupe).toEqual(['vue', 'vue-router', 'pinia', 'axios'])
+  })
+
   it('flattens nested plugin options and removes disabled entries', () => {
     const basePlugin = { name: 'base' }
     const userPlugin = { name: 'user' }

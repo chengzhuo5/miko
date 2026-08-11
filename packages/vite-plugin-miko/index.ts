@@ -63,6 +63,7 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
     resolve: {
       alias: [{ find: '@', replacement: project.viteRoot }],
       tsconfigPaths: true,
+      dedupe: ['vue', 'vue-router', 'pinia'],
     },
     experimental: {
       bundledDev: miko.devOptions.bundledDev ?? false,
