@@ -176,15 +176,6 @@ export async function checkStaticOutput(outDir: string, base: string): Promise<S
     const elements: HtmlElement[] = [];
     collectElements(parseHtml(source), elements);
     const appRoots = elements.filter((element) => getAttribute(element, 'id') === 'app');
-    if (appRoots.length !== 1) {
-      issues.push(
-        issue(
-          'MIKO_STATIC_APP_ROOT',
-          file,
-          `HTML 必须包含唯一的 #app，当前找到 ${appRoots.length} 个`,
-        ),
-      );
-    }
 
     const hasMonitor = elements.some(
       (element) =>
@@ -192,14 +183,35 @@ export async function checkStaticOutput(outDir: string, base: string): Promise<S
         (hasAttribute(element, 'data-miko-monitor') ||
           /(?:^|\/)miko-white-screen-[^/]+\.js$/u.test(getAttribute(element, 'src') ?? '')),
     );
-    if (appRoots.some((rootElement) => hasAttribute(rootElement, 'v-cloak')) && !hasMonitor) {
-      issues.push(
-        issue(
-          'MIKO_STATIC_BOOT_PROTOCOL',
-          file,
-          'HTML 保留了 v-cloak，但没有白屏监控资源负责解除启动遮罩',
-        ),
-      );
+    const hasBuildAssetReference = elements.some((element) => {
+      const reference =
+        element.tagName === 'script' ? getAttribute(element, 'src') : element.tagName === 'link' ? getAttribute(element, 'href') : undefined;
+      return typeof reference === 'string' && /assets\/.+\.(?:js|mjs|css)$/u.test(reference);
+    });
+    const hasMikoEntry = elements.some(
+      (element) => element.tagName === 'script' && hasAttribute(element, 'data-miko-entry'),
+    );
+
+    // 应用页（SSG 渲染）才校验应用协议；public 目录透传的纯静态页仅保留资源引用检查
+    if (hasMonitor || hasBuildAssetReference || hasMikoEntry) {
+      if (appRoots.length !== 1) {
+        issues.push(
+          issue(
+            'MIKO_STATIC_APP_ROOT',
+            file,
+            `HTML 必须包含唯一的 #app，当前找到 ${appRoots.length} 个`,
+          ),
+        );
+      }
+      if (appRoots.some((rootElement) => hasAttribute(rootElement, 'v-cloak')) && !hasMonitor) {
+        issues.push(
+          issue(
+            'MIKO_STATIC_BOOT_PROTOCOL',
+            file,
+            'HTML 保留了 v-cloak，但没有白屏监控资源负责解除启动遮罩',
+          ),
+        );
+      }
     }
 
     if (elements.some((element) => element.tagName === 'vite-error-overlay')) {

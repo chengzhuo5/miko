@@ -73,13 +73,13 @@ describe('checkStaticOutput', () => {
 
   it('requires one app root and a non-permanent cloak protocol', async () => {
     const missingRoot = await createOutput({
-      html: '<!doctype html><html><body><main>missing root</main></body></html>',
+      html: '<!doctype html><html><body><main>missing root</main><script type="module" src="/cms/assets/app-a1B2c3D4.js"></script></body></html>',
     });
     const duplicateRoot = await createOutput({
-      html: '<!doctype html><html><body><div id="app"></div><main id="app"></main></body></html>',
+      html: '<!doctype html><html><body><div id="app"></div><main id="app"></main><script type="module" src="/cms/assets/app-a1B2c3D4.js"></script></body></html>',
     });
     const permanentCloak = await createOutput({
-      html: '<!doctype html><html><body><div id="app" v-cloak></div></body></html>',
+      html: '<!doctype html><html><body><div id="app" v-cloak></div><script type="module" src="/cms/assets/app-a1B2c3D4.js"></script></body></html>',
     });
 
     await expect(checkStaticOutput(missingRoot.outDir, '/cms/')).resolves.toMatchObject({
@@ -90,6 +90,20 @@ describe('checkStaticOutput', () => {
     });
     await expect(checkStaticOutput(permanentCloak.outDir, '/cms/')).resolves.toMatchObject({
       issues: [expect.objectContaining({ code: 'MIKO_STATIC_BOOT_PROTOCOL' })],
+    });
+  });
+
+  it('skips application-protocol checks for public passthrough static pages', async () => {
+    const fixture = await createOutput();
+    await mkdir(join(fixture.outDir, 'perf-tab'), { recursive: true });
+    await writeFile(
+      join(fixture.outDir, 'perf-tab/index.html'),
+      '<!doctype html><html><body><div id="root"></div><script>render()</script></body></html>',
+    );
+
+    await expect(checkStaticOutput(fixture.outDir, '/cms/')).resolves.toEqual({
+      routes: ['/', '/perf-tab/'],
+      issues: [],
     });
   });
 
