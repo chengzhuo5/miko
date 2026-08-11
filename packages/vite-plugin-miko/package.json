@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/vite-plugin-miko",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Miko 配置解析、自动能力图与 Vite 插件装配引擎",
   "files": [
     "index.ts",
