@@ -132,6 +132,24 @@ describe('indexHTMLPlugin', () => {
     expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
   });
 
+  it('bundles inline styles in the in-memory fallback without intercepting html-proxy ids', async () => {
+    const fixture = await createFixture(
+      undefined,
+      undefined,
+    );
+    await writeFile(
+      resolve(fixture.template, 'index.html'),
+      [
+        '<!doctype html><html><head><style>#app { color: red; }</style></head>',
+        '<body><div id="app"></div></body></html>',
+      ].join(''),
+    );
+    const result = await compile(fixture);
+
+    expect(result.html).toContain('#app { color: red');
+    expect(result.code).toContain('INDEX_HTML_RUNTIME_MARKER');
+  });
+
   it('prefers and transforms a user-owned root/index.html', async () => {
     const fixture = await createFixture(
       '<!doctype html><html><head><meta name="user-shell"></head><body><div id="app"></div></body></html>',

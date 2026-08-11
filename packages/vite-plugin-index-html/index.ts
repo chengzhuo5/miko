@@ -30,7 +30,8 @@ export async function indexHTMLPlugin(options: IndexHTMLOptions) {
   const htmlPath = normalizePath(resolve(options.root, 'index.html'));
   const fallbackHtml = await readFile(resolve(options.template, 'index.html'), 'utf8');
   const hasUserHtml = () => existsSync(htmlPath);
-  const isHtmlId = (id: string) => normalizePath(id.split('?', 1)[0]) === htmlPath;
+  const isHtmlId = (id: string) =>
+    !id.includes('html-proxy') && normalizePath(id.split('?', 1)[0]) === htmlPath;
   let base = '/';
   let monitorReferenceId: string | undefined;
 
