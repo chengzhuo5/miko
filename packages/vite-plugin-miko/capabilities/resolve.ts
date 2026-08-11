@@ -258,7 +258,7 @@ export function resolveCapabilities(
             )
           : hasDependency(signals, 'unocss') || hasDependency(signals, '@unocss/vite')
             ? capability(true, {}, 'dependency', '检测到 UnoCSS 直接依赖')
-            : capability(false, {}, 'default', '未检测到 UnoCSS 配置或直接依赖');
+            : capability(true, {}, 'builtin', '默认启用（零配置，与 Miko 0.x 行为一致）');
 
   const layoutsExplicit = raw.layoutsPluginOptions;
   const layouts =
