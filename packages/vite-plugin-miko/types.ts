@@ -50,6 +50,15 @@ export interface LibConfig {
   fileName?: string;
 }
 
+export interface RouteFolder {
+  /** 页面文件目录（相对于项目根目录） */
+  src: string;
+  /** 路由路径前缀，如 '/selfstock/' */
+  path?: string;
+  /** 排除目录 glob */
+  exclude?: string[];
+}
+
 export interface VueRouterOptions {
   /**
    * 路由文件扩展名
@@ -60,7 +69,7 @@ export interface VueRouterOptions {
    * 页面文件目录（文件系统路由扫描根目录）
    * @default '<root>/pages'
    */
-  routesFolder?: string;
+  routesFolder?: string | RouteFolder[];
   /**
    * 路由类型声明输出路径
    * @default '<root>/types/routes.d.ts'
