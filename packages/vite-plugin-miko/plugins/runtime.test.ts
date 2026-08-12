@@ -66,6 +66,7 @@ describe('createRuntimeModule', () => {
         errorHandler: previousErrorHandler,
         warnHandler: previousWarnHandler,
       },
+      mixin: vi.fn(),
     };
     const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
 
@@ -123,16 +124,20 @@ describe('createRuntimeModule', () => {
     const router = {
       isReady: vi.fn(() => new Promise<void>((resolve) => (resolveReady = resolve))),
     };
+    const mixins: Array<{ mounted?: () => void }> = [];
     const app = {
       config: {
-        globalProperties: { $router: router },
+        globalProperties: { $router: undefined },
       },
+      mixin: (options: { mounted?: () => void }) => mixins.push(options),
     };
     const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
 
     runtime.setupMikoRuntime(app as never);
     expect(boot.ready).not.toHaveBeenCalled();
 
+    // 首个组件挂载时从实例拿到 $router，等待首次导航完成
+    mixins[0]!.mounted?.call({ $router: router });
     resolveReady();
     await Promise.resolve();
 
@@ -148,9 +153,14 @@ describe('createRuntimeModule', () => {
       fail: vi.fn(),
     };
     Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    const mixins: Array<{ mounted?: () => void }> = [];
     const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
 
-    runtime.setupMikoRuntime({ config: { globalProperties: {} } } as never);
+    runtime.setupMikoRuntime({
+      config: {},
+      mixin: (options: { mounted?: () => void }) => mixins.push(options),
+    } as never);
+    mixins[0]!.mounted?.call({});
 
     expect(boot.ready).not.toHaveBeenCalled();
   });
