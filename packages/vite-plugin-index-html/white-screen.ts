@@ -41,30 +41,94 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     root.removeAttribute('data-miko-ready')
     root.setAttribute('data-miko-failed', code)
 
+    // 失败面板样式：证券终端"信号中断"质感 —— 暖纸底 + 墨黑细线 + 警戒红点缀。
+    // 独立内联样式（监控脚本无应用依赖），兼容 chrome 64 / iOS 12（无 clamp/dvh/web font）。
+    const styles = [
+      '.miko-fail{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;display:flex;flex-direction:column;background:#f6f4ef;color:#191918;font-family:-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;padding:28px 28px 22px;-webkit-font-smoothing:antialiased;animation:miko-fade .45s ease both}',
+      '@keyframes miko-fade{from{opacity:0}to{opacity:1}}',
+      '.miko-fail__top{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.18em;opacity:.55}',
+      '.miko-fail__tag{display:flex;align-items:center;gap:8px}',
+      '.miko-fail__dot{width:7px;height:7px;border-radius:50%;background:#c93a2e;animation:miko-pulse 1.6s ease-in-out infinite}',
+      '@keyframes miko-pulse{0%,100%{opacity:.25}50%{opacity:1}}',
+      '.miko-fail__code{font-family:"SF Mono",Consolas,"Courier New",monospace;font-variant-numeric:tabular-nums;letter-spacing:.08em}',
+      '.miko-fail__body{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:520px}',
+      '.miko-fail__rule{width:34px;height:3px;background:#c93a2e;margin-bottom:22px}',
+      '.miko-fail__title{margin:0;font-size:32px;line-height:1.28;font-weight:600;letter-spacing:.01em}',
+      '.miko-fail__desc{margin:12px 0 0;font-size:15px;line-height:1.7;opacity:.62}',
+      '.miko-fail__detail{margin:18px 0 0;padding:10px 12px;background:#efece5;border-left:2px solid #c93a2e;font-family:"SF Mono",Consolas,"Courier New",monospace;font-size:12px;line-height:1.55;opacity:.8;word-break:break-all;white-space:pre-wrap;max-height:96px;overflow:auto}',
+      '.miko-fail__bottom{display:flex;align-items:center;justify-content:space-between;gap:16px}',
+      '.miko-fail__signal{display:flex;align-items:flex-end;gap:5px;height:22px}',
+      '.miko-fail__signal i{width:4px;background:#191918;animation:miko-wave 1.2s ease-in-out infinite}',
+      '.miko-fail__signal i:nth-child(1){height:8px}',
+      '.miko-fail__signal i:nth-child(2){height:14px;animation-delay:.1s}',
+      '.miko-fail__signal i:nth-child(3){height:20px;animation-delay:.2s}',
+      '.miko-fail__signal i:nth-child(4){height:14px;animation-delay:.3s}',
+      '.miko-fail__signal i:nth-child(5){height:8px;animation-delay:.4s}',
+      '@keyframes miko-wave{0%,100%{transform:scaleY(.5);opacity:.18}50%{transform:scaleY(1);opacity:.7}}',
+      '.miko-fail__btn{margin:0;padding:11px 26px;background:transparent;border:1px solid #191918;color:#191918;font-size:14px;letter-spacing:.12em;cursor:pointer;transition:background .18s ease,color .18s ease;appearance:none;-webkit-tap-highlight-color:transparent}',
+      '.miko-fail__btn:hover{background:#191918;color:#f6f4ef}',
+      '.miko-fail__btn:active{transform:translateY(1px)}',
+      '@media (min-width:420px){.miko-fail__title{font-size:40px}}',
+    ].join('')
+
+    const styleEl = document.createElement('style')
+    styleEl.textContent = styles
+
     const panel = document.createElement('section')
     panel.setAttribute('data-miko-failure', '')
     panel.setAttribute('role', 'alert')
+    panel.className = 'miko-fail'
 
+    const top = document.createElement('header')
+    top.className = 'miko-fail__top'
+    const tag = document.createElement('span')
+    tag.className = 'miko-fail__tag'
+    const dot = document.createElement('span')
+    dot.className = 'miko-fail__dot'
+    const tagLabel = document.createElement('span')
+    tagLabel.textContent = development ? 'SIGNAL LOST' : '信号中断'
+    tag.append(dot, tagLabel)
+    const codeLabel = document.createElement('span')
+    codeLabel.className = 'miko-fail__code'
+    codeLabel.textContent = code
+    top.append(tag, codeLabel)
+
+    const body = document.createElement('div')
+    body.className = 'miko-fail__body'
+    const rule = document.createElement('div')
+    rule.className = 'miko-fail__rule'
     const title = document.createElement('h1')
-    title.textContent = development ? 'Miko application failed to start' : '应用启动失败'
-
-    const message = document.createElement('p')
-    message.textContent = code
-
-    panel.append(title, message)
+    title.className = 'miko-fail__title'
+    title.textContent = development ? 'The page failed to start' : '页面加载失败'
+    const desc = document.createElement('p')
+    desc.className = 'miko-fail__desc'
+    desc.textContent = development
+      ? 'Check the console and reload to continue development.'
+      : '网络似乎不太稳定，行情与交易服务暂时中断。请检查网络后重新加载。'
+    body.append(rule, title, desc)
     if (detail) {
       const description = document.createElement('pre')
+      description.className = 'miko-fail__detail'
       description.textContent = detail
-      panel.append(description)
+      body.append(description)
     }
 
+    const bottom = document.createElement('footer')
+    bottom.className = 'miko-fail__bottom'
+    const signal = document.createElement('span')
+    signal.className = 'miko-fail__signal'
+    signal.setAttribute('aria-hidden', 'true')
+    for (let i = 0; i < 5; i += 1) signal.append(document.createElement('i'))
     const reload = document.createElement('button')
     reload.type = 'button'
+    reload.className = 'miko-fail__btn'
     reload.setAttribute('data-miko-reload', '')
-    reload.textContent = '重新加载'
+    reload.textContent = development ? 'RELOAD' : '重新加载'
     reload.addEventListener('click', () => window.location.reload())
-    panel.append(reload)
-    root.replaceChildren(panel)
+    bottom.append(signal, reload)
+
+    panel.append(top, body, bottom)
+    root.replaceChildren(styleEl, panel)
   }
 
   const fail = (code, value) => {

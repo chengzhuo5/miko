@@ -57,6 +57,22 @@ describe('createWhiteScreenMonitorModule', () => {
     expect(dom.window.document.querySelector('[data-miko-reload]')).not.toBeNull();
   });
 
+  it('renders the signal-loss panel with title, signal bars, and reload button', () => {
+    vi.useFakeTimers();
+    const { dom, state } = executeMonitor();
+
+    vi.advanceTimersByTime(8000);
+
+    const panel = dom.window.document.querySelector<HTMLElement>('[data-miko-failure]')!;
+    expect(panel).not.toBeNull();
+    expect(panel.querySelector('.miko-fail__title')?.textContent).toContain('页面加载失败');
+    expect(panel.querySelectorAll('.miko-fail__signal i')).toHaveLength(5);
+    expect(panel.querySelector('.miko-fail__code')?.textContent).toBe('MIKO_BOOT_TIMEOUT');
+    expect(dom.window.document.querySelector('#app style')).not.toBeNull();
+    expect(panel.textContent).toContain('重新加载');
+    expect(state?.errors).toEqual([{ code: 'MIKO_BOOT_TIMEOUT' }]);
+  });
+
   it('marks the root ready and ignores later startup events', () => {
     vi.useFakeTimers();
     const { dom, root, state } = executeMonitor();
