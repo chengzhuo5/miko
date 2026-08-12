@@ -94,6 +94,14 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
       target !== window &&
       (target.tagName === 'SCRIPT' || target.tagName === 'LINK')
     ) {
+      const url = target.src || target.href || ''
+      // 跨域外链资源（native bridge SDK 等）失败不代表应用启动失败，
+      // 只记录 warning；同源/相对路径的应用资源失败才判定致命。
+      const isHttpUrl = url.startsWith('https://') || url.startsWith('http://')
+      if (isHttpUrl && !url.startsWith(window.location.origin)) {
+        warnings.push('cross-origin resource failed to load: ' + url)
+        return
+      }
       fail('MIKO_BOOT_RESOURCE')
       return
     }

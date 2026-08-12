@@ -86,6 +86,39 @@ describe('createWhiteScreenMonitorModule', () => {
     expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_RESOURCE');
   });
 
+  it('ignores cross-origin resource failures (native bridge SDK) but records a warning', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+    const script = dom.window.document.createElement('script');
+    script.src = 'https://other.test/native-bridge.js';
+    dom.window.document.body.append(script);
+
+    script.dispatchEvent(new dom.window.Event('error'));
+    vi.advanceTimersByTime(2000);
+
+    expect(state?.status).toBe('pending');
+    expect(state?.errors).toEqual([]);
+    expect(state?.warnings.some((warning) => warning.includes('other.test'))).toBe(true);
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(root.dataset.mikoFailed).toBeUndefined();
+
+    state?.ready();
+    expect(state?.status).toBe('ready');
+  });
+
+  it('still fails on same-origin application chunk resource errors', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+    const script = dom.window.document.createElement('script');
+    script.src = 'https://example.test/assets/app-abc123.js';
+    dom.window.document.body.append(script);
+
+    script.dispatchEvent(new dom.window.Event('error'));
+
+    expect(state?.status).toBe('failed');
+    expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_RESOURCE');
+  });
+
   it('records rejection details only in development', () => {
     vi.useFakeTimers();
     const production = executeMonitor();
