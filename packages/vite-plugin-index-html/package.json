@@ -1,6 +1,6 @@
 {
   "name": "@minar-kotonoha/vite-plugin-index-html",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Miko 零配置 HTML 入口、启动监控与静态入口校验插件",
   "files": [
     "html.ts",

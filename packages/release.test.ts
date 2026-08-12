@@ -27,6 +27,18 @@ const publicPackages = [
   ['vite-plugin-miko', '@minar-kotonoha/vite-plugin-miko'],
 ] as const;
 
+/** 当前发布版本（v1 主版本内的补丁演进；发布时同步更新） */
+const publicVersions: Record<(typeof publicPackages)[number][1], string> = {
+  '@minar-kotonoha/miko-cli': '1.0.3',
+  '@minar-kotonoha/framework': '1.0.0',
+  '@minar-kotonoha/linter': '1.0.0',
+  '@minar-kotonoha/to-miko': '1.0.0',
+  '@minar-kotonoha/vite-plugin-bootstrap': '1.0.0',
+  '@minar-kotonoha/vite-plugin-external': '1.0.0',
+  '@minar-kotonoha/vite-plugin-index-html': '1.0.5',
+  '@minar-kotonoha/vite-plugin-miko': '1.0.8',
+};
+
 const publicNames = new Set(publicPackages.map(([, name]) => name));
 const nodeRange = '^20.19.0 || >=22.12.0';
 
@@ -41,7 +53,7 @@ describe('Miko v1 release contract', () => {
 
       expect(manifest).toMatchObject({
         name,
-        version: '1.0.0',
+        version: publicVersions[name],
         engines: { node: nodeRange },
         publishConfig: {
           access: 'public',
