@@ -69,8 +69,15 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
 
   const fail = (code, value) => {
     if (status !== 'pending') return
-    status = 'failed'
     const detail = detailOf(value)
+    if (development) {
+      // dev 模式不渲染失败面板（Vite error overlay 已覆盖排查），只记录并保持 pending，
+      // 避免业务异步噪音导致面板闪现；应用随后 ready() 仍可正常生效。
+      console.warn('[miko] boot issue (dev):', code, detail ?? '')
+      errors.push(detail ? { code, detail } : { code })
+      return
+    }
+    status = 'failed'
     errors.push(detail ? { code, detail } : { code })
     cleanup()
     renderFailure(code, detail)
@@ -109,7 +116,16 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
   }
 
   function onUnhandledRejection(event) {
-    fail('MIKO_BOOT_REJECTION', event.reason)
+    // 未捕获的 Promise 拒绝多为业务异步噪音（接口失败、第三方时序），
+    // 不判定启动失败，仅记录 warning；真正启动失败由同步错误/资源/超时兜底。
+    const reason = event.reason
+    const message =
+      reason instanceof Error
+        ? reason.message
+        : typeof reason === 'string'
+          ? reason
+          : 'unknown reason'
+    warnings.push('unhandled rejection: ' + message)
   }
 
   window.__MIKO_BOOT__ = {

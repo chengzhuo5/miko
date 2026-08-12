@@ -119,27 +119,43 @@ describe('createWhiteScreenMonitorModule', () => {
     expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_RESOURCE');
   });
 
-  it('records rejection details only in development', () => {
+  it('records unhandled rejections as warnings without failing the boot', () => {
     vi.useFakeTimers();
-    const production = executeMonitor();
-    const productionEvent = new production.dom.window.Event('unhandledrejection');
-    Object.defineProperty(productionEvent, 'reason', {
-      value: new Error('token=secret https://example.test/private?key=value'),
-    });
-    production.dom.window.dispatchEvent(productionEvent);
+    const { dom, state } = executeMonitor();
+    const event = new dom.window.Event('unhandledrejection');
+    Object.defineProperty(event, 'reason', { value: new Error('async noise') });
+    dom.window.dispatchEvent(event);
 
-    expect(production.state?.errors).toEqual([{ code: 'MIKO_BOOT_REJECTION' }]);
-    expect(production.dom.window.document.body.textContent).not.toContain('secret');
+    expect(state?.status).toBe('pending');
+    expect(state?.errors).toEqual([]);
+    expect(state?.warnings.some((warning) => warning.includes('async noise'))).toBe(true);
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
 
-    const development = executeMonitor({ development: true });
-    const developmentEvent = new development.dom.window.Event('unhandledrejection');
-    Object.defineProperty(developmentEvent, 'reason', { value: new Error('development detail') });
-    development.dom.window.dispatchEvent(developmentEvent);
+    // 应用随后正常 ready，不受异步噪音影响
+    state?.ready();
+    expect(state?.status).toBe('ready');
+  });
 
-    expect(development.state?.errors[0]).toEqual({
-      code: 'MIKO_BOOT_REJECTION',
-      detail: 'development detail',
-    });
+  it('does not render the failure panel in development while keeping pending', () => {
+    vi.useFakeTimers();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { dom, root, state } = executeMonitor({ development: true });
+    const script = dom.window.document.createElement('script');
+    script.src = 'https://example.test/assets/app-abc123.js';
+    dom.window.document.body.append(script);
+
+    script.dispatchEvent(new dom.window.Event('error'));
+    vi.advanceTimersByTime(30000);
+
+    expect(state?.status).toBe('pending');
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(root.dataset.mikoFailed).toBeUndefined();
+    expect(warnSpy).toHaveBeenCalled();
+
+    // dev 下 ready 仍然生效（应用正常启动）
+    state?.ready();
+    expect(state?.status).toBe('ready');
+    warnSpy.mockRestore();
   });
 
   it('reuses an existing monitor state instead of installing duplicate listeners', () => {
