@@ -172,6 +172,9 @@ describe('createRuntimeModule', () => {
     expect(source).toContain('onSSRAppRendered');
     expect(source).toContain('setupMikoRuntime(app, initialState, onSSRAppRendered)');
     expect(source.indexOf('setupMikoRuntime(')).toBeLessThan(source.indexOf('await bootstrap('));
+    expect(source).toContain('router');
+    expect(source).toContain('.isReady()');
+    expect(source).toContain('.then(() => markMikoReady())');
     expect(source).not.toContain('afterBootstrap');
   });
 });

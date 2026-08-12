@@ -10,7 +10,7 @@ import { setupLayouts } from 'virtual:generated-layouts';
 import { routes, handleHotUpdate } from 'vue-router/auto-routes';
 
 import { bootstrap } from 'virtual:bootstrap';
-import { setupMikoRuntime } from 'virtual:miko-runtime';
+import { setupMikoRuntime, markMikoReady } from 'virtual:miko-runtime';
 
 import 'virtual:uno.css';
 
@@ -32,6 +32,11 @@ export const createApp = ViteSSG(
     }
 
     setupMikoRuntime(app, initialState, onSSRAppRendered);
+    // 首次路由导航完成后标记白屏监控 ready（mixin 兜底幂等，二者先到先得）
+    router
+      .isReady()
+      .then(() => markMikoReady())
+      .catch(() => {});
     await bootstrap(app, router, initialState);
   },
   {
