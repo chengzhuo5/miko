@@ -100,6 +100,7 @@ describe('createMikoViteConfig', () => {
       template: 'D:/template',
       whiteScreen: {
         development: false,
+        showFailure: false,
         enabled: true,
         timeout: 8000,
       },

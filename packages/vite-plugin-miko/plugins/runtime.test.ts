@@ -22,6 +22,7 @@ function executeRuntime(code: string) {
 
 afterEach(() => {
   Reflect.deleteProperty(globalThis, 'window');
+  Reflect.deleteProperty(globalThis, 'document');
 });
 
 describe('createRuntimeModule', () => {
@@ -111,7 +112,7 @@ describe('createRuntimeModule', () => {
     expect(boot.ready).toHaveBeenCalledOnce();
   });
 
-  it('auto-marks ready after the first router navigation without explicit calls', async () => {
+  it('auto-marks ready on the first rendered content without explicit calls', () => {
     const boot: BootState = {
       status: 'pending',
       errors: [],
@@ -119,16 +120,13 @@ describe('createRuntimeModule', () => {
       ready: vi.fn(),
       fail: vi.fn(),
     };
-    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
-    let resolveReady!: () => void;
-    const router = {
-      isReady: vi.fn(() => new Promise<void>((resolve) => (resolveReady = resolve))),
-    };
+    Object.assign(globalThis, {
+      window: { __MIKO_BOOT__: boot },
+      document: { getElementById: () => ({ childElementCount: 1, textContent: 'app' }) },
+    });
     const mixins: Array<{ mounted?: () => void }> = [];
     const app = {
-      config: {
-        globalProperties: { $router: undefined },
-      },
+      config: {},
       mixin: (options: { mounted?: () => void }) => mixins.push(options),
     };
     const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
@@ -136,15 +134,13 @@ describe('createRuntimeModule', () => {
     runtime.setupMikoRuntime(app as never);
     expect(boot.ready).not.toHaveBeenCalled();
 
-    // 首个组件挂载时从实例拿到 $router，等待首次导航完成
-    mixins[0]!.mounted?.call({ $router: router });
-    resolveReady();
-    await Promise.resolve();
+    // 首个组件挂载且 #app 已有内容：立即 ready，不依赖路由导航
+    mixins[0]!.mounted?.call({});
 
     expect(boot.ready).toHaveBeenCalledOnce();
   });
 
-  it('skips auto-ready when the app has no router', () => {
+  it('defers ready when the app renders no content yet', () => {
     const boot: BootState = {
       status: 'pending',
       errors: [],
@@ -152,7 +148,10 @@ describe('createRuntimeModule', () => {
       ready: vi.fn(),
       fail: vi.fn(),
     };
-    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    Object.assign(globalThis, {
+      window: { __MIKO_BOOT__: boot },
+      document: { getElementById: () => ({ childElementCount: 0, textContent: '' }) },
+    });
     const mixins: Array<{ mounted?: () => void }> = [];
     const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
 
@@ -160,6 +159,7 @@ describe('createRuntimeModule', () => {
       config: {},
       mixin: (options: { mounted?: () => void }) => mixins.push(options),
     } as never);
+    // 挂载但 #app 仍为空（如无匹配路由的 RouterView）：不标记 ready，留给监控超时兜底
     mixins[0]!.mounted?.call({});
 
     expect(boot.ready).not.toHaveBeenCalled();

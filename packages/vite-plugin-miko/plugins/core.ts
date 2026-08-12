@@ -53,6 +53,7 @@ export async function htmlEntryPlugins(project: ResolvedMikoConfig): Promise<Plu
     template: project.miko.template,
     whiteScreen: {
       development: project.env.command === 'dev',
+      showFailure: project.env.mode === 'test',
       enabled: project.capabilities.whiteScreen.enabled,
       timeout: project.capabilities.whiteScreen.value.timeout ?? 8000,
     },
