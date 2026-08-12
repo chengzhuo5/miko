@@ -2,6 +2,8 @@ export interface WhiteScreenMonitorOptions {
   enabled: boolean;
   timeout: number;
   development: boolean;
+  /** 失败面板是否渲染（仅测试环境开启；生产环境只记录告警，不弹失败页） */
+  showFailure: boolean;
 }
 
 export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOptions): string {
@@ -11,6 +13,7 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
   if (typeof window === 'undefined' || typeof document === 'undefined' || window.__MIKO_BOOT__) return
 
   const development = ${JSON.stringify(options.development)}
+  const showFailure = ${JSON.stringify(options.showFailure)}
   let status = 'pending'
   let timer
   const errors = []
@@ -31,6 +34,15 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     clearTimeout(timer)
     window.removeEventListener('error', onError, true)
     window.removeEventListener('unhandledrejection', onUnhandledRejection)
+  }
+
+  // 页面是否已有可见内容（Vue 已接管渲染 / 自定义 HTML 未用 v-cloak 隐藏）。
+  // 白屏保护只对"页面仍为空白"负责：已渲染的页面不是白屏，不能弹失败面板。
+  const hasVisibleContent = () => {
+    const root = document.getElementById('app')
+    if (!root) return false
+    if (root.hasAttribute('v-cloak')) return false
+    return root.childElementCount > 0 || (root.textContent ?? '').trim() !== ''
   }
 
   const renderFailure = (code, detail) => {
@@ -73,6 +85,7 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
 
     const styleEl = document.createElement('style')
     styleEl.textContent = styles
+    styleEl.setAttribute('data-miko-fail-style', '')
 
     const panel = document.createElement('section')
     panel.setAttribute('data-miko-failure', '')
@@ -134,10 +147,26 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
   const fail = (code, value) => {
     if (status !== 'pending') return
     const detail = detailOf(value)
-    if (development) {
-      // dev 模式不渲染失败面板（Vite error overlay 已覆盖排查），只记录并保持 pending，
-      // 避免业务异步噪音导致面板闪现；应用随后 ready() 仍可正常生效。
-      console.warn('[miko] boot issue (dev):', code, detail ?? '')
+    if (development || !showFailure) {
+      // dev 模式：Vite error overlay 已覆盖排查；生产环境（失败页未开启）：
+      // 只记录并保持 pending，不弹失败面板；应用随后 ready() 仍可正常生效。
+      console.warn(
+        '[miko] boot issue (' + (development ? 'dev' : 'suppressed') + '):',
+        code,
+        detail ?? '',
+      )
+      errors.push(detail ? { code, detail } : { code })
+      return
+    }
+    if (hasVisibleContent()) {
+      // 页面已有可见内容：不是白屏，不能判定启动失败。启动噪音/单资源失败
+      // 只记录告警并保持 pending，应用随后 ready() 仍可正常生效——
+      // 避免"页面正常加载后却被失败面板覆盖"的误报。
+      const warning = 'boot issue after render: ' + code
+      if (!warnings.includes(warning)) {
+        console.warn('[miko] boot issue ignored (page already rendered):', code, detail ?? '')
+        warnings.push(warning)
+      }
       errors.push(detail ? { code, detail } : { code })
       return
     }
@@ -148,10 +177,24 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
   }
 
   const ready = () => {
-    if (status !== 'pending') return
+    if (status === 'ready') return
+    const root = document.getElementById('app')
+    if (status === 'failed') {
+      // 弱网/瞬时故障已渲染失败面板，但应用随后启动成功（Suspense resolve /
+      // 路由就绪晚于超时）：撤销面板恢复页面；错误记录保留供诊断。
+      status = 'ready'
+      if (root) {
+        root.removeAttribute('v-cloak')
+        root.removeAttribute('data-miko-failed')
+        root.setAttribute('data-miko-ready', 'true')
+      }
+      document
+        .querySelectorAll('.miko-fail, [data-miko-fail-style]')
+        .forEach((element) => element.remove())
+      return
+    }
     status = 'ready'
     cleanup()
-    const root = document.getElementById('app')
     if (!root) return
     root.removeAttribute('v-cloak')
     root.removeAttribute('data-miko-failed')
@@ -204,6 +247,28 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
 
   window.addEventListener('error', onError, true)
   window.addEventListener('unhandledrejection', onUnhandledRejection)
-  timer = setTimeout(() => fail('MIKO_BOOT_TIMEOUT'), ${JSON.stringify(options.timeout)})
+  // 启动预算：以应用入口脚本执行完成为起点计 timeout —— 弱网下 JS 下载耗时不计入，
+  // 避免"页面仍在正常加载却被判定超时"。入口缺失/永不执行时退化为立即计时（原行为）。
+  const startTimer = (ms) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fail('MIKO_BOOT_TIMEOUT'), ms)
+  }
+  const entryScript = document.querySelector('script[type="module"][src]')
+  if (entryScript) {
+    // 入口存在时：初始计时只作下载宽限（页面在 bundle 到达前必然是空白），
+    // 入口脚本执行完成（下载+模块图执行结束）后再按 timeout 计启动预算。
+    entryScript.addEventListener(
+      'load',
+      () => {
+        if (status !== 'pending') return
+        startTimer(${JSON.stringify(options.timeout)})
+      },
+      { once: true },
+    )
+    startTimer(Math.max(${JSON.stringify(options.timeout)}, 30000))
+  } else {
+    // 无 module 入口（legacy 纯脚本等）：维持原行为，直接按 timeout 计时。
+    startTimer(${JSON.stringify(options.timeout)})
+  }
 })()`;
 }

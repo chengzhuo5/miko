@@ -12,7 +12,7 @@ const servers: ViteDevServer[] = [];
 
 async function createFixture(
   userHtml?: string,
-  whiteScreen?: { enabled: boolean; timeout: number; development: boolean },
+  whiteScreen?: { enabled: boolean; timeout: number; development: boolean; showFailure: boolean },
 ) {
   const root = await mkdtemp(join(tmpdir(), 'miko-html-'));
   const template = resolve(root, 'template');
@@ -167,6 +167,7 @@ describe('indexHTMLPlugin', () => {
       enabled: true,
       timeout: 8000,
       development: false,
+      showFailure: true,
     });
     const result = await compile(fixture);
     const monitor = result.assets.find((asset) => asset.fileName.includes('miko-white-screen'));
