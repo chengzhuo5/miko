@@ -43,6 +43,15 @@ export function createRuntimeModule(options: RuntimeModuleOptions): string {
     '',
     'export function setupMikoRuntime(app, initialState, onSSRAppRendered) {',
     '  attachMikoBootHandlers(app)',
+    '  // 自动 ready：首次路由导航完成后标记（无需业务显式调用 markMikoReady）。',
+    '  // router 由 app.use(router) 安装到 globalProperties；SSR 无 window 时 getMikoBoot 返回 undefined 即 no-op。',
+    "  const router = app.config.globalProperties?.$router",
+    "  if (router && typeof router.isReady === 'function') {",
+    '    router',
+    '      .isReady()',
+    "      .then(() => getMikoBoot()?.ready())",
+    '      .catch(() => {})',
+    '  }',
     ...(options.pinia
       ? [
     '  const pinia = createPinia()',

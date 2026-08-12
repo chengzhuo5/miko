@@ -110,6 +110,51 @@ describe('createRuntimeModule', () => {
     expect(boot.ready).toHaveBeenCalledOnce();
   });
 
+  it('auto-marks ready after the first router navigation without explicit calls', async () => {
+    const boot: BootState = {
+      status: 'pending',
+      errors: [],
+      warnings: [],
+      ready: vi.fn(),
+      fail: vi.fn(),
+    };
+    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    let resolveReady!: () => void;
+    const router = {
+      isReady: vi.fn(() => new Promise<void>((resolve) => (resolveReady = resolve))),
+    };
+    const app = {
+      config: {
+        globalProperties: { $router: router },
+      },
+    };
+    const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
+
+    runtime.setupMikoRuntime(app as never);
+    expect(boot.ready).not.toHaveBeenCalled();
+
+    resolveReady();
+    await Promise.resolve();
+
+    expect(boot.ready).toHaveBeenCalledOnce();
+  });
+
+  it('skips auto-ready when the app has no router', () => {
+    const boot: BootState = {
+      status: 'pending',
+      errors: [],
+      warnings: [],
+      ready: vi.fn(),
+      fail: vi.fn(),
+    };
+    Object.assign(globalThis, { window: { __MIKO_BOOT__: boot } });
+    const runtime = executeRuntime(createRuntimeModule({ pinia: false }));
+
+    runtime.setupMikoRuntime({ config: { globalProperties: {} } } as never);
+
+    expect(boot.ready).not.toHaveBeenCalled();
+  });
+
   it('registers the SSR-rendered lifecycle before project bootstrap', async () => {
     const source = await readFile(new URL('../template/main.ts', import.meta.url), 'utf8');
 
