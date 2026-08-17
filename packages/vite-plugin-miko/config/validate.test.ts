@@ -92,4 +92,30 @@ describe('validateResolvedProject', () => {
       expect.objectContaining({ code: 'MIKO_CAPABILITY_MISSING_DEPENDENCY' }),
     );
   });
+
+  it('rejects a whitespace-only library CSS scope', () => {
+    const resolved = project();
+    Object.assign(resolved.miko, { lib: { cssScope: '   ' } });
+
+    expect(() => validateResolvedProject(resolved)).toThrowError(
+      expect.objectContaining({
+        code: 'MIKO_CONFIG_INVALID',
+        field: 'miko.lib.cssScope',
+      }),
+    );
+  });
+
+  it('rejects a library CSS scope with a string PostCSS config path', () => {
+    const resolved = project({
+      vite: { css: { postcss: './postcss.config.cjs' } },
+    });
+    Object.assign(resolved.miko, { lib: { cssScope: '[data-miko-lib="fixture"]' } });
+
+    expect(() => validateResolvedProject(resolved)).toThrowError(
+      expect.objectContaining({
+        code: 'MIKO_CONFIG_CONFLICT',
+        field: 'vite.css.postcss',
+      }),
+    );
+  });
 });

@@ -48,6 +48,11 @@ export interface LibConfig {
   name?: string;
   /** 输出文件名 */
   fileName?: string;
+  /**
+   * 将库 CSS 限定到该宿主选择器；使用方必须提供匹配容器。
+   * @example '[data-miko-lib="quote-kit"]'
+   */
+  cssScope?: string;
 }
 
 export interface RouteFolder {

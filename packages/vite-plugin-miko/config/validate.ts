@@ -31,6 +31,30 @@ function exactStrings(value: unknown): string[] {
     : [];
 }
 
+export function validateLibCssScope(project: ResolvedMikoConfig): string | undefined {
+  const cssScope = project.miko.lib?.cssScope;
+  if (cssScope === undefined) return undefined;
+
+  if (typeof cssScope !== 'string' || cssScope.trim().length === 0) {
+    throw new MikoConfigError({
+      code: 'MIKO_CONFIG_INVALID',
+      field: 'miko.lib.cssScope',
+      message: 'miko.lib.cssScope 必须是非空 CSS 选择器字符串',
+    });
+  }
+
+  if (typeof project.vite.css?.postcss === 'string') {
+    throw new MikoConfigError({
+      code: 'MIKO_CONFIG_CONFLICT',
+      field: 'vite.css.postcss',
+      message:
+        'miko.lib.cssScope 不能与字符串形式的 vite.css.postcss 同时使用；请改为 vite.css.postcss.plugins',
+    });
+  }
+
+  return cssScope.trim();
+}
+
 export function validateResolvedProject(project: ResolvedMikoConfig): void {
   if (
     project.capabilities.cdn.enabled &&
@@ -42,6 +66,8 @@ export function validateResolvedProject(project: ResolvedMikoConfig): void {
       message: 'CDN 外部化需要项目直接依赖 @minar-kotonoha/framework，请先使用 Bun 安装该依赖',
     });
   }
+
+  validateLibCssScope(project);
 }
 
 export async function validateFinalConfig(
