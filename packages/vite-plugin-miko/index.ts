@@ -128,6 +128,11 @@ export function createLibConfig(options: { config: ResolvedMikoConfig }): UserCo
       alias: [{ find: '@', replacement: root }],
       tsconfigPaths: true,
     },
+    css: {
+      // 库不能隐式继承应用根目录的 postcss-pxtorem 等自适应转换。
+      // 如需 PostCSS，使用者可在 miko.config.ts 的 vite.css.postcss 显式提供。
+      postcss: { plugins: [] },
+    },
     plugins: [
       VueMacros({
         plugins: {
