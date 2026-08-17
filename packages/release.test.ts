@@ -36,7 +36,7 @@ const publicVersions: Record<(typeof publicPackages)[number][1], string> = {
   '@minar-kotonoha/vite-plugin-bootstrap': '1.0.0',
   '@minar-kotonoha/vite-plugin-external': '1.0.0',
   '@minar-kotonoha/vite-plugin-index-html': '1.0.5',
-  '@minar-kotonoha/vite-plugin-miko': '1.0.8',
+  '@minar-kotonoha/vite-plugin-miko': '1.0.9',
 };
 
 const publicNames = new Set(publicPackages.map(([, name]) => name));
@@ -67,10 +67,21 @@ describe('Miko v1 release contract', () => {
           .some((file) => /(?:^|\/)(?:fixtures?|tests?)\/|\.test\./u.test(file)),
       ).not.toBe(true);
 
-      for (const [dependency, version] of Object.entries(manifest.dependencies ?? {})) {
-        if (publicNames.has(dependency)) expect(version).toBe('workspace:^');
+      const publicDependencies = Object.entries(manifest.dependencies ?? {}).filter(
+        ([dependency]) => publicNames.has(dependency),
+      );
+      for (const [, version] of publicDependencies) {
+        expect(version).toBe('workspace:^');
       }
     }
+  });
+
+  it('publishes the library CSS scope transformer', async () => {
+    const manifest = await readManifest(
+      new URL('./vite-plugin-miko/package.json', import.meta.url),
+    );
+
+    expect(manifest.files).toContain('lib-css-scope.ts');
   });
 
   it('keeps private workspaces private and points the starter at v1', async () => {
