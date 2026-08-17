@@ -18,7 +18,12 @@ import { inspectProject, resolveCapabilities } from './capabilities';
 import { loadMikoConfig, resolveMikoConfig } from './config';
 import { mergeViteConfig } from './config/merge';
 import type { MikoConfigEnv, ResolvedMikoConfig } from './config/types';
-import { validateFinalConfig, validateResolvedProject } from './config/validate';
+import {
+  validateFinalConfig,
+  validateLibCssScope,
+  validateResolvedProject,
+} from './config/validate';
+import { createLibCssScopePlugin } from './lib-css-scope';
 import { assembleMikoPlugins } from './plugins';
 import { composeSsgPageRendered } from './ssg/state';
 
@@ -103,6 +108,7 @@ export async function createMikoViteConfig(project: ResolvedMikoConfig) {
 export function createLibConfig(options: { config: ResolvedMikoConfig }): UserConfig {
   const { config } = options;
   const root = config.viteRoot;
+  const cssScope = validateLibCssScope(config);
   const lib = {
     entry: 'src/index.ts',
     formats: ['es', 'cjs'] as ('es' | 'cjs' | 'umd')[],
@@ -131,7 +137,9 @@ export function createLibConfig(options: { config: ResolvedMikoConfig }): UserCo
     css: {
       // 库不能隐式继承应用根目录的 postcss-pxtorem 等自适应转换。
       // 如需 PostCSS，使用者可在 miko.config.ts 的 vite.css.postcss 显式提供。
-      postcss: { plugins: [] },
+      postcss: {
+        plugins: cssScope ? [createLibCssScopePlugin(cssScope)] : [],
+      },
     },
     plugins: [
       VueMacros({
