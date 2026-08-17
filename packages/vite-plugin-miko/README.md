@@ -78,6 +78,36 @@ export default ((env) => ({
 })) satisfies MikoConfigFactory;
 ```
 
+## 组件库样式作用域
+
+`miko build --lib` 默认不改变 CSS。需要隔离组件库样式时，显式设置
+`miko.lib.cssScope`：
+
+```ts
+import { defineMikoConfig } from '@minar-kotonoha/vite-plugin-miko';
+
+export default defineMikoConfig({
+  miko: {
+    lib: {
+      cssScope: '[data-miko-lib="quote-kit"]',
+    },
+  },
+});
+```
+
+使用方必须以相同选择器包裹组件：
+
+```vue
+<section data-miko-lib="quote-kit">
+  <QuoteKit />
+</section>
+```
+
+Miko 只作用域化普通 CSS 选择器及 `html`、`body`、`:root`、`#app`。它不会重命名
+class、id、CSS 自定义属性、动画名称或字体名称，也不会使用 Shadow DOM；需要完全隔离时，
+应由组件库自行采用 Shadow DOM。仍需 PostCSS 时，请通过 `vite.css.postcss.plugins` 显式
+配置插件；`cssScope` 不支持与字符串形式的 `vite.css.postcss` 同时使用。
+
 ## CLI
 
 项目只通过 Miko CLI 执行：
