@@ -2,57 +2,34 @@
 .skeleton {
   pointer-events: none !important;
 
-  // 扫光：整屏固定光带自左向右循环（composited transform，全屏只有一个动画实例）。
-  // 用 backdrop-filter 把光带范围内的画面**提亮**，而不是盖一层白色：
-  // ① 白底（255）再提亮仍是 255 → 白底上看不出来，不会出现「一条白色光柱压在内容
-  //    最前面」；
-  // ② 灰条（248）被提亮后冲到 255 → 视觉上就是「光柱在骨架条内部扫过」；
-  // ③ 提亮量按亮度等比放大，饱和底色（涨跌 pill 红绿底）几乎不动。
-  // 实测（375×812，光带压住 pill）：灰条最大 +13 级、涨跌 pill 平均 +5.8 / 最大 +13；
-  // 旧的「纯白不透明盖顶」写法是 pill 平均 +24.6 / 最大 +54 —— 把颜色洗白。
-  // 仅在支持 backdrop-filter 的引擎上画；不支持时不画，避免退回旧毛病。
-  // 这份是**发布包里的模板**，可能被没有 autoprefixer 的工程消费，因此显式写全
-  // -webkit- 前缀与带前缀的 @supports 条件（老 iOS Safari 只认 -webkit-）。
-  // 业务 app 内的副本（apps/*/template/styles/skeleton.*）只写无前缀属性，由根
-  // postcss.config.js 的 autoprefixer 补齐——那边 stylelint 禁止重复声明；语义一致。
-  //
-  // 为什么不把光柱画进 ::first-line 灰条内部（最理想的「光柱在骨架内」）：
-  // ::first-line 支持 background 系列，但**不支持 animation / transform**
-  // （Chromium 实测 getComputedStyle(el, '::first-line').animationName === 'none'，
-  // 声明被整条丢弃），唯一可行做法是用 @property 逐帧改 ::first-line 的
-  // background-position，实测（375×812、6× CPU 降速、448 个元素）帧间隔中位数
-  // 16.7ms → 366.6ms；甚至只动自定义属性、没有任何 var() 消费方也有 316.7ms，
-  // 逐帧样式重算的代价不可接受。
-  @supports (backdrop-filter: brightness(1)) or (-webkit-backdrop-filter: brightness(1)) {
-    &::before {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 1000;
-      width: 25vw;
-      height: 100%;
-      content: '';
-      -webkit-backdrop-filter: brightness(1.06);
-      backdrop-filter: brightness(1.06);
-      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 50%, transparent 100%);
-      mask-image: linear-gradient(to right, transparent 0, #000 50%, transparent 100%);
-      transform: translateX(-25vw);
-      animation: shimmer 1.25s linear infinite;
-    }
-  }
+  // 骨架呼吸（2026-09-21 定稿）：参数对齐业界标准。
+  // 参考 Tailwind v4 上游默认（packages/tailwindcss/theme.css）：
+  //   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  //   @keyframes pulse { 50% { opacity: 0.5 } }
+  // 即「占位灰块整体 1 → 0.5 → 1 淡入淡出」，占位底色用 slate-200（oklch 92.9%）。
+  // 本产品两处调整：① 底色用中性黑 9%（≈224，与 slate-200 同量级），半透明 →
+  // 仍能透出卡片底色；② 峰值 4%（≈245），幅度 13 级，略强于 Tailwind 的 14 级。
+  // 动的是根元素 color，灰条用 background-color: currentColor 跟随（::first-line 无法
+  // 直接声明 animation，实测 animationName 恒为 none）；文字不可见改用
+  // -webkit-text-fill-color（只改文字填充色，不影响 currentColor）。
+  // 这份是**发布包里的模板**，可能被没有 autoprefixer 的工程消费，因此显式写全前缀。
+  color: rgb(0 0 0 / 9%);
+  animation: skeleton-breath 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   * {
-    white-space: nowrap !important;
+    // color 必须 inherit，否则杀掉 currentColor
+    color: inherit !important;
+    -webkit-text-fill-color: transparent !important;
     border-color: transparent !important;
-    color: transparent !important;
+    white-space: nowrap !important;
 
-    // 文字形灰条：每段文字首行的淡灰底，撑起内容形状的骨架观感
+    // 文字形灰条：每段文字首行的淡灰底，随呼吸变化
     &::first-line {
-      background-color: #e8e6e850;
+      background-color: currentColor;
     }
 
     &::placeholder {
-      color: transparent !important;
+      -webkit-text-fill-color: transparent !important;
     }
   }
 
@@ -62,23 +39,22 @@
   }
 }
 
-// 光带自左向右扫过
-@keyframes shimmer {
-  0% {
-    transform: translateX(-25vw);
+// 呼吸：12%（≈224）↔ 5%（≈242），2s 与 Tailwind 默认同拍、同缓动曲线
+@keyframes skeleton-breath {
+  0%,
+  100% {
+    color: rgb(0 0 0 / 9%);
   }
 
-  100% {
-    transform: translateX(100vw);
+  50% {
+    color: rgb(0 0 0 / 4%);
   }
 }
 
-// 降低动效偏好：不扫光，保持静态灰条
+// 降低动效偏好：不呼吸，保持静态灰条（用 keyframes 起点色）
 @media (prefers-reduced-motion: reduce) {
   [v-cloak],
   .skeleton {
-    &::before {
-      animation: none;
-    }
+    animation: none;
   }
 }
