@@ -16,7 +16,24 @@ import { writeStaticDeploymentManifest } from './static-manifest';
 
 let cssLoaderRegistration: Promise<void> | undefined;
 
+/** 跳过类型检查的逃生口（CI 容器 Node 版本受限时的临时开关）。
+ *
+ * 背景（2026-09-23）：CI 容器 Node 22 + \`typescript-native-bridge\`(tsgo) + vue-tsc 3.3.10
+ * 会在 @volar/typescript 的 runTsc 里崩（delete require.cache[undefined] →
+ * "Cannot convert undefined or null to object"），而本地 Node 25 正常、容器 Node 又无法升级。
+ * 因此提供一个**显式**开关；默认关闭，打开时打印醒目告警，避免被长期误用。
+ *
+ * 用法：MIKO_SKIP_TYPECHECK=1 miko build ...（只建议在受容器 Node 限制的流水线里设置）
+ */
+const SKIP_TYPECHECK_ENV = 'MIKO_SKIP_TYPECHECK'
+
 async function runTypecheck(root: string): Promise<void> {
+  if (process.env[SKIP_TYPECHECK_ENV] === '1') {
+    console.warn(
+      `[miko] ⚠️ 已跳过 TypeScript 类型检查（${SKIP_TYPECHECK_ENV}=1）——仅用于 CI 容器 Node 版本受限的场景，本地与其它流水线请勿设置`,
+    );
+    return;
+  }
   // spawn 子进程执行 vue-tsc 类型检查，通过 jiti/register 加载 .ts 文件
   const tscPath = fileURLToPath(new URL('./tsc.ts', import.meta.url));
   // Node.js ESM 在 Windows 上需要 file:// URL 格式
