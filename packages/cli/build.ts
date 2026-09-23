@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { build as viteSsgBuild } from '@minar-kotonoha/vite-ssg/node';
 import {
   createLibConfig,
@@ -6,8 +7,7 @@ import {
   resolveMikoProject,
 } from '@minar-kotonoha/vite-plugin-miko';
 import type { ResolvedMikoConfig } from '@minar-kotonoha/vite-plugin-miko';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { build as viteBuild } from 'vite';
 import type { UserConfig } from 'vite';
 import type { CommandContext } from './context';
@@ -34,15 +34,16 @@ async function runTypecheck(root: string): Promise<void> {
     );
     return;
   }
-  // spawn 子进程执行 vue-tsc 类型检查，通过 jiti/register 加载 .ts 文件
-  const tscPath = fileURLToPath(new URL('./tsc.ts', import.meta.url));
-  // Node.js ESM 在 Windows 上需要 file:// URL 格式
-  const jitiUrl = import.meta.resolve('jiti/register');
-  const tscUrl = pathToFileURL(tscPath).href;
+  // 直接用官方 vue-tsc CLI，在**干净 node 子进程**里跑，不经 jiti。
+  // 为什么：jiti 环境下 require.cache 不可用，@volar/typescript 的 runTsc 会在
+  //   delete require.cache[tscPath] 处崩（TypeError: Cannot convert undefined or null to object）。
+  //   这是本仓库早已定位过的坑（见 pnpm-workspace.yaml 里 0.1.25 时期的记录：patch 改为
+  //   直接跑 vue-tsc/bin/vue-tsc.js --noEmit），v1.x 曾把这层 jiti 载体又带回来 —— 不要在改回去。
+  const requireFromProject = createRequire(join(root, 'package.json'));
+  const vueTscBin = requireFromProject.resolve('vue-tsc/bin/vue-tsc.js');
 
   const { promise, resolve: res, reject: rej } = Promise.withResolvers<void>();
-  // --eval + dynamic import 执行 tsc.ts，避免文件作为 CLI 位置参数触发 TS5112
-  spawn(process.execPath, ['--import', jitiUrl, '--eval', `import('${tscUrl}')`], {
+  spawn(process.execPath, [vueTscBin, '--noEmit'], {
     cwd: root,
     stdio: 'inherit',
     env: process.env,
