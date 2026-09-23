@@ -124,6 +124,23 @@ describe('checkStaticOutput', () => {
     });
   });
 
+  it('放行网关根级资源（/npm），白名单之外照旧校验（2026-09-23 设计修正）', async () => {
+    const gatewayRoot = await createOutput({
+      html: '<!doctype html><html><body><div id="app"></div><script src="/npm/static/js/cmb/cmblapi.js"></script></body></html>',
+    });
+    // /npm 由部署网关在域名根提供、不随包发布：不再要求落在应用 base 下
+    await expect(checkStaticOutput(gatewayRoot.outDir, '/ext/cmb/trade/')).resolves.toMatchObject({
+      issues: [],
+    });
+
+    const otherRoot = await createOutput({
+      html: '<!doctype html><html><body><div id="app"></div><script src="/other/app.js"></script></body></html>',
+    });
+    await expect(checkStaticOutput(otherRoot.outDir, '/ext/cmb/trade/')).resolves.toMatchObject({
+      issues: [expect.objectContaining({ code: 'MIKO_STATIC_BASE_MISMATCH' })],
+    });
+  });
+
   it('rejects emitted Vite error pages and exposes build exit code five', async () => {
     const fixture = await createOutput({
       html: '<!doctype html><html><body><div id="app"></div><vite-error-overlay></vite-error-overlay></body></html>',

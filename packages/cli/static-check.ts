@@ -92,6 +92,20 @@ function criticalReferences(elements: HtmlElement[]): string[] {
   return references;
 }
 
+/**
+ * 「网关根级资源」前缀白名单。
+ *
+ * 这类资源**不在应用 base 下、也不随包发布**，由部署网关在**域名根**提供
+ * （典型：`/npm/static/js/cmb/cmblapi.js`）。此前一律要求「根相对引用必须落在
+ * 应用 base 下」，等于强制业务把它写成绝对域名；在入口域/资源域双域部署下，
+ * 这条对 /npm 这类网关根资源过于僵硬（2026-09-23 设计修正）。
+ *
+ * 放行后行为与「带 scheme 的绝对 URL」一致（不再做 base 前缀与文件存在性校验）；
+ * 其余根相对引用照旧校验。**若要彻底取消该限制**，把
+ * resolveLocalReference 里那一行改成 `if (source.startsWith('/')) return {}` 即可。
+ */
+export const ALLOWED_ROOT_REFERENCE_PREFIXES = ['/npm/']
+
 function basePathname(base: string): string {
   try {
     return new URL(base).pathname;
@@ -119,6 +133,8 @@ function resolveLocalReference(
 
   let path: string;
   if (source.startsWith('/')) {
+    // 网关根级资源：与绝对 URL 同类，放行（不比对 base、不查文件存在性）
+    if (ALLOWED_ROOT_REFERENCE_PREFIXES.some((prefix) => source.startsWith(prefix))) return {}
     const prefix = basePathname(base);
     if (prefix !== '/' && !source.startsWith(prefix)) return { baseMismatch: true };
     path = resolve(root, source.slice(prefix === '/' ? 1 : prefix.length));
