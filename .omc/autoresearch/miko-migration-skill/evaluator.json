@@ -1,0 +1,17 @@
+{
+  "evaluator": {
+    "description": "对 market 项目执行迁移后 miko build 成功 + 页面渲染与迁移前一致",
+    "command": "cd D:/Code/CMS/trading-business-h5/apps/market && miko build",
+    "passCondition": {
+      "type": "build_success",
+      "expectedExitCode": 0,
+      "expectedOutput": "no errors"
+    },
+    "visualVerification": {
+      "tool": "playwright",
+      "description": "截图对比迁移前后关键页面（行情、个股详情、板块表现）"
+    }
+  },
+  "maxRuntime": null,
+  "terminalConditions": ["miko build exit 0 on market", "user cancels"]
+}

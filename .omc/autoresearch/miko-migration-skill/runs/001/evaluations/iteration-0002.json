@@ -1,0 +1,36 @@
+{
+  "iteration": 2,
+  "timestamp": "2026-07-28T00:00:00Z",
+  "evaluator": "market_migration",
+  "result": {
+    "pass": false,
+    "score": 0.85,
+    "details": {
+      "migrationComplete": false,
+      "skillIteration": "skill fully created with all references",
+      "marketMigration": {
+        "mikoConfigTs": "created",
+        "indexTsBootstrap": "created",
+        "unoConfigTs": "created",
+        "packageJson": "updated (scripts + vue-router@5 + devDeps)",
+        "tsconfigJson": "updated (extends linter, @/* → ./*)",
+        "pagesMigrated": true,
+        "routeBlocksAdded": 12,
+        "sourceDirsMoved": [
+          "pages/", "components/", "composables/", "hooks/",
+          "directive/", "stores/", "api/", "assets/", "config/",
+          "util/", "typing/"
+        ],
+        "stylesAndEnv": ["styles.ts", "env.d.ts"],
+        "mikoBuildTested": false
+      },
+      "remainingWork": [
+        "Delete old files (vite.config.ts, src/ remnants, index.html, etc.)",
+        "Resolve import './styles' reference (styles.ts not styles/)",
+        "Handle perf-test/shared/ sub-components (may generate unwanted routes)",
+        "Test miko build (requires bun environment + @minar-kotonoha/miko-cli install)",
+        "Playwright visual regression comparison"
+      ]
+    }
+  }
+}

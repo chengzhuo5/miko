@@ -13,7 +13,7 @@
   // 直接声明 animation，实测 animationName 恒为 none）；文字不可见改用
   // -webkit-text-fill-color（只改文字填充色，不影响 currentColor）。
   // 这份是**发布包里的模板**，可能被没有 autoprefixer 的工程消费，因此显式写全前缀。
-  color: rgb(0 0 0 / 9%);
+  color: rgb(0 0 0 / 6%);
   animation: skeleton-breath 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 
   * {
@@ -39,15 +39,15 @@
   }
 }
 
-// 呼吸：12%（≈224）↔ 5%（≈242），2s 与 Tailwind 默认同拍、同缓动曲线
+// 呼吸：6%（≈240）↔ 2.5%（≈249），2s 与 Tailwind 默认同拍、同缓动曲线
 @keyframes skeleton-breath {
   0%,
   100% {
-    color: rgb(0 0 0 / 9%);
+    color: rgb(0 0 0 / 6%);
   }
 
   50% {
-    color: rgb(0 0 0 / 4%);
+    color: rgb(0 0 0 / 2.5%);
   }
 }
 

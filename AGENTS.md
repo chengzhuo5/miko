@@ -150,7 +150,7 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - Doctor：`miko doctor [--json]` 复用同一项目解析和插件装配，只读输出能力来源、实际标量值、插件顺序和警告；能力错误退出码为 3
 - Check：`miko check [--all-routes]` 在系统临时目录运行类型检查、构建、静态产物校验、Vite Preview 和 375×812 Chromium 冒烟；不覆盖正式 `dist`，浏览器错误退出码为 6
 - Migrate：`miko migrate` 默认使用 `oxc-parser` 静态分析且不写文件；`--write` 只接受安全计划并创建 `.miko-migrate/<UTC timestamp>/` 备份，`--check` 在写入后运行 Doctor 和完整 Check；不安全写入退出码为 7
-- 白屏保护：默认启用独立启动监控；runtime 在首个真实渲染后自动标记 ready（业务零配置，不依赖路由导航成功，慢路由/异步组件/导航失败均不阻塞）；超时以入口脚本执行为起点（下载耗时不计入），失败面板仅在 test 模式（`--mode test`）且页面仍为空白时渲染，生产构建只记录告警不弹失败页，页面已渲染时启动噪音只记告警，面板渲染后应用就绪可自动撤销；构建静态校验和 Check 覆盖入口失败、bootstrap 异常、hydration 警告、永久骨架和资源缺失
+- 白屏保护：默认启用独立启动监控；runtime 在首个真实渲染后自动标记 ready（业务零配置，不依赖路由导航成功，慢路由/异步组件/导航失败均不阻塞）；超时以入口脚本执行为起点（下载耗时不计入），失败面板仅在 test 模式（`--mode test`）且页面仍为空白时渲染，生产构建只记录告警不弹失败页，页面已渲染时启动噪音只记告警，失败面板以覆盖层渲染（不清空 `#app`、保留 SSG 内容）且先隐藏挂载、持续失败 1s 后才显示，应用就绪在窗口内撤销面板则用户完全看不到失败页（无闪现）；除超时外的失败信号先经 2s 确认窗口坐实，`<link>` 资源失败（favicon/样式表等）与 vite-legacy 探针错误只记告警不判死；构建静态校验和 Check 覆盖入口失败、bootstrap 异常、hydration 警告、永久骨架和资源缺失
 - Dev 重启：package、Miko/Browserslist/Uno 配置或 schemas 内容变化时合并触发一次 server restart；页面和组件继续使用 HMR
 - 发包：使用 `bun publish --registry https://registry.npmjs.org/ --access public`（bun 会自动把 `workspace:^` / `catalog:` 改写为真实版本号；`prepublishOnly` 已配置为 `bun run build`）。认证沿用 `~/.npmrc` 的 token（`npm login` 或 `NPM_CONFIG_TOKEN` 均可）。**认证需要浏览器确认**：`bun publish` 会输出形如 `https://www.npmjs.com/auth/cli/<id>` 的确认链接并等待。Agent 发包时必须持续检测发布日志，提取该链接并**自动打开浏览器**让用户确认；发布流程会等待确认，未确认前不要误判为卡死或提前中断。若直接调用被沙箱策略拦截，可用 `explorer.exe <url>` 或 `rundll32 url.dll,FileProtocolHandler <url>` 打开
 - 包版本以各 `package.json` 和 npm registry 验证结果为准，不依赖文档中的历史发布号

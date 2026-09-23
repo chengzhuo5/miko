@@ -14,8 +14,19 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
 
   const development = ${JSON.stringify(options.development)}
   const showFailure = ${JSON.stringify(options.showFailure)}
+  // 失败面板"防闪现"窗口：面板先以隐藏态挂载，持续失败超过该窗口才真正显示。
+  // 慢启动页面在超时后短时间内完成启动时，ready() 会在面板可见前将其撤销，
+  // 避免"闪现页面加载失败后马上恢复正常页面"的误导体验。
+  const REVEAL_DELAY = 1000
+  // 非超时失败信号（资源加载失败、启动异常等）的确认窗口：信号先挂起，
+  // 窗口内应用启动成功（ready()）则信号作废。favicon 404、样式表缺失、
+  // legacy 探针报错、可恢复的启动异常等都不应让页面在加载瞬间误弹失败面板。
+  const CONFIRM_DELAY = 2000
   let status = 'pending'
   let timer
+  let revealTimer
+  let confirmTimer
+  let panelElement
   const errors = []
   const warnings = []
 
@@ -32,6 +43,8 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
 
   const cleanup = () => {
     clearTimeout(timer)
+    clearTimeout(revealTimer)
+    clearTimeout(confirmTimer)
     window.removeEventListener('error', onError, true)
     window.removeEventListener('unhandledrejection', onUnhandledRejection)
   }
@@ -45,11 +58,22 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     return root.childElementCount > 0 || (root.textContent ?? '').trim() !== ''
   }
 
+  // 防闪现窗口到期：仅当仍处于 failed 才解除 v-cloak 并淡入面板。
+  // 只按 status 判断——SSG 页面在 fail() 保留 v-cloak 期间必然"无可见内容"，
+  // 在这里复查 hasVisibleContent() 会把真实失败的面板永远拦在隐藏态。
+  const revealFailure = () => {
+    revealTimer = undefined
+    if (status !== 'failed' || !panelElement) return
+    const root = document.getElementById('app')
+    if (root) root.removeAttribute('v-cloak')
+    panelElement.classList.remove('miko-fail--pending')
+  }
+
   const renderFailure = (code, detail) => {
     const root = document.getElementById('app')
     if (!root) return
 
-    root.removeAttribute('v-cloak')
+    // v-cloak 暂不解除：防闪现窗口内页面维持骨架/遮罩，面板真正显示时再解除
     root.removeAttribute('data-miko-ready')
     root.setAttribute('data-miko-failed', code)
 
@@ -57,6 +81,7 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     // 独立内联样式（监控脚本无应用依赖），兼容 chrome 64 / iOS 12（无 clamp/dvh/web font）。
     const styles = [
       '.miko-fail{position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;display:flex;flex-direction:column;background:#f6f4ef;color:#191918;font-family:-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;padding:28px 28px 22px;-webkit-font-smoothing:antialiased;animation:miko-fade .45s ease both}',
+      '.miko-fail--pending{animation:none;visibility:hidden}',
       '@keyframes miko-fade{from{opacity:0}to{opacity:1}}',
       '.miko-fail__top{display:flex;align-items:center;justify-content:space-between;font-size:12px;letter-spacing:.18em;opacity:.55}',
       '.miko-fail__tag{display:flex;align-items:center;gap:8px}',
@@ -90,7 +115,7 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     const panel = document.createElement('section')
     panel.setAttribute('data-miko-failure', '')
     panel.setAttribute('role', 'alert')
-    panel.className = 'miko-fail'
+    panel.className = 'miko-fail miko-fail--pending'
 
     const top = document.createElement('header')
     top.className = 'miko-fail__top'
@@ -141,12 +166,39 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     bottom.append(signal, reload)
 
     panel.append(top, body, bottom)
-    root.replaceChildren(styleEl, panel)
+
+    // 覆盖层而非替换 #app：保留 SSG/预渲染内容，应用随后仍可正常 hydration；
+    // 面板先以隐藏态挂载，持续失败超过 REVEAL_DELAY 才解除 v-cloak 并淡入。
+    ;(document.head || root).appendChild(styleEl)
+    ;(document.body || root).appendChild(panel)
+    panelElement = panel
+    revealTimer = setTimeout(revealFailure, REVEAL_DELAY)
   }
 
   const fail = (code, value) => {
     if (status !== 'pending') return
-    const detail = detailOf(value)
+    if (code !== 'MIKO_BOOT_TIMEOUT') {
+      // 非超时信号不立即判死：进入确认窗口，应用随后 ready() 即作废。
+      // 真正致命的启动失败（入口脚本 404 等）由窗口到期后的复查接管，
+      // 仍远快于 30s 下载宽限兜底。
+      if (!confirmTimer) {
+        confirmTimer = setTimeout(() => {
+          confirmTimer = undefined
+          // 窗口到期信号坐实：直接走即时判定，不再重复进入确认窗口
+          raiseFailure(code, detailOf(value))
+        }, CONFIRM_DELAY)
+        warnings.push('boot failure signal (confirming): ' + code)
+      } else {
+        warnings.push('boot failure signal (dedup): ' + code)
+      }
+      return
+    }
+    // 超时本身就是长期确认（整个预算期内页面一直空白），直接判死
+    raiseFailure(code, detailOf(value))
+  }
+
+  const raiseFailure = (code, detail) => {
+    if (status !== 'pending') return
     if (development || !showFailure) {
       // dev 模式：Vite error overlay 已覆盖排查；生产环境（失败页未开启）：
       // 只记录并保持 pending，不弹失败面板；应用随后 ready() 仍可正常生效。
@@ -182,7 +234,11 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
     if (status === 'failed') {
       // 弱网/瞬时故障已渲染失败面板，但应用随后启动成功（Suspense resolve /
       // 路由就绪晚于超时）：撤销面板恢复页面；错误记录保留供诊断。
+      // 面板尚处于隐藏等待态时撤销 = 用户从未看到失败页，完全无闪现。
       status = 'ready'
+      clearTimeout(revealTimer)
+      revealTimer = undefined
+      panelElement = undefined
       if (root) {
         root.removeAttribute('v-cloak')
         root.removeAttribute('data-miko-failed')
@@ -216,10 +272,26 @@ export function createWhiteScreenMonitorModule(options: WhiteScreenMonitorOption
         warnings.push('cross-origin resource failed to load: ' + url)
         return
       }
+      if (target.tagName === 'LINK') {
+        // 样式表/图标/预加载等 <link> 失败不会阻断 JS 启动（favicon 404、
+        // 样式表缺失等场景应用都应照常进入），只记录告警，不判启动失败。
+        warnings.push('link resource failed to load: ' + url)
+        return
+      }
       fail('MIKO_BOOT_RESOURCE')
       return
     }
-    fail('MIKO_BOOT_ERROR', event.error ?? event.message)
+    const error = event.error ?? event.message
+    // vite-legacy 现代浏览器探针在不支持 import.meta.resolve 的浏览器上
+    // 必然抛错（data: URL 模块），legacy 分支随后接管启动，属已知启动噪音。
+    if (
+      (error && error.message === 'import.meta.resolve not supported') ||
+      (typeof event.filename === 'string' && event.filename.startsWith('data:'))
+    ) {
+      warnings.push('legacy browser probe error ignored: ' + (error && error.message ? error.message : 'unknown'))
+      return
+    }
+    fail('MIKO_BOOT_ERROR', error)
   }
 
   function onUnhandledRejection(event) {

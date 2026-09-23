@@ -1,0 +1,31 @@
+{
+  "iteration": 1,
+  "timestamp": "2026-07-28T00:00:00Z",
+  "evaluator": "market_migration",
+  "result": {
+    "pass": false,
+    "score": 0.60,
+    "details": {
+      "skillCreated": true,
+      "skillDetected": true,
+      "referencesCreated": 4,
+      "marketMigration": {
+        "mikoConfigTs": "created",
+        "indexTs": "created",
+        "unoConfigTs": "created",
+        "packageJson": "updated",
+        "tsconfigJson": "updated",
+        "pagesMigrated": false,
+        "sourceDirsMoved": false,
+        "oldFilesDeleted": false,
+        "mikoBuildTested": false
+      },
+      "blockers": [
+        "Pages not yet migrated (need <route> blocks)",
+        "src/ directories not moved to root",
+        "Old files not deleted (vite.config.ts, router/, main.ts, main-mf.ts, app.vue, index.html)",
+        "miko build not testable — market uses pnpm workspace, miko requires bun/jiti"
+      ]
+    }
+  }
+}

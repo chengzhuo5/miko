@@ -10,6 +10,11 @@ interface BootState {
   fail(code: string, detail?: string): void;
 }
 
+// 防闪现窗口：与 white-screen.ts 内置的 REVEAL_DELAY 保持一致
+const REVEAL_DELAY = 1000;
+// 非超时失败信号确认窗口：与 white-screen.ts 内置的 CONFIRM_DELAY 保持一致
+const CONFIRM_DELAY = 2000;
+
 function executeMonitor(
   options: {
     enabled?: boolean;
@@ -54,27 +59,40 @@ describe('createWhiteScreenMonitorModule', () => {
 
     expect(state?.status).toBe('failed');
     expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_TIMEOUT');
+
+    // 防闪现：面板先隐藏挂载，v-cloak 暂不解除（骨架延续）
+    const panel = dom.window.document.querySelector<HTMLElement>('[data-miko-failure]')!;
+    expect(panel).not.toBeNull();
+    expect(panel.classList.contains('miko-fail--pending')).toBe(true);
+    expect(root.hasAttribute('v-cloak')).toBe(true);
+
+    // 持续失败超过防闪现窗口：解除 v-cloak 并显示面板
+    vi.advanceTimersByTime(REVEAL_DELAY);
+    expect(panel.classList.contains('miko-fail--pending')).toBe(false);
     expect(root.hasAttribute('v-cloak')).toBe(false);
-    expect(dom.window.document.querySelector('[data-miko-failure]')?.textContent).toContain(
-      'MIKO_BOOT_TIMEOUT',
-    );
+    expect(panel.textContent).toContain('MIKO_BOOT_TIMEOUT');
     expect(dom.window.document.querySelector('[data-miko-reload]')).not.toBeNull();
   });
 
   it('renders the signal-loss panel with title, signal bars, and reload button', () => {
     vi.useFakeTimers();
-    const { dom, state } = executeMonitor();
+    const { dom, root, state } = executeMonitor();
 
-    vi.advanceTimersByTime(8000);
+    vi.advanceTimersByTime(8000 + REVEAL_DELAY);
 
     const panel = dom.window.document.querySelector<HTMLElement>('[data-miko-failure]')!;
     expect(panel).not.toBeNull();
     expect(panel.querySelector('.miko-fail__title')?.textContent).toContain('页面加载失败');
     expect(panel.querySelectorAll('.miko-fail__signal i')).toHaveLength(5);
     expect(panel.querySelector('.miko-fail__code')?.textContent).toBe('MIKO_BOOT_TIMEOUT');
-    expect(dom.window.document.querySelector('#app style')).not.toBeNull();
+    expect(dom.window.document.querySelector('head style[data-miko-fail-style]')).not.toBeNull();
     expect(panel.textContent).toContain('重新加载');
     expect(state?.errors).toEqual([{ code: 'MIKO_BOOT_TIMEOUT' }]);
+
+    // 覆盖层：不清空 #app，SSG/预渲染内容保持原状，面板挂在 #app 之外
+    expect(root.querySelector('p')?.textContent).toBe('prerendered');
+    expect(root.querySelector('[data-miko-failure]')).toBeNull();
+    expect(panel.parentElement).not.toBe(root);
   });
 
   it('marks the root ready and ignores later startup events', () => {
@@ -93,7 +111,54 @@ describe('createWhiteScreenMonitorModule', () => {
     expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
   });
 
-  it('classifies failed script requests as boot resource failures', () => {
+  it('never reveals the failure panel when the app becomes ready within the anti-flash delay', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+
+    // 超时触发：面板隐藏挂载（用户看到的仍是骨架/空白，无失败页）
+    vi.advanceTimersByTime(8000);
+    expect(state?.status).toBe('failed');
+    const panel = dom.window.document.querySelector<HTMLElement>('[data-miko-failure]')!;
+    expect(panel.classList.contains('miko-fail--pending')).toBe(true);
+
+    // 应用在防闪现窗口内启动成功：面板在可见前被撤销，之后也不再出现
+    vi.advanceTimersByTime(500);
+    state?.ready();
+
+    expect(state?.status).toBe('ready');
+    expect(root.dataset.mikoReady).toBe('true');
+    expect(root.dataset.mikoFailed).toBeUndefined();
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(dom.window.document.querySelector('[data-miko-fail-style]')).toBeNull();
+
+    vi.advanceTimersByTime(REVEAL_DELAY + 5000);
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+  });
+
+  it('recovers from a revealed failure panel when the app becomes ready later', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+
+    vi.advanceTimersByTime(8000);
+    expect(state?.status).toBe('failed');
+
+    // 持续失败超过防闪现窗口：面板真正显示
+    vi.advanceTimersByTime(REVEAL_DELAY);
+    const panel = dom.window.document.querySelector<HTMLElement>('[data-miko-failure]')!;
+    expect(panel).not.toBeNull();
+    expect(panel.classList.contains('miko-fail--pending')).toBe(false);
+
+    // 应用随后启动成功：撤销面板，恢复页面
+    state?.ready();
+
+    expect(state?.status).toBe('ready');
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(dom.window.document.querySelector('[data-miko-fail-style]')).toBeNull();
+    expect(root.dataset.mikoReady).toBe('true');
+    expect(root.dataset.mikoFailed).toBeUndefined();
+  });
+
+  it('classifies failed script requests as boot resource failures after the confirm window', () => {
     vi.useFakeTimers();
     const { dom, root, state } = executeMonitor();
     const script = dom.window.document.createElement('script');
@@ -101,9 +166,75 @@ describe('createWhiteScreenMonitorModule', () => {
 
     script.dispatchEvent(new dom.window.Event('error'));
 
+    // 非超时信号先进入确认窗口，不立即判死
+    expect(state?.status).toBe('pending');
+    expect(state?.warnings.some((warning) => warning.includes('confirming'))).toBe(true);
+
+    vi.advanceTimersByTime(CONFIRM_DELAY);
     expect(state?.status).toBe('failed');
     expect(state?.errors).toEqual([{ code: 'MIKO_BOOT_RESOURCE' }]);
     expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_RESOURCE');
+  });
+
+  it('cancels deferred resource failures when the app becomes ready within the confirm window', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+    const script = dom.window.document.createElement('script');
+    script.src = 'https://example.test/assets/app-abc123.js';
+    dom.window.document.body.append(script);
+
+    script.dispatchEvent(new dom.window.Event('error'));
+    vi.advanceTimersByTime(CONFIRM_DELAY - 1);
+    expect(state?.status).toBe('pending');
+
+    // 应用在确认窗口内启动成功：失败信号作废，面板永不出现
+    state?.ready();
+    vi.advanceTimersByTime(CONFIRM_DELAY + REVEAL_DELAY + 5000);
+
+    expect(state?.status).toBe('ready');
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(root.dataset.mikoFailed).toBeUndefined();
+  });
+
+  it('never fails the boot on link resource errors (favicon, stylesheets)', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+    const link = dom.window.document.createElement('link');
+    link.href = '/favicon.ico';
+    dom.window.document.body.append(link);
+
+    link.dispatchEvent(new dom.window.Event('error'));
+    vi.advanceTimersByTime(7999);
+
+    expect(state?.status).toBe('pending');
+    expect(state?.errors).toEqual([]);
+    expect(state?.warnings.some((warning) => warning.includes('/favicon.ico'))).toBe(true);
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(root.dataset.mikoFailed).toBeUndefined();
+
+    state?.ready();
+    expect(state?.status).toBe('ready');
+  });
+
+  it('ignores the vite legacy modern-browser probe error', () => {
+    vi.useFakeTimers();
+    const { dom, root, state } = executeMonitor();
+    const event = new dom.window.Event('error');
+    Object.defineProperty(event, 'error', {
+      value: new Error('import.meta.resolve not supported'),
+    });
+
+    dom.window.dispatchEvent(event);
+    vi.advanceTimersByTime(7999);
+
+    expect(state?.status).toBe('pending');
+    expect(state?.errors).toEqual([]);
+    expect(state?.warnings.some((warning) => warning.includes('legacy browser probe'))).toBe(true);
+    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
+    expect(root.dataset.mikoFailed).toBeUndefined();
+
+    state?.ready();
+    expect(state?.status).toBe('ready');
   });
 
   it('ignores cross-origin resource failures (native bridge SDK) but records a warning', () => {
@@ -134,6 +265,7 @@ describe('createWhiteScreenMonitorModule', () => {
     dom.window.document.body.append(script);
 
     script.dispatchEvent(new dom.window.Event('error'));
+    vi.advanceTimersByTime(CONFIRM_DELAY);
 
     expect(state?.status).toBe('failed');
     expect(root.dataset.mikoFailed).toBe('MIKO_BOOT_RESOURCE');
@@ -269,24 +401,6 @@ describe('createWhiteScreenMonitorModule', () => {
     state?.ready();
     expect(state?.status).toBe('ready');
     expect(root.dataset.mikoReady).toBe('true');
-  });
-
-  it('recovers from a rendered failure panel when the app becomes ready', () => {
-    vi.useFakeTimers();
-    const { dom, root, state } = executeMonitor();
-
-    vi.advanceTimersByTime(8000);
-    expect(state?.status).toBe('failed');
-    expect(dom.window.document.querySelector('[data-miko-failure]')).not.toBeNull();
-
-    // 应用随后启动成功：撤销面板，恢复页面
-    state?.ready();
-
-    expect(state?.status).toBe('ready');
-    expect(dom.window.document.querySelector('[data-miko-failure]')).toBeNull();
-    expect(dom.window.document.querySelector('[data-miko-fail-style]')).toBeNull();
-    expect(root.dataset.mikoReady).toBe('true');
-    expect(root.dataset.mikoFailed).toBeUndefined();
   });
 
   it('does not render the failure panel when the failure page is disabled (production)', () => {
