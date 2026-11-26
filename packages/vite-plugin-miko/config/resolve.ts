@@ -112,6 +112,7 @@ export function resolveMikoConfig(
       lib: raw.lib,
       vuePluginOptions: mergeOptions({}, raw.vuePluginOptions),
       vueJsxPluginOptions: mergeOptions({}, raw.vueJsxPluginOptions),
+      vueMacros: raw.vueMacros ?? true,
       routerPluginOptions: mergeOptions(
         {
           extensions: ['.vue', '.setup.tsx'],

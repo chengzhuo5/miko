@@ -115,6 +115,9 @@ export function createLibConfig(options: { config: ResolvedMikoConfig }): UserCo
     ...config.miko.lib,
   };
 
+  const vuePlugin = vue(config.miko.vuePluginOptions);
+  const vueJsxPlugin = vueJsx(config.miko.vueJsxPluginOptions);
+
   const generated: UserConfig = {
     root,
     build: {
@@ -142,12 +145,9 @@ export function createLibConfig(options: { config: ResolvedMikoConfig }): UserCo
       },
     },
     plugins: [
-      VueMacros({
-        plugins: {
-          vue: vue(config.miko.vuePluginOptions),
-          vueJsx: vueJsx(config.miko.vueJsxPluginOptions),
-        },
-      }),
+      config.miko.vueMacros === false
+        ? [vuePlugin, vueJsxPlugin]
+        : VueMacros({ plugins: { vue: vuePlugin, vueJsx: vueJsxPlugin } }),
       config.miko.unoCSSPluginOptions === false ? null : UnoCSS(config.miko.unoCSSPluginOptions),
     ],
   };

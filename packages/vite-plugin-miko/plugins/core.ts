@@ -24,20 +24,26 @@ export function ssrCssPlugin(): PluginOption {
 
 export function vueCorePlugins(project: ResolvedMikoConfig): PluginOption {
   const { miko } = project;
+  const vueRouter = VueRouter({
+    extensions: miko.routerPluginOptions.extensions,
+    routesFolder: miko.routerPluginOptions.routesFolder,
+    dts: miko.routerPluginOptions.dts,
+    extendRoute(route: { path?: string; addAlias: (aliases: string[]) => void }) {
+      if (route.path) {
+        route.addAlias([route.path === '/' ? '/index.html' : `${route.path}.html`]);
+      }
+    },
+  });
+  // 默认保持历史行为（字段缺失也算 true）：用 vue-macros 包住官方插件。
+  // 不用宏语法的项目把 miko.vueMacros 设为 false，可去掉三个宏插件对全量模块的 transform。
+  if (miko.vueMacros === false) {
+    return [vue(miko.vuePluginOptions), vueJsx(miko.vueJsxPluginOptions), vueRouter];
+  }
   return VueMacros({
     plugins: {
       vue: vue(miko.vuePluginOptions),
       vueJsx: vueJsx(miko.vueJsxPluginOptions),
-      vueRouter: VueRouter({
-        extensions: miko.routerPluginOptions.extensions,
-        routesFolder: miko.routerPluginOptions.routesFolder,
-        dts: miko.routerPluginOptions.dts,
-        extendRoute(route: { path?: string; addAlias: (aliases: string[]) => void }) {
-          if (route.path) {
-            route.addAlias([route.path === '/' ? '/index.html' : `${route.path}.html`]);
-          }
-        },
-      }),
+      vueRouter,
     },
   });
 }

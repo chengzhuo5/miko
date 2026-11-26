@@ -35,6 +35,7 @@ function project(): ResolvedMikoConfig {
       layout: 'flexible',
       vuePluginOptions: {},
       vueJsxPluginOptions: {},
+      vueMacros: true,
       routerPluginOptions: {},
       layoutsPluginOptions: {},
       componentsPluginOptions: false,

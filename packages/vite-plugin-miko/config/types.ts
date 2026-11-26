@@ -40,6 +40,18 @@ export interface MikoOptions {
   lib?: LibConfig;
   vuePluginOptions?: VueOptions;
   vueJsxPluginOptions?: VueJsxOptions;
+  /**
+   * 是否用 vue-macros 包裹 Vue 官方插件，默认 true（保持历史行为）。
+   *
+   * vue-macros 会为每个宏单独再挂一层全局 transform，对不依赖宏语法的项目是纯开销：
+   * 1350 个模块的 app 构建里，setup-component-pre / reactivity-transform / better-define
+   * 三个插件各跑 1350 次，关掉后同机构建 27.0s → 17.5s（-35%）。
+   *
+   * 设为 false 即直接使用 @vitejs/plugin-vue 与 @vitejs/plugin-vue-jsx，代价是不再支持
+   * vue-macros 的 `$ref` 等响应式解构语法糖与 `.setup.tsx` 组件（`defineOptions` 等
+   * Vue 3.3+ 原生宏不受影响）。
+   */
+  vueMacros?: boolean;
   routerPluginOptions?: VueRouterOptions;
   layoutsPluginOptions?: AutoOption<LayoutsUserOptions>;
   componentsPluginOptions?: AutoOption<ComponentsOptions>;
@@ -91,6 +103,7 @@ export interface ResolvedMikoOptions extends Required<
   lib?: LibConfig;
   vuePluginOptions: VueOptions;
   vueJsxPluginOptions: VueJsxOptions;
+  vueMacros: boolean;
   routerPluginOptions: VueRouterOptions;
   layoutsPluginOptions: LayoutsUserOptions | false;
   componentsPluginOptions: ComponentsOptions | false;

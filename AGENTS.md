@@ -158,6 +158,7 @@ TypeScript 7（tsgo + `typescript-native-bridge`）通过 `vue-tsc` 进行类型
 - Janus 前端接口拦截器：`bun link @janus/core @janus/unplugin` 后由能力解析和插件装配自动发现，并通过 `createRequire` 同步加载 CJS 构建产物，无需手动配插件
 - Vue DevTools 仅在 `miko dev` 自动启用，Build / Preview / Doctor 不加载
 - `miko.config.ts`（可选）严格使用 `{ miko, vite }` 两个命名空间。`miko` 放框架能力（如 `rendering`、`uiLibrary`、`vuePluginOptions`、`legacyPluginOptions`、`externalOptions`），`vite` 接受 Vite 原生配置；入口 input 仍由 Miko 管理。完整类型见 `MikoUserConfig`
+- `miko.vueMacros`（默认 `true`）：vue-macros 会为每个宏再挂一层全局 transform，对不用 `$ref` 等语法糖、不用 `.setup.tsx` 的项目是纯开销。显式设 `false` 后 app 与库构建都直接装配 `vue`/`vueJsx`/`vueRouter`（`<route>` 自定义块与 `*.html` 别名不受影响，`defineOptions` 走 Vue 3.3+ 原生路径）；一千三百模块量级的 app 构建实测 vite 阶段 66s → 42s
 - 应用构建：类型检查与配置/插件准备并行，但 Vite/SSG 构建必须等待两者完成；成功后生成 `dist/.miko/routes.json` 与 `assets.json`，提供部署路由和缓存建议
 - 性能基准：Bun 只负责 workspace 和命令调度，`node runner.mjs` 及 `process.execPath` worker 执行真实构建；3 次 cold、5 次 warm、5 次浏览器样本取中位数，结果目录 `packages/performance/results/` 不提交
 
